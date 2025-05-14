@@ -1,2 +1,18 @@
-# AminaEc
-Aplicación para clases de cycling
+<<<<<<< HEAD
+# amina_ec
+
+AminaEc cycling indoor
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+>>>>>>> 8ee0892 (Amina Ec -Create Project - Splash - Register - Login)
