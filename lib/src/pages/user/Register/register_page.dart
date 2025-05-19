@@ -1,8 +1,8 @@
-import 'package:amina_ec/src/pages/Register/register_controller.dart';
+import 'package:amina_ec/src/pages/user/Register/register_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../utils/color.dart';
+import '../../../utils/color.dart';
 
 class RegisterPage extends StatelessWidget {
   RegisterController con = Get.put(RegisterController());
@@ -61,7 +61,7 @@ class RegisterPage extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 1,
       height: MediaQuery.of(context).size.height * 0.65,
       margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.35),
-      padding: EdgeInsets.symmetric(vertical: 35, horizontal: 10),
+      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -72,6 +72,7 @@ class RegisterPage extends StatelessWidget {
       child: SingleChildScrollView(
         child: Column(
           children: [
+            //_boxPhoto(context),
             _textFieldEmail(),
             _textFieldName(),
             _textFieldLastName(),
@@ -264,14 +265,56 @@ class RegisterPage extends StatelessWidget {
       height: 50,
       child: FloatingActionButton.extended(
         onPressed: () {
-          return con.register();
+          return con.goToRegisterImage();
         },
         label: Text(
-          'Registrarse',
+          'Siguiente',
           style: TextStyle(fontSize: 16, color: Colors.white),
         ),
         backgroundColor: almostBlack,
       ),
+    );
+  }
+
+  //Foto de usuario
+  Widget _boxPhoto(BuildContext context) {
+    return Container(
+      height: 110,
+      width: 110,
+      margin: const EdgeInsets.only(top: 10),
+      child: Stack(
+        alignment: AlignmentDirectional.bottomEnd,
+        children: [
+          _userPhoto(),
+          _editPhoto(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _userPhoto() {
+    return Container(
+      width: 110,
+      height: 110,
+      decoration: const BoxDecoration(
+        color: darkGrey,
+        shape: BoxShape.circle,
+      ),
+      child: GetBuilder<RegisterController>(
+        builder: (_) => CircleAvatar(
+          backgroundColor: darkGrey,
+          backgroundImage: con.imageFile != null
+              ? FileImage(con.imageFile!)
+              : const AssetImage('assets/img/user_photo1.png') as ImageProvider,
+        ),
+      ),
+    );
+  }
+
+  Widget _editPhoto(BuildContext context) {
+    return IconButton.filled(
+      onPressed: () => con.showAlertDialog(context),
+      icon: const Icon(Icons.edit),
     );
   }
 }

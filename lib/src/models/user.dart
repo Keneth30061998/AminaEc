@@ -12,7 +12,7 @@ class User {
   String? ci;
   String? phone;
   String? password;
-  String? photo;
+  String? photo_url;
   String? session_token;
 
   User({
@@ -23,7 +23,7 @@ class User {
     this.ci,
     this.phone,
     this.password,
-    this.photo,
+    this.photo_url,
     this.session_token,
   });
 
@@ -35,7 +35,7 @@ class User {
         ci: json["ci"],
         phone: json["phone"],
         password: json["password"],
-        photo: json["photo"],
+        photo_url: json["photo_url"],
         session_token: json["session_token"],
       );
 
@@ -47,7 +47,7 @@ class User {
         "ci": ci,
         "phone": phone,
         "password": password,
-        "photo": photo,
+        "photo_url": photo_url,
         "session_token": session_token,
       };
 }

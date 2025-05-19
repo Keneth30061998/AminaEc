@@ -1,9 +1,10 @@
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/pages/Login/login_page.dart';
 import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_page.dart';
-import 'package:amina_ec/src/pages/Register/register_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
 import 'package:amina_ec/src/pages/home/home_page.dart';
+import 'package:amina_ec/src/pages/user/Register/register_page.dart';
+import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/login', page: () => LoginPage()),
         GetPage(name: '/login-register', page: () => LoginOrRegisterPage()),
         GetPage(name: '/register', page: () => RegisterPage()),
+        GetPage(name: '/register-image', page: () => RegisterPageImage()),
         GetPage(name: '/home', page: () => HomePage())
       ],
     );

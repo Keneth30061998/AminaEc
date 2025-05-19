@@ -1,11 +1,31 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:amina_ec/src/environment/environment.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart';
 
 import '../models/response_api.dart';
 import '../models/user.dart';
 
 class UserProvider extends GetConnect {
   String url = Environment.API_URL + 'api/users';
+
+  //registrar un usuario con imagen
+  Future<Stream> createWithImage(User user, File image) async {
+    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/users/createWithImage');
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(http.MultipartFile(
+      'image',
+      http.ByteStream(image.openRead().cast()),
+      await image.length(),
+      filename: basename(image.path),
+    ));
+    request.fields['user'] = json.encode(user);
+    final response = await request.send();
+    return response.stream.transform(utf8.decoder);
+  }
 
   //registrar un usuario
   Future<Response> create(User user) async {

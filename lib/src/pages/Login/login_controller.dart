@@ -16,7 +16,7 @@ class LoginController extends GetxController {
     Get.toNamed('/register');
   }
 
-  //Moverse a User - home ? Roles
+  //Moverse a User - Home ? Roles
   void goToUserHomePage() {
     Get.toNamed('/home');
   }
