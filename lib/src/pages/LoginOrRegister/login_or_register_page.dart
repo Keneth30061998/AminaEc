@@ -1,6 +1,7 @@
 import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../utils/color.dart';
 
@@ -29,8 +30,9 @@ class LoginOrRegisterPage extends StatelessWidget {
         'Bienvenido a',
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
+          fontFamily: 'Montserrat',
+          fontSize: 30,
+          fontWeight: FontWeight.w800,
           color: limeGreen,
         ),
       ),
@@ -73,10 +75,11 @@ class LoginOrRegisterPage extends StatelessWidget {
       child: Text(
         '¡Hora de pedalear con estilo!',
         textAlign: TextAlign.center,
-        style: TextStyle(
+        style: GoogleFonts.acme(
+          //fontFamily: 'Montserrat',
           color: almostBlack,
-          fontWeight: FontWeight.bold,
-          fontSize: 25,
+          fontWeight: FontWeight.w700,
+          fontSize: 26,
         ),
       ),
     );
@@ -85,13 +88,13 @@ class LoginOrRegisterPage extends StatelessWidget {
   Widget _subTitleBoxForm(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width * 1,
-      padding: EdgeInsets.only(left: 40, top: 25),
+      padding: EdgeInsets.only(left: 45, top: 25),
       child: Text(
         'Registrate o incia sesión',
-        style: TextStyle(
-          color: almostBlack,
-          fontSize: 19,
-          fontWeight: FontWeight.w500,
+        style: GoogleFonts.robotoCondensed(
+          color: darkGrey,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
