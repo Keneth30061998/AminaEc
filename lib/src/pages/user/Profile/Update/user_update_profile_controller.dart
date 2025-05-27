@@ -1,24 +1,24 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:amina_ec/src/models/response_api.dart';
-import 'package:amina_ec/src/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sn_progress_dialog/progress_dialog.dart';
 
-import '../../../providers/users_provider.dart';
+import '../../../../models/response_api.dart';
+import '../../../../models/user.dart';
+import '../../../../providers/users_provider.dart';
+import '../Info/user_profile_info_controller.dart';
 
-class RegisterController extends GetxController {
-  TextEditingController emailController = TextEditingController();
+class UserProfileUpdateController extends GetxController {
+  User user = User.fromJson(GetStorage().read('user'));
+
   TextEditingController nameController = TextEditingController();
   TextEditingController lastnameController = TextEditingController();
   TextEditingController ciController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
 
   UserProvider usersProvider = UserProvider();
 
@@ -26,59 +26,79 @@ class RegisterController extends GetxController {
   File? imageFile;
   ImagePicker picker = ImagePicker(); //arriba
 
-  void register(BuildContext context) async {
-    String email = emailController.text.trim();
+  UserProfileInfoController userProfileInfoController = Get.find();
+
+  //Cargar datos del usuario - constructor
+  UserProfileUpdateController() {
+    nameController.text = user.name ?? '';
+    lastnameController.text = user.lastname ?? '';
+    ciController.text = user.ci ?? '';
+    phoneController.text = user.phone ?? '';
+  }
+
+  void updateProfile(BuildContext context) async {
     String name = nameController.text;
     String lastname = lastnameController.text;
     String ci = ciController.text;
     String phone = phoneController.text;
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPasswordController.text.trim();
 
-    if (isValidForm(
-        email, name, lastname, ci, phone, password, confirmPassword)) {
+    if (isValidForm(name, lastname, ci, phone)) {
       //Para usar progress dialog
       ProgressDialog progressDialog = ProgressDialog(context: context);
-      progressDialog.show(max: 100, msg: 'Registrando Usuario...');
-      User user = User(
-        email: email,
+      progressDialog.show(max: 100, msg: 'Actualizando Usuario...');
+
+      User myUser = User(
+        id: user.id,
         name: name,
         lastname: lastname,
         ci: ci,
         phone: phone,
-        password: password,
+        //enviar el session token
+        session_token: user.session_token,
       );
-      Stream stream = await usersProvider.createWithImage(user, imageFile!);
-      stream.listen((res) {
-        ResponseApi responseApi = ResponseApi.fromJson(json.decode(
-            res)); //me permite mapear el json y poder usarlo como objeto de dart
-        progressDialog.close();
+
+      if (imageFile == null) {
+        ResponseApi responseApi = await usersProvider.update(myUser);
+        print('Response Api Update : ${responseApi.data}');
         if (responseApi.success == true) {
+          //almacernar en sesion los cambios
           GetStorage().write('user', responseApi.data);
-          print('Reponse: ${responseApi}');
-          goToUserHomePage();
-        } else {
-          Get.snackbar('ERROR!!!', 'Registro fallido');
+          userProfileInfoController.user.value =
+              User.fromJson(GetStorage().read('user'));
+          progressDialog.close();
         }
-      });
+      } else {
+        Stream stream = await usersProvider.updateWithImage(myUser, imageFile!);
+        stream.listen((res) {
+          print('Respuesta cruda: $res');
+          progressDialog.close();
+
+          ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
+
+          print('Response Api Update : ${responseApi.data}');
+          Get.snackbar('Registro', responseApi.message ?? '');
+
+          if (responseApi.success == true) {
+            GetStorage().write('user', responseApi.data);
+            userProfileInfoController.user.value =
+                User.fromJson(GetStorage().read('user') ?? {});
+          } else {
+            Get.snackbar('Registro Fallido E2', responseApi.message ?? '');
+          }
+        });
+      }
     }
   }
 
   //metodo de validacion de campos
   bool isValidForm(
-    String email,
     String name,
     String lastname,
     String ci,
     String phone,
-    String password,
-    String confirmPassword,
   ) {
     //Validaciones - datos
-    if (!GetUtils.isEmail(email)) {
-      Get.snackbar('Email incorrecto', 'Ingrese un email válido');
-      return false;
-    }
+
     if (!GetUtils.isUsername(name)) {
       Get.snackbar('Nombre incorrecto', 'Ingrese un nombre válido');
       return false;
@@ -96,10 +116,7 @@ class RegisterController extends GetxController {
       return false;
     }
     //validaciones - campos vacíos
-    if (email.isEmpty) {
-      Get.snackbar('Email vacío', 'Ingrese un email');
-      return false;
-    }
+
     if (name.isEmpty) {
       Get.snackbar('Email vacío', 'Ingrese un email');
       return false;
@@ -116,26 +133,7 @@ class RegisterController extends GetxController {
       Get.snackbar('Email vacío', 'Ingrese un email');
       return false;
     }
-    if (password.isEmpty) {
-      Get.snackbar('Email vacío', 'Ingrese un email');
-      return false;
-    }
-    if (confirmPassword.isEmpty) {
-      Get.snackbar('Email vacío', 'Ingrese un email');
-      return false;
-    }
-    // validacion - contraseñas
-    if (password != confirmPassword) {
-      Get.snackbar('Contraseñas no coinciden',
-          'Revise las contraseñas e intente nuevamente');
-      return false;
-    }
 
-    //  validacion de imagen de usuario
-    if (imageFile == null) {
-      Get.snackbar('Imagen vacía', 'Seleccione una imagen');
-      return false;
-    }
     return true;
   }
 

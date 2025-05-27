@@ -43,9 +43,7 @@ class User {
         session_token: json["session_token"],
         roles: json["roles"] == null
             ? []
-            : List<Rol>.from(
-                    json["roles"].map((model) => Rol.fromJson(model))) ??
-                [],
+            : List<Rol>.from(json["roles"].map((model) => Rol.fromJson(model))),
       );
 
   Map<String, dynamic> toJson() => {

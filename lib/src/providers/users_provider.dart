@@ -12,6 +12,39 @@ import '../models/user.dart';
 class UserProvider extends GetConnect {
   String url = Environment.API_URL + 'api/users';
 
+  //actualizar un usuario - sin imagen
+  Future<ResponseApi> update(User user) async {
+    Response response = await put(
+      '$url/updateWithoutImage',
+      user.toJson(),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.body == null) {
+      Get.snackbar('Error', 'No se pudo actualizar la informacion');
+      return ResponseApi();
+    }
+
+    ResponseApi responseApi = ResponseApi.fromJson(response.body);
+
+    return responseApi;
+  }
+
+  //Actualizar un usuario  - con imagen
+  Future<Stream> updateWithImage(User user, File image) async {
+    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/users/updateWithImage');
+    final request = http.MultipartRequest('PUT', uri);
+    request.files.add(http.MultipartFile(
+      'image',
+      http.ByteStream(image.openRead().cast()),
+      await image.length(),
+      filename: basename(image.path),
+    ));
+    request.fields['user'] = json.encode(user);
+    final response = await request.send();
+    return response.stream.transform(utf8.decoder);
+  }
+
   //registrar un usuario con imagen
   Future<Stream> createWithImage(User user, File image) async {
     Uri uri = Uri.http(Environment.API_URL_OLD, '/api/users/createWithImage');

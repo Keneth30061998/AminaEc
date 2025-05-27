@@ -1,43 +1,56 @@
-import 'package:amina_ec/src/pages/Admin/Profile/Info/admin_profile_info_controller.dart';
+import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class AdminProfileInfoPage extends StatelessWidget {
-  AdminProfileInfoController con = Get.put(AdminProfileInfoController());
-
+class UserProfileInfoPage extends StatelessWidget {
+  UserProfileInfoController con = Get.put(UserProfileInfoController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: darkGrey,
         foregroundColor: limeGreen,
-        title: const Text(
-          'Perfil Administrador',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: _titleAppbar(),
         actions: [
-          IconButton.filled(
-            onPressed: () => con.signOut(),
-            icon: const Icon(Icons.exit_to_app),
-          ),
+          _actionButtonExit(),
         ],
       ),
       backgroundColor: darkGrey,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _photoNameEmail(context),
-            _boxFormData(context),
-          ],
+      body: Obx(
+        () => SingleChildScrollView(
+          child: Column(
+            children: [
+              _photoNameEmail(context),
+              _boxFormData(context),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  //Widgets - AppBar
+  Widget _titleAppbar() {
+    return Text(
+      'Perfil de usuario',
+      style: TextStyle(fontWeight: FontWeight.w600),
+    );
+  }
+
+  Widget _actionButtonExit() {
+    return Container(
+      margin: EdgeInsets.only(right: 15),
+      child: IconButton.filled(
+        onPressed: () => con.signOut(),
+        icon: const Icon(Icons.exit_to_app),
       ),
     );
   }
 
   Widget _photoNameEmail(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 45),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -48,16 +61,16 @@ class AdminProfileInfoPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${con.user.name} ${con.user.lastname}',
+                  '${con.user.value.name} ${con.user.value.lastname}',
                   style: TextStyle(
                       color: limeGreen,
                       fontSize: 22,
                       fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis, // Por si acaso
+                  overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 4),
                 Text(
-                  '${con.user.email}',
+                  '${con.user.value.email}',
                   style: TextStyle(color: Colors.white60, fontSize: 13.5),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -73,15 +86,16 @@ class AdminProfileInfoPage extends StatelessWidget {
     return Container(
       width: 110,
       height: 110,
+      margin: EdgeInsets.only(left: 10),
       decoration: const BoxDecoration(
         color: darkGrey,
         shape: BoxShape.circle,
       ),
-      child: GetBuilder<AdminProfileInfoController>(
+      child: GetBuilder<UserProfileInfoController>(
         builder: (_) => CircleAvatar(
           backgroundColor: darkGrey,
-          backgroundImage: con.user.photo_url != null
-              ? NetworkImage('${con.user.photo_url}')
+          backgroundImage: con.user.value.photo_url != null
+              ? NetworkImage(con.user.value.photo_url.toString())
               : const AssetImage('assets/img/user_photo1.png') as ImageProvider,
         ),
       ),
@@ -90,7 +104,7 @@ class AdminProfileInfoPage extends StatelessWidget {
 
   Widget _boxFormData(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       padding: const EdgeInsets.symmetric(vertical: 40),
       decoration: BoxDecoration(
         color: darkGrey,
@@ -106,9 +120,9 @@ class AdminProfileInfoPage extends StatelessWidget {
       child: Column(
         children: [
           _textTitle(),
-          _textSubtitle(),
           _textCI(),
           _textPhone(),
+          _buttonUpdate(context),
         ],
       ),
     );
@@ -116,19 +130,12 @@ class AdminProfileInfoPage extends StatelessWidget {
 
   Widget _textTitle() {
     return const Text(
-      'Datos de Administrador',
+      'Datos de Usuario',
       style: TextStyle(
         fontSize: 25,
         fontWeight: FontWeight.bold,
         color: Colors.white70,
       ),
-    );
-  }
-
-  Widget _textSubtitle() {
-    return Text(
-      '*Los datos de administrador no se pueden editar',
-      style: TextStyle(fontSize: 12, color: Colors.white30),
     );
   }
 
@@ -146,7 +153,7 @@ class AdminProfileInfoPage extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.assignment_ind),
         title: Text(
-          '${con.user.ci}',
+          '${con.user.value.ci}',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text('Cédula'),
@@ -168,10 +175,29 @@ class AdminProfileInfoPage extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.phone_android),
         title: Text(
-          '${con.user.phone}',
+          '${con.user.value.phone}',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text('Teléfono'),
+      ),
+    );
+  }
+
+  Widget _buttonUpdate(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      width: MediaQuery.of(context).size.width * 0.77,
+      height: 50,
+      child: FloatingActionButton.extended(
+        onPressed: () {
+          con.goToProfileUpdate();
+        },
+        label: const Text(
+          'Actualizar',
+          style: TextStyle(
+              fontSize: 16, color: almostBlack, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: limeGreen,
       ),
     );
   }

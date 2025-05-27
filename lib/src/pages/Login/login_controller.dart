@@ -21,6 +21,8 @@ class LoginController extends GetxController {
 
   //Moverse a User - Home ? Roles
   void goToUserHomePage() {
+    Get.offNamedUntil('/user/home', (route) => false);
+
     Get.toNamed('/user/home');
   }
 

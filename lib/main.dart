@@ -5,7 +5,8 @@ import 'package:amina_ec/src/pages/Login/login_page.dart';
 import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_page.dart';
 import 'package:amina_ec/src/pages/Roles/roles_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
-import 'package:amina_ec/src/pages/home/home_page.dart';
+import 'package:amina_ec/src/pages/user/Home/user_home_page.dart';
+import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
@@ -18,12 +19,18 @@ User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
 void main() async {
   await GetStorage.init();
+  //Get.put(UserProfileInfoController());
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -52,7 +59,9 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/register-image', page: () => RegisterPageImage()),
         GetPage(name: '/roles', page: () => RolesPage()),
         //usuario
-        GetPage(name: '/user/home', page: () => HomePage()),
+        GetPage(name: '/user/home', page: () => UserHomePage()),
+        GetPage(
+            name: '/user/profile/update', page: () => UserProfileUpdatePage()),
         //coach
         GetPage(name: '/coach/home', page: () => CoachHomePage()),
         //admin

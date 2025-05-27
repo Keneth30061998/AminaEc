@@ -1,19 +1,15 @@
-import 'package:amina_ec/src/pages/Admin/Home/admin_home_controller.dart';
+import 'package:amina_ec/src/pages/user/Home/user_home_controller.dart';
+import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_page.dart';
 import 'package:amina_ec/src/utils/color.dart'; // Asumo que darkGrey, limeGreen, almostBlack están aquí
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-import '../Profile/Info/admin_profile_info_page.dart';
+class UserHomePage extends StatelessWidget {
+  final UserHomeController con = Get.put(UserHomeController());
 
-class AdminHomePage extends StatelessWidget {
-  // Es buena práctica marcar como 'final' si no se reasignará.
-  final AdminHomeController con = Get.put(AdminHomeController());
-
-  // Considera hacer estas páginas más significativas o incluso widgets separados si crecen en complejidad.
   final List<Widget> _pageViews = [
     const Center(
-      // Usar Center para mejor visualización de texto simple
       child: Text(
         'Home',
         style:
@@ -28,11 +24,12 @@ class AdminHomePage extends StatelessWidget {
     ),
     const Center(
       child: Text(
-        'Search',
+        'Favorite',
         style: TextStyle(color: Colors.white, fontSize: 24),
       ),
     ),
-    AdminProfileInfoPage()
+    //UserProfileUpdatePage(),
+    UserProfileInfoPage(),
   ];
 
   // Constantes para el BottomNavigationBar
@@ -45,8 +42,6 @@ class AdminHomePage extends StatelessWidget {
   static const double _gNavGap = 10.0;
   static const int _gNavAnimationMillis = 460;
   static const double _gNavTabBorderRadius = 15.0;
-
-  AdminHomePage({super.key}); // Añadir constructor con key
 
   @override
   Widget build(BuildContext context) {
@@ -80,12 +75,7 @@ class AdminHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: Colors
-            .white10, // Considera definir este color en tu archivo de colores
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(_bottomNavBorderRadius),
-          topRight: Radius.circular(_bottomNavBorderRadius),
-        ),
+        color: Colors.white10,
       ),
       child: GNav(
         rippleColor: limeGreen,
@@ -114,7 +104,7 @@ class AdminHomePage extends StatelessWidget {
             ),
           ),
           const GButton(
-            icon: Icons.support_agent,
+            icon: Icons.directions_bike_outlined,
             text: 'Coachs',
           ),
           const GButton(
