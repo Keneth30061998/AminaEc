@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:amina_ec/src/environment/environment.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 
@@ -12,16 +13,26 @@ import '../models/user.dart';
 class UserProvider extends GetConnect {
   String url = Environment.API_URL + 'api/users';
 
+  User userSession = User.fromJson(GetStorage().read('user') ?? {});
+
   //actualizar un usuario - sin imagen
   Future<ResponseApi> update(User user) async {
     Response response = await put(
       '$url/updateWithoutImage',
       user.toJson(),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? ''
+      },
     );
 
     if (response.body == null) {
       Get.snackbar('Error', 'No se pudo actualizar la informacion');
+      return ResponseApi();
+    }
+
+    if (response.statusCode == 401) {
+      Get.snackbar('Error', 'No está autorizado para realizar esta acción');
       return ResponseApi();
     }
 
@@ -34,6 +45,7 @@ class UserProvider extends GetConnect {
   Future<Stream> updateWithImage(User user, File image) async {
     Uri uri = Uri.http(Environment.API_URL_OLD, '/api/users/updateWithImage');
     final request = http.MultipartRequest('PUT', uri);
+    request.headers['Authorization'] = userSession.session_token ?? '';
     request.files.add(http.MultipartFile(
       'image',
       http.ByteStream(image.openRead().cast()),
