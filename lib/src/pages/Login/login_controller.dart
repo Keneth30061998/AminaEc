@@ -22,8 +22,10 @@ class LoginController extends GetxController {
   //Moverse a User - Home ? Roles
   void goToUserHomePage() {
     Get.offNamedUntil('/user/home', (route) => false);
+  }
 
-    Get.toNamed('/user/home');
+  void goToCoachHomePage() {
+    Get.offNamedUntil('/coach/home', (route) => false);
   }
 
   void goToRolesPage() {
@@ -47,7 +49,12 @@ class LoginController extends GetxController {
         if (myUser.roles!.length > 1) {
           goToRolesPage();
         } else {
-          goToUserHomePage();
+          print('roles: ${myUser.roles!.first.id}');
+          if (myUser.roles!.first.id == '3') {
+            goToCoachHomePage();
+          } else {
+            goToUserHomePage();
+          }
         }
         Get.snackbar('Login Exitoso', responseApi.message ?? '');
       } else {

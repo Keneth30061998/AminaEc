@@ -22,7 +22,7 @@ class RegisterController extends GetxController {
 
   UserProvider usersProvider = UserProvider();
 
-  //Metodo para seleccionar una imagen
+  //Variables para subir imagen
   File? imageFile;
   ImagePicker picker = ImagePicker(); //arriba
 
@@ -50,8 +50,8 @@ class RegisterController extends GetxController {
       );
       Stream stream = await usersProvider.createWithImage(user, imageFile!);
       stream.listen((res) {
-        ResponseApi responseApi = ResponseApi.fromJson(json.decode(
-            res)); //me permite mapear el json y poder usarlo como objeto de dart
+        //me permite mapear el json y poder usarlo como objeto de dart
+        ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
         progressDialog.close();
         if (responseApi.success == true) {
           GetStorage().write('user', responseApi.data);
@@ -190,7 +190,7 @@ class RegisterController extends GetxController {
 
   //Metodos para moverse
   void goToUserHomePage() {
-    Get.toNamed('/user/home');
+    Get.offNamedUntil('user/home', (route) => false);
   }
 
   void goToRegisterImage() {

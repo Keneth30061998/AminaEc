@@ -1,30 +1,22 @@
 import 'package:amina_ec/src/pages/user/Home/user_home_controller.dart';
+import 'package:amina_ec/src/pages/user/Plan/List/user_plan_list_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_page.dart';
 import 'package:amina_ec/src/utils/color.dart'; // Asumo que darkGrey, limeGreen, almostBlack están aquí
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
+import '../Start/user_start_page.dart';
+
 class UserHomePage extends StatelessWidget {
   final UserHomeController con = Get.put(UserHomeController());
 
   final List<Widget> _pageViews = [
+    UserStartPage(),
+    UserPlanListPage(),
     const Center(
       child: Text(
-        'Home',
-        style:
-            TextStyle(color: Colors.white, fontSize: 24), // Ejemplo de estilo
-      ),
-    ),
-    const Center(
-      child: Text(
-        'Favorite',
-        style: TextStyle(color: Colors.white, fontSize: 24),
-      ),
-    ),
-    const Center(
-      child: Text(
-        'Favorite',
+        'Calendar',
         style: TextStyle(color: Colors.white, fontSize: 24),
       ),
     ),
@@ -104,12 +96,12 @@ class UserHomePage extends StatelessWidget {
             ),
           ),
           const GButton(
-            icon: Icons.directions_bike_outlined,
-            text: 'Coachs',
-          ),
-          const GButton(
             icon: Icons.local_offer_sharp,
             text: 'Planes',
+          ),
+          const GButton(
+            icon: Icons.calendar_month,
+            text: 'Agenda',
           ),
           const GButton(
             icon: Icons.person,

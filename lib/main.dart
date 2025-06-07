@@ -1,4 +1,8 @@
+import 'package:amina_ec/src/components/Socket/socket_service.dart';
 import 'package:amina_ec/src/models/user.dart';
+import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_image_page.dart';
+import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_page.dart';
+import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_schedule_page.dart';
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_page.dart';
 import 'package:amina_ec/src/pages/Coach/Home/coach_home_page.dart';
 import 'package:amina_ec/src/pages/Login/login_page.dart';
@@ -20,6 +24,7 @@ User userSession = User.fromJson(GetStorage().read('user') ?? {});
 void main() async {
   await GetStorage.init();
   //Get.put(UserProfileInfoController());
+  SocketService().connect(); // Conexión al socket
   runApp(const MyApp());
 }
 
@@ -32,6 +37,13 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   // This widget is the root of your application.
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    print('Token de session del usuario: ${userSession.session_token}');
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -49,7 +61,9 @@ class _MyAppState extends State<MyApp> {
       initialRoute: userSession.id != null
           ? userSession.roles!.length > 1
               ? '/roles'
-              : '/user/home'
+              : userSession.roles!.first.id != '3'
+                  ? '/user/home'
+                  : '/coach/home'
           : '/splash',
       getPages: [
         GetPage(name: '/splash', page: () => SplashPage()),
@@ -66,6 +80,15 @@ class _MyAppState extends State<MyApp> {
         GetPage(name: '/coach/home', page: () => CoachHomePage()),
         //admin
         GetPage(name: '/admin/home', page: () => AdminHomePage()),
+        GetPage(
+            name: '/admin/coach/register',
+            page: () => AdminCoachRegisterPage()),
+        GetPage(
+            name: '/admin/coach/register-image',
+            page: () => AdminCoachRegisterImagePage()),
+        GetPage(
+            name: '/admin/coach/register-schedule',
+            page: () => AdminCoachRegisterSchedulePage()),
       ],
     );
   }

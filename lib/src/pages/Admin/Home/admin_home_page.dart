@@ -1,10 +1,13 @@
+import 'package:amina_ec/src/pages/Admin/Coach/List/admin_coach_list_page.dart';
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_controller.dart';
-import 'package:amina_ec/src/utils/color.dart'; // Asumo que darkGrey, limeGreen, almostBlack están aquí
+import 'package:amina_ec/src/pages/Admin/Plan/Register/admin_plan_register_page.dart';
+import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 import '../Profile/Info/admin_profile_info_page.dart';
+import '../Start/admin_start_page.dart';
 
 class AdminHomePage extends StatelessWidget {
   // Es buena práctica marcar como 'final' si no se reasignará.
@@ -12,26 +15,15 @@ class AdminHomePage extends StatelessWidget {
 
   // Considera hacer estas páginas más significativas o incluso widgets separados si crecen en complejidad.
   final List<Widget> _pageViews = [
-    const Center(
-      // Usar Center para mejor visualización de texto simple
-      child: Text(
-        'Home',
-        style:
-            TextStyle(color: Colors.white, fontSize: 24), // Ejemplo de estilo
-      ),
-    ),
-    const Center(
-      child: Text(
-        'Favorite',
-        style: TextStyle(color: Colors.white, fontSize: 24),
-      ),
-    ),
+    AdminStartPage(),
+    AdminPlanRegisterPage(),
     const Center(
       child: Text(
         'Search',
         style: TextStyle(color: Colors.white, fontSize: 24),
       ),
     ),
+    AdminCoachListPage(),
     AdminProfileInfoPage()
   ];
 
@@ -80,12 +72,7 @@ class AdminHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: Colors
-            .white10, // Considera definir este color en tu archivo de colores
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(_bottomNavBorderRadius),
-          topRight: Radius.circular(_bottomNavBorderRadius),
-        ),
+        color: Colors.white10,
       ),
       child: GNav(
         rippleColor: limeGreen,
@@ -114,12 +101,16 @@ class AdminHomePage extends StatelessWidget {
             ),
           ),
           const GButton(
-            icon: Icons.support_agent,
-            text: 'Coachs',
-          ),
-          const GButton(
             icon: Icons.local_offer_sharp,
             text: 'Planes',
+          ),
+          const GButton(
+            icon: Icons.blur_linear,
+            text: 'Salas',
+          ),
+          const GButton(
+            icon: Icons.support_agent,
+            text: 'Coachs',
           ),
           const GButton(
             icon: Icons.person,
