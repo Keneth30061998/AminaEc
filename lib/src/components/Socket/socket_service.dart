@@ -12,14 +12,40 @@ class SocketService {
   late IO.Socket socket;
 
   SocketService._internal() {
+    // Inicializa socket con el token actual (aunque sea null al principio)
+    socket = IO.io(
+      Environment.API_URL_SOCKET,
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .setAuth({'token': userSession.session_token ?? ''})
+          .disableAutoConnect()
+          .build(),
+    );
+  }
+
+  void setUser(User user) {
+    userSession = user;
+  }
+
+  // Actualiza el usuario y reconecta el socket
+  void updateUserSession(User newUser) {
+    userSession = newUser;
+
+    // Si el socket está conectado, desconéctalo antes de reconectar
+    if (socket != null && socket.connected) {
+      socket.disconnect();
+    }
     connect();
   }
 
   void connect() {
+    print('🔌 Intentando conectar al socket...');
+    print('🔑 Token usado: ${userSession.session_token}');
     socket = IO.io(
-      '${Environment.API_URL}?token=${userSession.session_token}',
+      Environment.API_URL_SOCKET,
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setAuth({'token': userSession.session_token})
           .disableAutoConnect()
           .build(),
     );

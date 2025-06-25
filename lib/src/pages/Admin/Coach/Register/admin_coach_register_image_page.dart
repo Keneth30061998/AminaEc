@@ -10,7 +10,12 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: limeGreen,
+        foregroundColor: almostBlack,
+      ),
       resizeToAvoidBottomInset: true,
+      backgroundColor: limeGreen,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -31,7 +36,7 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
     return Container(
       height: 110,
       width: 110,
-      margin: const EdgeInsets.only(top: 10),
+      margin: const EdgeInsets.only(top: 40),
       child: Stack(
         alignment: AlignmentDirectional.bottomEnd,
         children: [
@@ -75,8 +80,15 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
       padding: EdgeInsets.all(35),
       decoration: BoxDecoration(
         color: Colors.white,
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Colors.black54,
+            blurRadius: 10,
+            offset: Offset(0, 0.75),
+          ),
+        ],
         borderRadius: BorderRadius.all(
-          Radius.circular(35),
+          Radius.circular(30),
         ),
       ),
       child: SingleChildScrollView(
@@ -178,13 +190,13 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
         },
         label: Text(
           'Siguiente',
-          style: TextStyle(fontSize: 16, color: almostBlack),
+          style: TextStyle(fontSize: 16, color: Colors.white),
         ),
         icon: Icon(
           Icons.arrow_forward_ios,
-          color: almostBlack,
+          color: Colors.white,
         ),
-        backgroundColor: limeGreen,
+        backgroundColor: almostBlack,
       ),
     );
   }

@@ -3,321 +3,358 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import '../../../models/coach.dart';
 
 class UserStartPage extends StatelessWidget {
-  UserSatartController con = Get.put(UserSatartController());
+  UserSatartController con = Get.put(UserSatartController(), permanent: true);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          foregroundColor: limeGreen,
-          backgroundColor: darkGrey,
-          title: _appBarTitle(),
-        ),
-        body: Obx(() {
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _textGreeting(),
-                _containerCount(),
-                _textTitleInfo(),
-                _textInfo(),
-                _texttitleCoachs(),
-                _boxCoachs(context),
-              ],
-            ),
-          );
-        }));
+      backgroundColor: whiteLight,
+      appBar: AppBar(
+        foregroundColor: darkGrey,
+        backgroundColor: whiteLight,
+        title: _appBarTitle(),
+      ),
+      body: Obx(() {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _textGreeting(),
+              const SizedBox(height: 20),
+              _containerCount(),
+              const SizedBox(height: 20),
+              _reelCoach(context),
+            ],
+          ),
+        );
+      }),
+    );
   }
 
   Widget _appBarTitle() {
     return Text(
       'Amina Ec',
       style: GoogleFonts.montserrat(
-        fontSize: 30,
+        fontSize: 26,
         fontWeight: FontWeight.w800,
       ),
     );
   }
 
   Widget _textGreeting() {
-    return Container(
-      margin: EdgeInsets.only(left: 30, top: 10),
-      child: Text(
-        'Hola, ${con.user.name}',
-        style: TextStyle(
-            color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+    return Text(
+      'Hola, ${con.user.name} ${con.user.lastname}',
+      style: GoogleFonts.roboto(
+        color: almostBlack,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
 
   Widget _containerCount() {
-    return Container(
-        padding: EdgeInsets.all(25),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 30,
-          children: [
-            _boxBikesComplete(),
-            _boxBikesPending(),
-          ],
-        ));
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _boxBikesComplete(),
+        _boxBikesPending(),
+      ],
+    );
   }
 
   Widget _boxBikesComplete() {
-    return Container(
-      height: 120,
-      width: 150,
-      decoration: BoxDecoration(
-        color: almostBlack,
-        borderRadius: BorderRadius.all(
-          Radius.circular(20),
-        ),
-        border: Border.all(
-          color: Colors.white24, // Cambia el color aquí si deseas otro
-          width: 2.0, // Grosor de la línea
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.white10,
-            blurRadius: 8,
-            offset: Offset(0.10, 0.85),
-          ),
-        ],
-      ),
-      child: _textDataBikesComplete(),
+    return _boxTemplate(
+      title: 'Rides',
+      count: '1',
+      subtitle: 'Completados',
+      color: Colors.blueGrey.shade50,
     );
   }
 
   Widget _boxBikesPending() {
+    return _boxTemplate(
+      title: 'Rides',
+      count: '0',
+      subtitle: 'Pendientes',
+      color: Colors.blueGrey.shade50,
+    );
+  }
+
+  Widget _boxTemplate({
+    required String title,
+    required String count,
+    required String subtitle,
+    required Color color,
+  }) {
     return Container(
-      height: 120,
+      height: 100,
       width: 150,
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: almostBlack,
-        borderRadius: BorderRadius.all(
-          Radius.circular(20),
-        ),
-        border: Border.all(
-          color: Colors.white24, // Cambia el color aquí si deseas otro
-          width: 2.0, // Grosor de la línea
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.white10,
-            blurRadius: 8,
-            offset: Offset(0.10, 0.85),
-          ),
-        ],
-      ),
-      child: _textDataBikesPending(),
-    );
-  }
-
-  Widget _textDataBikesPending() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Rides',
-          style: GoogleFonts.kodchasan(
-            color: Colors.white,
-            fontSize: 18,
-          ),
-        ),
-        Text(
-          '0',
-          style: GoogleFonts.kodchasan(
-            color: Colors.white,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Text(
-          'Pendientes',
-          style: GoogleFonts.kodchasan(
-            color: Colors.white,
-            fontSize: 18,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _textDataBikesComplete() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Rides',
-          style: GoogleFonts.kodchasan(
-            color: Colors.white,
-            fontSize: 18,
-          ),
-        ),
-        Text(
-          '1',
-          style: GoogleFonts.kodchasan(
-            color: Colors.white,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Text(
-          'Completados',
-          style: GoogleFonts.kodchasan(
-            color: Colors.white,
-            fontSize: 18,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _textTitleInfo() {
-    return Container(
-      margin: EdgeInsets.only(left: 35, top: 15),
-      child: Text(
-        'Rides para hoy (0)',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  Widget _textInfo() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-      child: Text(
-        'No se han reservado rides, agenda un ride para hoy seleccionando uno en el calendario',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-    );
-  }
-
-  Widget _texttitleCoachs() {
-    return Container(
-      margin: EdgeInsets.only(left: 35, top: 15),
-      child: Text(
-        'Instructores',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  Widget _boxCoachs(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 35,
-      ),
-      padding: const EdgeInsets.all(10),
-      //decoration: BoxDecoration(color: almostBlack),
-      height: MediaQuery.of(context).size.height * 0.38,
-      child: ListView.builder(
-        itemCount: con.coaches.length,
-        itemBuilder: (context, index) {
-          final coach = con.coaches[index];
-          return _cardCoachs(coach, context);
-        },
-      ),
-    );
-  }
-
-  Widget _cardCoachs(Coach coach, BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: almostBlack,
+        color: color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white54,
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.white10,
+            color: Colors.black26,
             blurRadius: 8,
-            offset: const Offset(0.1, 0.85),
+            offset: Offset(3, 4),
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Nombre
-          Expanded(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _textCoachName(coach, context),
-              _textCoachDescription(coach, context),
-            ],
-          )),
-          const SizedBox(width: 16),
-          // Foto
-          _photoCoachs(coach),
+          Text(title,
+              style: GoogleFonts.roboto(
+                color: almostBlack,
+                fontSize: 16,
+              )),
+          Text(count,
+              style: GoogleFonts.montserrat(
+                color: darkGrey,
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+              )),
+          Text(subtitle,
+              style: GoogleFonts.kodchasan(
+                color: almostBlack,
+                fontSize: 16,
+              )),
         ],
       ),
     );
   }
 
-  Widget _textCoachName(Coach coach, BuildContext context) {
-    return Text(
-      coach.user?.name ?? 'Nombre no disponible',
-      style: GoogleFonts.montserrat(
-        fontSize: MediaQuery.of(context).size.width > 600 ? 26 : 20,
-        fontWeight: FontWeight.w800,
-        color: Colors.white,
-      ),
-      maxLines: 2,
+  Widget _reelCoach(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Nuestros Coaches',
+          style: GoogleFonts.montserrat(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: darkGrey,
+          ),
+        ),
+        SizedBox(
+          height: 20,
+        ),
+        Container(
+          //padding: EdgeInsets.all(20),
+          color: whiteLight,
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: con.coaches.length,
+            itemBuilder: (context, index) {
+              final coach = con.coaches[index];
+              return _cardCoach(coach, context);
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _textCoachDescription(Coach coach, BuildContext context) {
-    return Text(
-      coach.description ?? 'Descripción no disponible',
-      style: GoogleFonts.roboto(
-        fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 14,
-        color: Colors.white38,
-      ),
-      maxLines: 3,
-    );
-  }
-
-  Widget _photoCoachs(Coach coach) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: coach.user?.photo_url != null
-          ? Image.network(
-              coach.user!.photo_url!,
-              width: 120,
-              height: 100,
-              fit: BoxFit.fill,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.broken_image, size: 50, color: Colors.grey),
-            )
-          : Container(
-              width: 100,
-              height: 100,
-              color: Colors.grey[300],
-              child: const Icon(Icons.person, size: 50, color: Colors.white),
+  Widget _cardCoach(Coach coach, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        showCoachBottomSheet(context, coach);
+      },
+      child: Container(
+        width: 120,
+        height: 140,
+        margin: const EdgeInsets.only(right: 15),
+        decoration: BoxDecoration(
+          color: color_background_box,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 5,
+              offset: Offset(5, 0),
             ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(60),
+              child: coach.user?.photo_url != null
+                  ? Image.network(
+                      coach.user!.photo_url!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.broken_image,
+                          size: 40,
+                          color: Colors.grey),
+                    )
+                  : Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.person,
+                          size: 40, color: Colors.white),
+                    ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                coach.user?.name ?? 'Nombre no disponible',
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.montserrat(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: darkGrey,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void showCoachBottomSheet(BuildContext context, Coach coach) {
+    showMaterialModalBottomSheet(
+      context: context,
+      expand: false,
+      backgroundColor: whiteLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 5,
+              width: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.only(bottom: 20),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(60),
+              child: coach.user?.photo_url != null
+                  ? Image.network(
+                      coach.user!.photo_url!,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 50),
+                    )
+                  : Container(
+                      width: 120,
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.person,
+                          size: 60, color: Colors.white),
+                    ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              coach.user?.name ?? 'Nombre no disponible',
+              style: GoogleFonts.montserrat(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: darkGrey,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.email, size: 18, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Text(
+                  coach.user?.email ?? 'Correo no disponible',
+                  style: GoogleFonts.roboto(
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _infoTile(
+              icon: Icons.person_outline,
+              label: 'Presentación',
+              content: coach.presentation ?? 'No disponible',
+            ),
+            _infoTile(
+              icon: Icons.description_outlined,
+              label: 'Descripción',
+              content: coach.description ?? 'No disponible',
+            ),
+            _infoTile(
+              icon: Icons.sports_handball,
+              label: 'Hobby',
+              content: coach.hobby ?? 'No disponible',
+            ),
+            const SizedBox(height: 35),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Widget auxiliar para mostrar cada sección de información
+  Widget _infoTile({
+    required IconData icon,
+    required String label,
+    required String content,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 26, color: whiteGrey),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: darkGrey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  content,
+                  style: GoogleFonts.roboto(
+                    fontSize: 15,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

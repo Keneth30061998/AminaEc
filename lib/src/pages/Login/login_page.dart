@@ -9,6 +9,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: whiteLight,
       body: Stack(
         children: [
           _backFontColor(context),
@@ -92,7 +93,7 @@ Widget _boxForm(BuildContext context) {
           _titleBoxForm(),
           _textFieldEmail(),
           _textFieldPassword(),
-          _buttonLogin(),
+          _buttonLogin(context),
         ],
       ),
     ),
@@ -159,20 +160,20 @@ Widget _textFieldPassword() {
   );
 }
 
-Widget _buttonLogin() {
+Widget _buttonLogin(BuildContext context) {
   return Container(
     width: double.infinity,
     margin: const EdgeInsets.symmetric(vertical: 20),
     child: FloatingActionButton.extended(
       onPressed: () {
-        return con.login();
+        return con.login(context);
       },
-      backgroundColor: limeGreen,
+      backgroundColor: almostBlack,
       elevation: 2,
       label: const Text(
         'Login',
         style: TextStyle(
-            color: almostBlack, fontWeight: FontWeight.bold, fontSize: 17),
+            color: whiteLight, fontWeight: FontWeight.bold, fontSize: 17),
       ),
     ),
   );
@@ -185,8 +186,7 @@ Widget _textDontHaveAccount() {
       const Text(
         '¿No tienes una cuenta?',
         style: TextStyle(
-          fontSize: 17,
-        ),
+            fontSize: 17, color: darkGrey, fontWeight: FontWeight.w600),
       ),
       const SizedBox(
         width: 10,
@@ -198,20 +198,9 @@ Widget _textDontHaveAccount() {
         child: const Text(
           'Registrate Aqui',
           style: TextStyle(
-              color: limeGreen, fontWeight: FontWeight.bold, fontSize: 18),
+              color: indigoAmina, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       )
     ],
   );
 }
-//construir lentamente el codigo del registro de usuario
-//desarrollar todos los widgets por separado para mejorar la presentacion
-//empezar con el desarrollo del backend
-//el backend debe ser manejado de manera facil, sencilla y dinamida
-//consultar por todos los medios posibles el dezpliegue del backend
-//consultar de forma exaustiva el uso de pasarellas de pago para el funcionamiento.
-
-/* Revisar forma de crear el backend del producto final
-
-    Subir proyecto en github
- */

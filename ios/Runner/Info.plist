@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSMotionUsageDescription</key>
+    <string>Necesitamos acceso al giroscopio para mostrar animaciones interactivas en la tarjeta.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Se requiere acceder a la galeria de fotos</string>
     <key>NSCameraUsageDescription</key>

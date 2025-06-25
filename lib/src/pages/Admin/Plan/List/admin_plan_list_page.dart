@@ -1,4 +1,5 @@
 import 'package:amina_ec/src/pages/Admin/Plan/List/admin_plan_list_controller.dart';
+import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -15,47 +16,114 @@ class AdminPlanListPage extends StatelessWidget {
         return Center(child: NoDataWidget(text: 'No hay planes disponibles'));
       } else {
         return ListView.builder(
+          padding: const EdgeInsets.all(12),
           itemCount: con.plans.length,
           itemBuilder: (context, index) {
             final plan = con.plans[index];
-            return _cardPlan(plan);
+            return _cardPlan(context, plan);
           },
         );
       }
     });
   }
 
-  Widget _cardPlan(Plan plan) {
+  Widget _cardPlan(BuildContext context, Plan plan) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 5,
-      child: ListTile(
-        leading: plan.image != null
-            ? Image.network(plan.image!,
-                width: 60, height: 60, fit: BoxFit.cover)
-            : const Icon(Icons.image_not_supported),
-        title: Text(plan.name ?? 'Sin nombre'),
-        subtitle: Text('\$${plan.price?.toStringAsFixed(2) ?? '0.00'}'),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') {
-              // Ir a la página de edición
-              // Navigator.pushNamed(context, '/admin/plan/edit', arguments: plan);
-              print('Editando plan');
-            } else if (value == 'delete') {
-              con.deletePlan(plan.id!);
-              print('Eliminando plan: ${plan.id}');
-            }
-          },
-          itemBuilder: (BuildContext context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Text('Editar'),
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color_background_box,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: plan.image != null
+                  ? Image.network(
+                      plan.image!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      width: 80,
+                      height: 80,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image_not_supported, size: 40),
+                    ),
             ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Text('Eliminar'),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    plan.name ?? 'Sin nombre',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: almostBlack,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    plan.description ?? 'Sin descripción',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '\$${plan.price?.toStringAsFixed(2) ?? '0.00'}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'edit') {
+                  Get.toNamed('/admin/plans/update', arguments: {'plan': plan});
+                } else if (value == 'delete') {
+                  con.deletePlan(plan.id!);
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Text('Editar'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Eliminar'),
+                    ],
+                  ),
+                ),
+              ],
+            )
           ],
         ),
       ),

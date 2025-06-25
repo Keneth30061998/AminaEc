@@ -22,6 +22,11 @@ class AdminCoachListController extends GetxController {
       print('🗑️ Evento coach:delete recibido');
       getCoaches();
     });
+
+    SocketService().on('coach:update', (data) {
+      print('📡 Evento coach:update recibido');
+      getCoaches();
+    });
   }
 
   void getCoaches() async {
@@ -35,5 +40,23 @@ class AdminCoachListController extends GetxController {
 
   void goToAdminCoachRegisterPage() {
     Get.toNamed('/admin/coach/register');
+  }
+
+  void goToUpdateCoachSchedulePage(Coach coach) {
+    Get.toNamed('/admin/coach/update/schedule', arguments: coach);
+  }
+
+  void goToUpdateCoachPage(Coach coach) {
+    Get.toNamed('/admin/coach/update', arguments: coach);
+  }
+
+  void deleteCoach(String id) async {
+    final res = await coachProvider.deleteCoach(id);
+    if (res.statusCode == 201) {
+      Get.snackbar('Exito', 'Coach eliminado correctamente');
+      getCoaches(); //recarga la lista de coachs
+    } else {
+      Get.snackbar('Error', 'No se pudo eliminar el coach');
+    }
   }
 }

@@ -14,8 +14,8 @@ class AdminPlanRegisterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkGrey,
-        foregroundColor: limeGreen,
+        backgroundColor: whiteLight,
+        foregroundColor: darkGrey,
         title: _texttitleAppbar(),
       ),
       body: AdminPlanListPage(),
@@ -46,24 +46,32 @@ class AdminPlanRegisterPage extends StatelessWidget {
   }
 
   Widget _formAddPlan(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.93,
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 40, horizontal: 50),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          //mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _textTitle(context),
-            _textSubtitle(context),
-            _cardImage(context),
-            _textFieldName(),
-            _textFieldDescription(),
-            _textFieldRides(),
-            _textFieldPrice(),
-            _buttonSave(context),
-          ],
+    return SafeArea(
+      child: Padding(
+        padding: MediaQuery.of(context)
+            .viewInsets, // esto ajusta el padding con respecto al teclado
+        child: SingleChildScrollView(
+          controller: ModalScrollController.of(
+              context), // importante para scroll correcto
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 50),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _textTitle(context),
+                _textSubtitle(context),
+                _cardImage(context),
+                _textFieldName(),
+                _textFieldDescription(),
+                _textFieldRides(),
+                _textFieldPrice(),
+                _textFieldDurationDays(),
+                _buttonSave(context),
+                const SizedBox(
+                    height: 30), // espacio extra para no estar justo al borde
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -103,19 +111,21 @@ class AdminPlanRegisterPage extends StatelessWidget {
       onTap: () {
         return con.showAlertDialog(context);
       },
-      child: Card(
-        elevation: 3,
-        child: Container(
-            color: Colors.transparent,
-            height: 100,
-            width: MediaQuery.of(context).size.width * 0.25,
-            padding: EdgeInsets.all(2),
-            child: con.imageFile != null
-                ? Image.file(
-                    con.imageFile!,
-                    fit: BoxFit.cover,
-                  )
-                : Image.asset('assets/img/addImage.png')),
+      child: Obx(
+        () => Card(
+          elevation: 3,
+          child: Container(
+              color: Colors.transparent,
+              height: 100,
+              width: MediaQuery.of(context).size.width * 0.25,
+              padding: EdgeInsets.all(2),
+              child: con.imageFile.value != null
+                  ? Image.file(
+                      con.imageFile.value!,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.asset('assets/img/addImage.png')),
+        ),
       ),
     );
   }
@@ -207,6 +217,30 @@ class AdminPlanRegisterPage extends StatelessWidget {
           labelText: "Precio",
           hintText: "Precio",
           prefixIcon: Icon(Icons.attach_money_outlined),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textFieldDurationDays() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      child: TextField(
+        controller: con.durationDaysController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          floatingLabelStyle: TextStyle(color: darkGrey),
+          labelText: "Duración en días",
+          hintText: "Duración en días",
+          prefixIcon: Icon(Icons.date_range),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),

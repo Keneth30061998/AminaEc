@@ -12,12 +12,6 @@ class CoachHomePage extends StatelessWidget {
   final List<Widget> _pageViews = [
     const Center(
       child: Text(
-        'Home',
-        style: TextStyle(color: Colors.white, fontSize: 24),
-      ),
-    ),
-    const Center(
-      child: Text(
         'Agenda',
         style: TextStyle(color: Colors.white, fontSize: 24),
       ),
@@ -28,7 +22,7 @@ class CoachHomePage extends StatelessWidget {
   // Constantes para el BottomNavigationBar
   static const double _bottomNavBorderRadius = 20.0;
   static const EdgeInsets _bottomNavPadding =
-      EdgeInsets.symmetric(horizontal: 20, vertical: 14);
+      EdgeInsets.symmetric(horizontal: 100, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
       EdgeInsets.symmetric(horizontal: 15, vertical: 10);
   static const double _gNavIconSize = 26.5;
@@ -85,18 +79,13 @@ class CoachHomePage extends StatelessWidget {
         onTabChange: con.changeTab,
         tabs: [
           const GButton(
-            // Usar const si los parámetros no cambian
-            icon: Icons.home,
-            text: 'Inicio',
+            icon: Icons.calendar_month,
+            text: 'Agenda',
             backgroundGradient: LinearGradient(
               colors: [limeGreen, Colors.lightGreenAccent],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),
-          ),
-          const GButton(
-            icon: Icons.calendar_month,
-            text: 'Agenda',
           ),
           const GButton(
             icon: Icons.person,

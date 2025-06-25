@@ -26,6 +26,10 @@ class UserPlanListController extends GetxController {
       print('🗑️ Evento plan:delete recibido');
       getPlans();
     });
+    SocketService().on('plan:update', (data) {
+      print('🗑️ Evento plan:update recibido');
+      getPlans();
+    });
   }
 
   void getPlans() async {
@@ -35,5 +39,9 @@ class UserPlanListController extends GetxController {
 
   void refresh() {
     getPlans();
+  }
+
+  void goToPolanBuy() {
+    Get.toNamed('/user/plan/buy');
   }
 }

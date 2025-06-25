@@ -3,13 +3,18 @@ import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_image_page.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_page.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_schedule_page.dart';
+import 'package:amina_ec/src/pages/Admin/Coach/Update/Schedule/admin_coach_update_schedule_page.dart';
+import 'package:amina_ec/src/pages/Admin/Coach/Update/admin_coach_update_page.dart';
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_page.dart';
+import 'package:amina_ec/src/pages/Admin/Plan/Update/admin_plan_update_page.dart';
 import 'package:amina_ec/src/pages/Coach/Home/coach_home_page.dart';
 import 'package:amina_ec/src/pages/Login/login_page.dart';
 import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_page.dart';
 import 'package:amina_ec/src/pages/Roles/roles_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
+import 'package:amina_ec/src/pages/user/Coach/Reserve/user_coach_reserve_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_page.dart';
+import 'package:amina_ec/src/pages/user/Plan/Buy/user_plan_buy_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
@@ -17,6 +22,7 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 //para mantener abierta la session despues de login
 User userSession = User.fromJson(GetStorage().read('user') ?? {});
@@ -24,7 +30,11 @@ User userSession = User.fromJson(GetStorage().read('user') ?? {});
 void main() async {
   await GetStorage.init();
   //Get.put(UserProfileInfoController());
-  SocketService().connect(); // Conexión al socket
+  await initializeDateFormatting('es_ES', null);
+  if (userSession.session_token != null &&
+      userSession.session_token!.isNotEmpty) {
+    SocketService().connect(); // conecta automáticamente con token guardado
+  }
   runApp(const MyApp());
 }
 
@@ -51,7 +61,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: limeGreen),
         useMaterial3: true,
-        scaffoldBackgroundColor: darkGrey,
+        scaffoldBackgroundColor: whiteLight,
         textTheme: const TextTheme(
           bodyMedium:
               TextStyle(color: Colors.white), // color global para textos
@@ -76,6 +86,9 @@ class _MyAppState extends State<MyApp> {
         GetPage(name: '/user/home', page: () => UserHomePage()),
         GetPage(
             name: '/user/profile/update', page: () => UserProfileUpdatePage()),
+        GetPage(name: '/user/plan/buy', page: () => UserPlanBuyPage()),
+        GetPage(
+            name: '/user/coach/reserve', page: () => UserCoachReservePage()),
         //coach
         GetPage(name: '/coach/home', page: () => CoachHomePage()),
         //admin
@@ -89,6 +102,12 @@ class _MyAppState extends State<MyApp> {
         GetPage(
             name: '/admin/coach/register-schedule',
             page: () => AdminCoachRegisterSchedulePage()),
+        GetPage(
+            name: '/admin/coach/update', page: () => AdminCoachUpdatePage()),
+        GetPage(
+            name: '/admin/coach/update/schedule',
+            page: () => AdminCoachUpdateSchedulePage()),
+        GetPage(name: '/admin/plans/update', page: () => AdminPlanUpdatePage())
       ],
     );
   }

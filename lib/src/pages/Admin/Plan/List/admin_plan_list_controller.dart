@@ -26,6 +26,11 @@ class AdminPlanListController extends GetxController {
       print('🗑️ Evento plan:delete recibido');
       getPlans();
     });
+
+    SocketService().on('plan:update', (data) {
+      print('🗑️ Evento plan:update recibido');
+      getPlans();
+    });
   }
 
   void getPlans() async {

@@ -2,202 +2,178 @@ import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_controlle
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class UserProfileInfoPage extends StatelessWidget {
-  UserProfileInfoController con = Get.put(UserProfileInfoController());
+  final UserProfileInfoController con = Get.put(UserProfileInfoController());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: whiteLight,
       appBar: AppBar(
-        backgroundColor: darkGrey,
-        foregroundColor: limeGreen,
-        title: _titleAppbar(),
+        backgroundColor: whiteLight,
+        foregroundColor: darkGrey,
+        title: _textTitleAppBar(),
         actions: [
-          _actionButtonExit(),
+          _buttonLogout(),
         ],
       ),
-      backgroundColor: darkGrey,
-      body: Obx(
-        () => SingleChildScrollView(
+      body: Obx(() => SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+            child: Column(
+              children: [
+                _profileHeader(context),
+                SizedBox(height: 40),
+                _textTitleScaffold(),
+                _infoCard(
+                  icon: Icons.assignment_ind,
+                  title: con.user.value.ci ?? '',
+                  subtitle: 'Cédula',
+                ),
+                SizedBox(height: 15),
+                _infoCard(
+                  icon: Icons.phone_android,
+                  title: con.user.value.phone ?? '',
+                  subtitle: 'Teléfono',
+                ),
+                SizedBox(height: 30),
+                _updateButton(context),
+              ],
+            ),
+          )),
+    );
+  }
+
+  Widget _textTitleAppBar() {
+    return Text(
+      'Perfil de usuario',
+      style: GoogleFonts.montserrat(
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+
+  Widget _buttonLogout() {
+    return IconButton(
+      icon: Icon(Icons.exit_to_app, color: whiteGrey),
+      onPressed: () => con.signOut(),
+    );
+  }
+
+  Widget _textTitleScaffold() {
+    return Text(
+      'Datos del usuario',
+      style: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        color: darkGrey,
+      ),
+    );
+  }
+
+  Widget _profileHeader(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _userPhoto(),
+        SizedBox(width: 16),
+        Expanded(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _photoNameEmail(context),
-              _boxFormData(context),
+              Text(
+                '${con.user.value.name ?? ''} ${con.user.value.lastname ?? ''}',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: darkGrey,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 4),
+              Text(
+                con.user.value.email ?? '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black45,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  //Widgets - AppBar
-  Widget _titleAppbar() {
-    return Text(
-      'Perfil de usuario',
-      style: TextStyle(fontWeight: FontWeight.w600),
-    );
-  }
-
-  Widget _actionButtonExit() {
-    return Container(
-      margin: EdgeInsets.only(right: 15),
-      child: IconButton.filled(
-        onPressed: () => con.signOut(),
-        icon: const Icon(Icons.exit_to_app),
-      ),
-    );
-  }
-
-  Widget _photoNameEmail(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _userPhoto(),
-          const SizedBox(width: 16), // Espacio entre foto y texto
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${con.user.value.name} ${con.user.value.lastname}',
-                  style: TextStyle(
-                      color: limeGreen,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '${con.user.value.email}',
-                  style: TextStyle(color: Colors.white60, fontSize: 13.5),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
   Widget _userPhoto() {
     return Container(
-      width: 110,
-      height: 110,
-      margin: EdgeInsets.only(left: 10),
-      decoration: const BoxDecoration(
-        color: darkGrey,
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
+        border: Border.all(color: darkGrey, width: 2),
       ),
-      child: GetBuilder<UserProfileInfoController>(
-        builder: (_) => CircleAvatar(
-          backgroundColor: darkGrey,
-          backgroundImage: con.user.value.photo_url != null
-              ? NetworkImage(con.user.value.photo_url.toString())
-              : const AssetImage('assets/img/user_photo1.png') as ImageProvider,
+      child: ClipOval(
+        child: GetBuilder<UserProfileInfoController>(
+          builder: (_) => con.user.value.photo_url != null
+              ? Image.network(
+                  con.user.value.photo_url!,
+                  fit: BoxFit.cover,
+                )
+              : Image.asset(
+                  'assets/img/user_photo1.png',
+                  fit: BoxFit.cover,
+                ),
         ),
       ),
     );
   }
 
-  Widget _boxFormData(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: darkGrey,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black87,
-            blurRadius: 10,
-            offset: Offset(0.10, 0.85),
+  Widget _infoCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(icon, color: darkGrey),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(subtitle),
+      ),
+    );
+  }
+
+  Widget _updateButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => con.goToProfileUpdate(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: almostBlack,
+          padding: EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _textTitle(),
-          _textCI(),
-          _textPhone(),
-          _buttonUpdate(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _textTitle() {
-    return const Text(
-      'Datos de Usuario',
-      style: TextStyle(
-        fontSize: 25,
-        fontWeight: FontWeight.bold,
-        color: Colors.white70,
-      ),
-    );
-  }
-
-  Widget _textCI() {
-    return Container(
-      margin: const EdgeInsets.only(top: 30, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
+          elevation: 2,
         ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.assignment_ind),
-        title: Text(
-          '${con.user.value.ci}',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Cédula'),
-      ),
-    );
-  }
-
-  Widget _textPhone() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.phone_android),
-        title: Text(
-          '${con.user.value.phone}',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Teléfono'),
-      ),
-    );
-  }
-
-  Widget _buttonUpdate(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-      width: MediaQuery.of(context).size.width * 0.77,
-      height: 50,
-      child: FloatingActionButton.extended(
-        onPressed: () {
-          con.goToProfileUpdate();
-        },
-        label: const Text(
+        icon: Icon(Icons.edit, color: Colors.white),
+        label: Text(
           'Actualizar',
           style: TextStyle(
-              fontSize: 16, color: almostBlack, fontWeight: FontWeight.w700),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: whiteLight,
+          ),
         ),
-        backgroundColor: limeGreen,
       ),
     );
   }

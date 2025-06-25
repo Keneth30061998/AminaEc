@@ -2,6 +2,7 @@ import 'package:amina_ec/src/pages/Admin/Profile/Info/admin_profile_info_control
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdminProfileInfoPage extends StatelessWidget {
   AdminProfileInfoController con = Get.put(AdminProfileInfoController());
@@ -10,168 +11,150 @@ class AdminProfileInfoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkGrey,
-        foregroundColor: limeGreen,
-        title: const Text(
+        backgroundColor: whiteLight,
+        foregroundColor: darkGrey,
+        title: Text(
           'Perfil Administrador',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.w800),
         ),
         actions: [
-          IconButton.filled(
+          IconButton(
             onPressed: () => con.signOut(),
-            icon: const Icon(Icons.exit_to_app),
+            icon: const Icon(
+              Icons.exit_to_app,
+              color: whiteGrey,
+            ),
           ),
         ],
       ),
-      backgroundColor: darkGrey,
+      backgroundColor: whiteLight,
       body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
         child: Column(
           children: [
-            _photoNameEmail(context),
-            _boxFormData(context),
+            _profileHeader(context),
+            SizedBox(height: 50),
+            _textTitleScaffold(),
+            _textSubtitleScaffold(),
+            SizedBox(height: 10),
+            _infoCard(
+              icon: Icons.assignment_ind,
+              title: con.user.ci ?? '',
+              subtitle: 'Cédula',
+            ),
+            SizedBox(height: 15),
+            _infoCard(
+              icon: Icons.phone_android,
+              title: con.user.phone ?? '',
+              subtitle: 'Teléfono',
+            ),
+            SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
-  Widget _photoNameEmail(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 45),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _userPhoto(),
-          const SizedBox(width: 16), // Espacio entre foto y texto
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${con.user.name} ${con.user.lastname}',
-                  style: TextStyle(
-                      color: limeGreen,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis, // Por si acaso
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '${con.user.email}',
-                  style: TextStyle(color: Colors.white60, fontSize: 13.5),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
+  Widget _texttitleAppbar() {
+    return Text(
+      'Perfil de usuario',
+      style: TextStyle(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _textSubtitleScaffold() {
+    return Text(
+      '*Los datos de administrador no se pueden editar',
+      style: TextStyle(fontSize: 12, color: whiteGrey),
+    );
+  }
+
+  Widget _textTitleScaffold() {
+    return Text(
+      'Datos del administrador',
+      style: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        color: darkGrey,
       ),
+    );
+  }
+
+  Widget _profileHeader(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _userPhoto(),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${con.user.name ?? ''} ${con.user.lastname ?? ''}',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: whiteGrey,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 4),
+              Text(
+                con.user.email ?? '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black45,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _userPhoto() {
     return Container(
-      width: 110,
-      height: 110,
-      decoration: const BoxDecoration(
-        color: darkGrey,
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
+        border: Border.all(color: darkGrey, width: 2),
       ),
-      child: GetBuilder<AdminProfileInfoController>(
-        builder: (_) => CircleAvatar(
-          backgroundColor: darkGrey,
-          backgroundImage: con.user.photo_url != null
-              ? NetworkImage('${con.user.photo_url}')
-              : const AssetImage('assets/img/user_photo1.png') as ImageProvider,
+      child: ClipOval(
+        child: GetBuilder<AdminProfileInfoController>(
+          builder: (_) => con.user.photo_url != null
+              ? Image.network(
+                  con.user.photo_url!,
+                  fit: BoxFit.cover,
+                )
+              : Image.asset(
+                  'assets/img/user_photo1.png',
+                  fit: BoxFit.cover,
+                ),
         ),
       ),
     );
   }
 
-  Widget _boxFormData(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: darkGrey,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black87,
-            blurRadius: 10,
-            offset: Offset(0.10, 0.85),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _textTitle(),
-          _textSubtitle(),
-          _textCI(),
-          _textPhone(),
-        ],
-      ),
-    );
-  }
-
-  Widget _textTitle() {
-    return const Text(
-      'Datos de Administrador',
-      style: TextStyle(
-        fontSize: 25,
-        fontWeight: FontWeight.bold,
-        color: Colors.white70,
-      ),
-    );
-  }
-
-  Widget _textSubtitle() {
-    return Text(
-      '*Los datos de administrador no se pueden editar',
-      style: TextStyle(fontSize: 12, color: Colors.white30),
-    );
-  }
-
-  Widget _textCI() {
-    return Container(
-      margin: const EdgeInsets.only(top: 30, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
+  Widget _infoCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(Icons.assignment_ind),
+        leading: Icon(icon, color: darkGrey),
         title: Text(
-          '${con.user.ci}',
+          title,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Cédula'),
-      ),
-    );
-  }
-
-  Widget _textPhone() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.phone_android),
-        title: Text(
-          '${con.user.phone}',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Teléfono'),
+        subtitle: Text(subtitle),
       ),
     );
   }

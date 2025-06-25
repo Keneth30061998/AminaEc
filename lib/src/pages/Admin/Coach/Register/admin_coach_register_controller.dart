@@ -10,24 +10,25 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sn_progress_dialog/progress_dialog.dart';
 
-class AdminCoachRegisterController extends GetxController {
-  // Datos personales
-  TextEditingController emailController = TextEditingController();
-  TextEditingController nameController = TextEditingController();
-  TextEditingController lastnameController = TextEditingController();
-  TextEditingController ciController = TextEditingController();
-  TextEditingController phoneController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
+import '../../../../components/Socket/socket_service.dart';
 
-  // Datos del coach
-  TextEditingController hobbyController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  TextEditingController presentationController = TextEditingController();
+class AdminCoachRegisterController extends GetxController {
+  // Controladores de texto
+  final emailController = TextEditingController();
+  final nameController = TextEditingController();
+  final lastnameController = TextEditingController();
+  final ciController = TextEditingController();
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
+  final hobbyController = TextEditingController();
+  final descriptionController = TextEditingController();
+  final presentationController = TextEditingController();
 
   // Imagen
   File? imageFile;
-  ImagePicker picker = ImagePicker();
+  final ImagePicker picker = ImagePicker();
 
   // Horarios
   final List<String> dias = [
@@ -39,123 +40,141 @@ class AdminCoachRegisterController extends GetxController {
     'Sábado',
     'Domingo'
   ];
-  var horaEntrada = <String, TimeOfDay?>{}.obs;
-  var horaSalida = <String, TimeOfDay?>{}.obs;
-  var estadoDia = <String, bool>{}.obs;
+  var horariosPorDia = <String, List<Map<String, TimeOfDay?>>>{}.obs;
 
-  CoachProvider coachProvider = CoachProvider();
+  final CoachProvider coachProvider = CoachProvider();
 
   @override
   void onInit() {
     super.onInit();
     for (var dia in dias) {
-      horaEntrada[dia] = null;
-      horaSalida[dia] = null;
-      estadoDia[dia] = false;
+      horariosPorDia[dia] = [];
     }
   }
 
-  void seleccionarHora(String tipo, String dia, BuildContext context) async {
-    TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
+  void agregarRango(String dia) {
+    horariosPorDia[dia]!.add({'entrada': null, 'salida': null});
+    update();
+  }
 
-    if (picked != null) {
-      TimeOfDay? entrada = horaEntrada[dia];
-      TimeOfDay? salida = horaSalida[dia];
+  void eliminarRango(String dia, int index) {
+    horariosPorDia[dia]!.removeAt(index);
+    update();
+  }
 
-      if (tipo == 'entrada') {
-        if (salida != null && _compararHoras(picked, salida) >= 0) {
-          Get.snackbar('Hora inválida',
-              'La hora de entrada no puede ser mayor o igual que la hora de salida.',
-              backgroundColor: Colors.redAccent, colorText: Colors.white);
-          return;
-        }
-        horaEntrada[dia] = picked;
-      } else {
-        if (entrada != null && _compararHoras(entrada, picked) >= 0) {
-          Get.snackbar('Hora inválida',
-              'La hora de salida no puede ser menor o igual que la hora de entrada.',
-              backgroundColor: Colors.redAccent, colorText: Colors.white);
-          return;
-        }
-        horaSalida[dia] = picked;
+  Future<void> seleccionarHora(
+      String dia, int index, String tipo, BuildContext context) async {
+    final picked =
+        await showTimePicker(context: context, initialTime: TimeOfDay.now());
+
+    if (picked == null) return;
+
+    var rango = horariosPorDia[dia]![index];
+
+    if (tipo == 'entrada') {
+      if (rango['salida'] != null &&
+          _compararHoras(picked, rango['salida']!) >= 0) {
+        _mostrarError('La hora de entrada debe ser menor que la de salida');
+        return;
       }
-
-      update();
+      rango['entrada'] = picked;
+    } else {
+      if (rango['entrada'] != null &&
+          _compararHoras(rango['entrada']!, picked) >= 0) {
+        _mostrarError('La hora de salida debe ser mayor que la de entrada');
+        return;
+      }
+      rango['salida'] = picked;
     }
+
+    if (_rangoDuplicado(dia, index)) {
+      _mostrarError('Este rango ya existe para este día');
+      return;
+    }
+
+    update();
   }
 
-  int _compararHoras(TimeOfDay hora1, TimeOfDay hora2) {
-    final minutos1 = hora1.hour * 60 + hora1.minute;
-    final minutos2 = hora2.hour * 60 + hora2.minute;
-    return minutos1.compareTo(minutos2);
+  bool _rangoDuplicado(String dia, int indexActual) {
+    var actual = horariosPorDia[dia]![indexActual];
+    for (int i = 0; i < horariosPorDia[dia]!.length; i++) {
+      if (i == indexActual) continue;
+      var otro = horariosPorDia[dia]![i];
+      if (actual['entrada'] == otro['entrada'] &&
+          actual['salida'] == otro['salida']) {
+        return true;
+      }
+    }
+    return false;
   }
+
+  void _mostrarError(String mensaje) {
+    Get.snackbar('Error', mensaje,
+        backgroundColor: Colors.redAccent, colorText: Colors.white);
+  }
+
+  int _compararHoras(TimeOfDay hora1, TimeOfDay hora2) =>
+      (hora1.hour * 60 + hora1.minute)
+          .compareTo(hora2.hour * 60 + hora2.minute);
 
   String formatHora(TimeOfDay? time) {
     if (time == null) return 'Seleccionar';
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    return '$h:$m';
   }
 
   void showAlertDialog(BuildContext context) {
-    Widget galleryButton = FloatingActionButton.extended(
-      onPressed: () {
-        Get.back();
-        selectImage(ImageSource.gallery);
-      },
-      label: Text('Galería'),
-      icon: Icon(Icons.photo_library_outlined),
-      elevation: 3,
-    );
-    Widget cameraButton = FloatingActionButton.extended(
-      onPressed: () {
-        Get.back();
-        selectImage(ImageSource.camera);
-      },
-      label: Text('Cámara'),
-      icon: Icon(Icons.camera),
-      elevation: 3,
-    );
-
-    AlertDialog alertDialog = AlertDialog(
-      title: Text('Seleccione una opción',
-          style: TextStyle(fontWeight: FontWeight.w500)),
-      actions: [galleryButton, cameraButton],
-    );
-
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return alertDialog;
-        });
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Seleccione una opción',
+            style: TextStyle(fontWeight: FontWeight.w500)),
+        actions: [
+          FloatingActionButton.extended(
+            onPressed: () {
+              Get.back();
+              selectImage(ImageSource.gallery);
+            },
+            label: const Text('Galería'),
+            icon: const Icon(Icons.photo_library_outlined),
+            elevation: 3,
+          ),
+          FloatingActionButton.extended(
+            onPressed: () {
+              Get.back();
+              selectImage(ImageSource.camera);
+            },
+            label: const Text('Cámara'),
+            icon: const Icon(Icons.camera),
+            elevation: 3,
+          ),
+        ],
+      ),
+    );
   }
 
-  Future selectImage(ImageSource imageSource) async {
-    XFile? image = await picker.pickImage(source: imageSource);
+  Future<void> selectImage(ImageSource imageSource) async {
+    final image = await picker.pickImage(source: imageSource);
     if (image != null) {
       imageFile = File(image.path);
       update();
     }
   }
 
-  void goToRegisterAdminCoachImage() {
-    Get.toNamed('/admin/coach/register-image');
-  }
+  void goToRegisterAdminCoachImage() =>
+      Get.toNamed('/admin/coach/register-image');
 
-  void goToRegisterAdminCoachSchedule() {
-    Get.toNamed('/admin/coach/register-schedule');
-  }
+  void goToRegisterAdminCoachSchedule() =>
+      Get.toNamed('/admin/coach/register-schedule');
 
-  void registerCoach(BuildContext context) async {
+  Future<void> registerCoach(BuildContext context) async {
     if (!isValidForm()) return;
 
-    ProgressDialog progressDialog = ProgressDialog(context: context);
+    final progressDialog = ProgressDialog(context: context);
     progressDialog.show(max: 100, msg: 'Registrando Coach...');
 
-    User user = User(
+    final user = User(
       email: emailController.text.trim(),
       name: nameController.text,
       lastname: lastnameController.text,
@@ -164,27 +183,16 @@ class AdminCoachRegisterController extends GetxController {
       password: passwordController.text.trim(),
     );
 
-    Coach coach = Coach(
+    final coach = Coach(
       hobby: hobbyController.text,
       description: descriptionController.text,
       presentation: presentationController.text,
       state: 1,
     );
 
-    List<Schedule> scheduleList = [];
-    for (var dia in dias) {
-      if (estadoDia[dia] == true &&
-          horaEntrada[dia] != null &&
-          horaSalida[dia] != null) {
-        scheduleList.add(Schedule(
-          day: dia,
-          start_time: formatHora(horaEntrada[dia]),
-          end_time: formatHora(horaSalida[dia]),
-        ));
-      }
-    }
+    final scheduleList = getHorariosComoLista();
 
-    Stream stream = await coachProvider.registerCoach(
+    final stream = await coachProvider.registerCoach(
       user: user,
       coach: coach,
       schedule: scheduleList,
@@ -196,6 +204,13 @@ class AdminCoachRegisterController extends GetxController {
       final data = json.decode(res);
       if (data['success'] == true) {
         Get.snackbar('Éxito', 'Coach registrado correctamente');
+        if (SocketService().socket.connected) {
+          print(
+              '📤 Enviando horarios: ${json.encode(scheduleList.map((s) => s.toJson()).toList())}');
+          SocketService().emit('coach:new', coach.toJson());
+        } else {
+          print('Socket no conectado');
+        }
         Get.offAllNamed('/admin/home');
       } else {
         Get.snackbar('Error', 'No se pudo registrar el coach');
@@ -240,5 +255,21 @@ class AdminCoachRegisterController extends GetxController {
       return false;
     }
     return true;
+  }
+
+  List<Schedule> getHorariosComoLista() {
+    final lista = <Schedule>[];
+    horariosPorDia.forEach((dia, rangos) {
+      for (var rango in rangos) {
+        if (rango['entrada'] != null && rango['salida'] != null) {
+          lista.add(Schedule(
+            day: dia,
+            start_time: formatHora(rango['entrada']),
+            end_time: formatHora(rango['salida']),
+          ));
+        }
+      }
+    });
+    return lista;
   }
 }

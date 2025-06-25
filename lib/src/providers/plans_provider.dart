@@ -35,6 +35,7 @@ class PlanProvider extends GetConnect {
 
   //Listar los planes
   Future<List<Plan>> getAll() async {
+    print('Token que se envía al backend: ${userSession.session_token}');
     final response = await get('$url/getAll', headers: {
       'Content-Type': 'application/json',
       'Authorization': userSession.session_token ?? ''
@@ -44,14 +45,17 @@ class PlanProvider extends GetConnect {
     print('BODY: ${response.body}');
 
     if (response.statusCode == 401) {
-      Get.snackbar('Error', 'No autorizado');
       return [];
     }
-    List<Plan> plans = Plan.fromJsonList(response.body);
-    return plans;
+
+    // El endpoint envuelve la lista real en la clave "data"
+    final Map<String, dynamic> body = response.body;
+    final List<dynamic> list = body['data'] ?? [];
+
+    return Plan.fromJsonList(list);
   }
 
-  // ✅ Renombrado para evitar conflicto con GetConnect.delete()
+  // Eliminar Plan
   Future<http.Response> deletePlan(String id) async {
     final res = await http.delete(
       Uri.parse('$url/delete/$id'),
@@ -62,6 +66,41 @@ class PlanProvider extends GetConnect {
     );
 
     print('❌ PLAN DELETE: ${res.statusCode}');
+    return res;
+  }
+
+// Actualizar un plan con imagen
+  Future<Stream<String>> updateWithImage(Plan plan, File image) async {
+    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/plans/updateWithImage');
+    final request = http.MultipartRequest('PUT', uri);
+
+    request.headers['Authorization'] = userSession.session_token ?? '';
+    request.files.add(http.MultipartFile(
+      'image',
+      http.ByteStream(image.openRead().cast()),
+      await image.length(),
+      filename: basename(image.path),
+    ));
+
+    request.fields['plan'] = json.encode(plan.toJson());
+
+    final response = await request.send();
+    return response.stream.transform(utf8.decoder);
+  }
+
+// Actualizar un plan sin imagen
+  Future<http.Response> updateWithoutImage(Plan plan) async {
+    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/plans/update');
+    final res = await http.put(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? ''
+      },
+      body: json.encode(plan.toJson()),
+    );
+
+    print('📡 PUT sin imagen: ${res.statusCode}');
     return res;
   }
 }

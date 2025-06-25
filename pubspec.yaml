@@ -44,6 +44,8 @@ dependencies:
   google_fonts: ^6.2.1
   modal_bottom_sheet: ^3.0.0
   socket_io_client: ^3.1.2
+  flutter_credit_card: ^4.1.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +76,7 @@ flutter:
     - assets/img/noImage.jpg
     - assets/img/addImage.png
     - assets/img/no_files.png
+    - assets/img/visa.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

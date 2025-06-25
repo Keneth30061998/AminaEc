@@ -42,6 +42,7 @@ class CoachProvider extends GetConnect {
   }
 
   Future<List<Coach>> getAll() async {
+    print('Token que se envía al backend: ${userSession.session_token}');
     final response = await get('$url/getAll', headers: {
       'Content-Type': 'application/json',
       'Authorization': userSession.session_token ?? ''
@@ -59,5 +60,88 @@ class CoachProvider extends GetConnect {
     final List<dynamic> list = body['data'] ?? [];
 
     return Coach.fromJsonList(list);
+  }
+
+  // Eliminar Coach
+  Future<http.Response> deleteCoach(String id) async {
+    final res = await http.delete(
+      Uri.parse('$url/delete/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? ''
+      },
+    );
+    print('COACH DELETE: ${res.statusCode}');
+    return res;
+  }
+
+  // Actualizar coach SIN imagen
+  Future<http.Response> updateWithoutImage({
+    required User user,
+    required Coach coach,
+    required List<Schedule> schedules,
+  }) async {
+    final body = {
+      'user': user.toJson(),
+      'coach': coach.toJson(),
+      'schedule': schedules.map((s) => s.toJson()).toList(),
+    };
+
+    final response = await http.put(
+      Uri.parse('$url/updateWithoutImage'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? '',
+      },
+      body: json.encode(body),
+    );
+
+    return response;
+  }
+
+// Actualizar coach CON imagen
+  Future<Stream> updateWithImage({
+    required User user,
+    required Coach coach,
+    required List<Schedule> schedules,
+    required File image,
+  }) async {
+    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/coachs/updateWithImage');
+    final request = http.MultipartRequest('PUT', uri);
+
+    request.headers['Authorization'] = userSession.session_token ?? '';
+
+    request.files.add(http.MultipartFile(
+      'image',
+      http.ByteStream(image.openRead().cast()),
+      await image.length(),
+      filename: basename(image.path),
+    ));
+
+    request.fields['user'] = json.encode(user.toJson());
+    request.fields['coach'] = json.encode(coach.toJson());
+    request.fields['schedule'] =
+        json.encode(schedules.map((s) => s.toJson()).toList());
+
+    final response = await request.send();
+    return response.stream.transform(utf8.decoder);
+  }
+
+  //Actualizar horarios
+  Future<http.Response> updateSchedule(
+      String coachId, List<Schedule> schedules) async {
+    final body = {
+      'id_user': coachId,
+      'schedule': schedules.map((e) => e.toJson()).toList(),
+    };
+    final response = await http.put(
+      Uri.parse('$url/updateSchedule'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? '',
+      },
+      body: json.encode(body),
+    );
+    return response;
   }
 }

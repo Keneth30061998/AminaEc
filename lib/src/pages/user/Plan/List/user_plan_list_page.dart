@@ -18,16 +18,31 @@ class UserPlanListPage extends StatelessWidget {
       } else {
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: darkGrey,
-            foregroundColor: limeGreen,
+            backgroundColor: whiteLight,
+            foregroundColor: darkGrey,
             title: _texttitleAppbar(),
           ),
-          body: ListView.builder(
-            itemCount: con.plans.length,
-            itemBuilder: (context, index) {
-              final plan = con.plans[index];
-              return _cardPlan(plan);
-            },
+          body: Column(
+            children: [
+              Text(
+                'Adquiere planes y pedalea con tu coach favorito!',
+                style: GoogleFonts.abel(
+                  fontSize: 18,
+                  color: darkGrey,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.all(12),
+                  itemCount: con.plans.length,
+                  itemBuilder: (context, index) {
+                    final plan = con.plans[index];
+                    return _cardPlan(context, plan);
+                  },
+                ),
+              ),
+            ],
           ),
         );
       }
@@ -44,30 +59,98 @@ class UserPlanListPage extends StatelessWidget {
     );
   }
 
-  Widget _cardPlan(Plan plan) {
+  Widget _cardPlan(BuildContext context, Plan plan) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 5,
-      child: ListTile(
-        leading: plan.image != null
-            ? Image.network(plan.image!,
-                width: 60, height: 60, fit: BoxFit.cover)
-            : const Icon(Icons.image_not_supported),
-        title: Text(plan.name ?? 'Sin nombre'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white70,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(plan.description ?? ''),
-            const SizedBox(height: 4),
-            Text(
-              '${plan.rides ?? 0} Rides',
-              style: GoogleFonts.roboto(
-                fontWeight: FontWeight.w700,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: plan.image != null
+                  ? Image.network(
+                      plan.image!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      width: 70,
+                      height: 70,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image_not_supported, size: 40),
+                    ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    plan.name?.toUpperCase() ?? 'Sin nombre',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: almostBlack,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '# Rides: ${plan.rides ?? '***'}',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '\$${plan.price?.toStringAsFixed(2) ?? '0.00'}',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                    ),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    con.goToPolanBuy();
+                  },
+                  //icon: const Icon(Icons.shopping_cart_checkout, size: 18),
+                  label: const Text('Comprar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: almostBlack,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    textStyle: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        trailing: Text('\$${plan.price?.toStringAsFixed(2) ?? '0.00'}'),
       ),
     );
   }

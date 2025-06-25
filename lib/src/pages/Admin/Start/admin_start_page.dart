@@ -14,8 +14,8 @@ class _AdminStartPageState extends State<AdminStartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkGrey,
-        foregroundColor: limeGreen,
+        backgroundColor: whiteLight,
+        foregroundColor: darkGrey,
         title: _appBarTitle(),
       ),
       body: SingleChildScrollView(
@@ -49,7 +49,7 @@ class _AdminStartPageState extends State<AdminStartPage> {
         style: GoogleFonts.robotoCondensed(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: Colors.white30,
+          color: almostBlack,
         ),
         textAlign: TextAlign.left,
       ),
@@ -65,7 +65,7 @@ class _AdminStartPageState extends State<AdminStartPage> {
         style: GoogleFonts.robotoCondensed(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: Colors.white30,
+          color: almostBlack,
         ),
         textAlign: TextAlign.left,
       ),
@@ -82,7 +82,7 @@ class _AdminStartPageState extends State<AdminStartPage> {
         style: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: darkGrey,
         ),
         textAlign: TextAlign.left,
       ),

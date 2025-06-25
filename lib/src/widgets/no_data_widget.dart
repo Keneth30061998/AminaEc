@@ -1,4 +1,6 @@
+import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NoDataWidget extends StatelessWidget {
   String text = '';
@@ -16,7 +18,7 @@ class NoDataWidget extends StatelessWidget {
           ),
           Text(
             text,
-            style: TextStyle(color: Colors.white54),
+            style: GoogleFonts.robotoCondensed(color: whiteGrey),
           ),
         ],
       ),

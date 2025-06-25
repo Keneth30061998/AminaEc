@@ -11,6 +11,7 @@ class Plan {
   String? image;
   int? rides;
   double? price;
+  int? duration_days;
 
   Plan({
     this.id,
@@ -19,6 +20,7 @@ class Plan {
     this.image,
     this.rides,
     this.price,
+    this.duration_days,
   });
   factory Plan.fromJson(Map<String, dynamic> json) => Plan(
         id: json['id'],
@@ -29,6 +31,7 @@ class Plan {
         price: json['price'] is num
             ? json['price'].toDouble()
             : double.tryParse(json["price"]?.toString() ?? "0.0") ?? 0.0,
+        duration_days: json['duration_days'],
       );
 
   //Se requiere para listar el plan que llega como json
@@ -48,5 +51,6 @@ class Plan {
         "image": image,
         "rides": rides,
         "price": price,
+        "duration_days": duration_days,
       };
 }

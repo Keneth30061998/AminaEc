@@ -12,10 +12,10 @@ class RolesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: darkGrey,
+      backgroundColor: whiteLight,
       appBar: AppBar(
-        backgroundColor: darkGrey,
-        foregroundColor: limeGreen,
+        backgroundColor: whiteLight,
+        foregroundColor: darkGrey,
         elevation: 0,
         centerTitle: true,
         title: Text(
@@ -23,7 +23,6 @@ class RolesPage extends StatelessWidget {
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.w900,
             fontSize: 20,
-            color: limeGreen,
           ),
         ),
       ),
@@ -47,11 +46,11 @@ class RolesPage extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 20),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           decoration: BoxDecoration(
-            color: Colors.grey[850],
+            color: color_background_box,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black12,
                 blurRadius: 10,
                 offset: Offset(0, 5),
               ),
@@ -86,7 +85,7 @@ class RolesPage extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.white70,
+              color: almostBlack,
             ),
             overflow: TextOverflow.ellipsis,
           ),

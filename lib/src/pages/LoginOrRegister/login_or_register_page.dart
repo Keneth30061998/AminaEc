@@ -11,6 +11,7 @@ class LoginOrRegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: darkGrey,
       body: Stack(
         children: [
           _textTitle(context),
@@ -29,8 +30,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       child: Text(
         'Bienvenido a',
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'Montserrat',
+        style: GoogleFonts.montserrat(
           fontSize: 30,
           fontWeight: FontWeight.w800,
           color: limeGreen,
@@ -71,15 +71,14 @@ class LoginOrRegisterPage extends StatelessWidget {
   Widget _titleBoxForm(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width * 1,
-      padding: EdgeInsets.only(top: 65),
+      padding: EdgeInsets.only(top: 60),
       child: Text(
         '¡Hora de pedalear con estilo!',
         textAlign: TextAlign.center,
-        style: GoogleFonts.acme(
-          //fontFamily: 'Montserrat',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
           color: almostBlack,
-          fontWeight: FontWeight.w700,
-          fontSize: 26,
+          fontSize: 20,
         ),
       ),
     );
@@ -88,12 +87,12 @@ class LoginOrRegisterPage extends StatelessWidget {
   Widget _subTitleBoxForm(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width * 1,
-      padding: EdgeInsets.only(left: 45, top: 25),
+      padding: EdgeInsets.only(left: 45, top: 20),
       child: Text(
         'Registrate o incia sesión',
         style: GoogleFonts.robotoCondensed(
           color: darkGrey,
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -104,7 +103,7 @@ class LoginOrRegisterPage extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width * 0.8,
       height: 60,
-      margin: EdgeInsets.only(top: 50),
+      margin: EdgeInsets.only(top: 35),
       child: FloatingActionButton.extended(
         heroTag: 'registrar usuario',
         onPressed: () {

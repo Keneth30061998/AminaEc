@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/pages/user/Coach/List/user_coach_list_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_controller.dart';
 import 'package:amina_ec/src/pages/user/Plan/List/user_plan_list_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_page.dart';
@@ -14,12 +15,7 @@ class UserHomePage extends StatelessWidget {
   final List<Widget> _pageViews = [
     UserStartPage(),
     UserPlanListPage(),
-    const Center(
-      child: Text(
-        'Calendar',
-        style: TextStyle(color: Colors.white, fontSize: 24),
-      ),
-    ),
+    UserCoachSchedulePage(),
     //UserProfileUpdatePage(),
     UserProfileInfoPage(),
   ];
@@ -67,20 +63,20 @@ class UserHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: Colors.white10,
+        color: color_background_box,
       ),
       child: GNav(
-        rippleColor: limeGreen,
-        hoverColor: limeGreen,
+        rippleColor: darkGrey,
+        hoverColor: darkGrey,
         haptic: true,
         tabBorderRadius: _gNavTabBorderRadius,
         curve: Curves.easeOutExpo,
         duration: const Duration(milliseconds: _gNavAnimationMillis),
         gap: _gNavGap,
-        color: Colors.white60, // Considera definir este color
-        activeColor: almostBlack,
+        color: whiteGrey, // Considera definir este color
+        activeColor: whiteLight,
         iconSize: _gNavIconSize,
-        tabBackgroundColor: limeGreen,
+        tabBackgroundColor: almostBlack,
         padding: _gNavButtonPadding,
         selectedIndex: con.indexTab.value,
         onTabChange: con.changeTab,
@@ -90,7 +86,7 @@ class UserHomePage extends StatelessWidget {
             icon: Icons.home,
             text: 'Inicio',
             backgroundGradient: LinearGradient(
-              colors: [limeGreen, Colors.lightGreenAccent],
+              colors: [almostBlack, darkGrey],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),

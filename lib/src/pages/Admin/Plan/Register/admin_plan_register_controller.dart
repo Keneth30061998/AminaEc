@@ -16,11 +16,13 @@ class AdminPlanRegisterController extends GetxController {
   TextEditingController descriptionController = TextEditingController();
   TextEditingController ridesController = TextEditingController();
   TextEditingController priceController = TextEditingController();
+  TextEditingController durationDaysController = TextEditingController();
 
   PlanProvider plansProvider = PlanProvider();
 
   //Variables para subir una imagen
-  File? imageFile;
+  Rx<File?> imageFile = Rx<File?>(null);
+  File? imageFile2;
   ImagePicker picker = ImagePicker();
 
   //Metodos para registar un plan
@@ -29,18 +31,20 @@ class AdminPlanRegisterController extends GetxController {
     String description = descriptionController.text;
     String rides = ridesController.text;
     String price = priceController.text;
+    String durationDays = durationDaysController.text;
 
-    if (isValidForm(name, description, rides, price)) {
+    if (isValidForm(name, description, rides, price, durationDays)) {
       ProgressDialog progressDialog = ProgressDialog(context: context);
       progressDialog.show(max: 100, msg: 'Registrando Usuario...');
       Plan plan = Plan(
-        name: name,
-        description: description,
-        rides: int.parse(rides),
-        price: double.parse(price),
-      );
+          name: name,
+          description: description,
+          rides: int.parse(rides),
+          price: double.parse(price),
+          duration_days: int.parse(durationDays));
 
-      Stream stream = await plansProvider.createWithImage(plan, imageFile!);
+      Stream stream =
+          await plansProvider.createWithImage(plan, imageFile.value!);
       stream.listen((res) {
         ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
         progressDialog.close();
@@ -57,8 +61,8 @@ class AdminPlanRegisterController extends GetxController {
   }
 
 //Metodo para validar los campos
-  bool isValidForm(
-      String name, String description, String rides, String price) {
+  bool isValidForm(String name, String description, String rides, String price,
+      String durationDays) {
     //Validaciones - datos
     if (!GetUtils.isNum(rides)) {
       Get.snackbar('Rides incorrecto', 'Ingrese un número de rides válido');
@@ -83,8 +87,13 @@ class AdminPlanRegisterController extends GetxController {
       return false;
     }
 
+    if (durationDays.isEmpty) {
+      Get.snackbar('Duracion vacío', 'Ingrese duración en dias');
+      return false;
+    }
+
     //Validacion de imagen
-    if (imageFile == null) {
+    if (imageFile.value == null) {
       Get.snackbar('Imagen vacía', 'Seleccione una imágen');
       return false;
     }
@@ -97,7 +106,8 @@ class AdminPlanRegisterController extends GetxController {
     descriptionController.text = '';
     ridesController.text = '';
     priceController.text = '';
-    imageFile = null;
+    imageFile.value = null;
+    durationDaysController.text = '';
     update();
   }
 
@@ -145,7 +155,7 @@ class AdminPlanRegisterController extends GetxController {
   Future selectImage(ImageSource imageSource) async {
     XFile? image = await picker.pickImage(source: imageSource);
     if (image != null) {
-      imageFile = File(image.path);
+      imageFile.value = File(image.path);
       update();
     }
   }

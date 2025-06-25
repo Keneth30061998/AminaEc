@@ -17,12 +17,6 @@ class AdminHomePage extends StatelessWidget {
   final List<Widget> _pageViews = [
     AdminStartPage(),
     AdminPlanRegisterPage(),
-    const Center(
-      child: Text(
-        'Search',
-        style: TextStyle(color: Colors.white, fontSize: 24),
-      ),
-    ),
     AdminCoachListPage(),
     AdminProfileInfoPage()
   ];
@@ -72,20 +66,20 @@ class AdminHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: Colors.white10,
+        color: color_background_box,
       ),
       child: GNav(
-        rippleColor: limeGreen,
-        hoverColor: limeGreen,
+        rippleColor: darkGrey,
+        hoverColor: darkGrey,
         haptic: true,
         tabBorderRadius: _gNavTabBorderRadius,
         curve: Curves.easeOutExpo,
         duration: const Duration(milliseconds: _gNavAnimationMillis),
         gap: _gNavGap,
-        color: Colors.white60, // Considera definir este color
-        activeColor: almostBlack,
+        color: whiteGrey, // Considera definir este color
+        activeColor: whiteLight,
         iconSize: _gNavIconSize,
-        tabBackgroundColor: limeGreen,
+        tabBackgroundColor: almostBlack,
         padding: _gNavButtonPadding,
         selectedIndex: con.indexTab.value,
         onTabChange: con.changeTab,
@@ -95,7 +89,7 @@ class AdminHomePage extends StatelessWidget {
             icon: Icons.home,
             text: 'Inicio',
             backgroundGradient: LinearGradient(
-              colors: [limeGreen, Colors.lightGreenAccent],
+              colors: [almostBlack, darkGrey],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),
@@ -105,11 +99,7 @@ class AdminHomePage extends StatelessWidget {
             text: 'Planes',
           ),
           const GButton(
-            icon: Icons.blur_linear,
-            text: 'Salas',
-          ),
-          const GButton(
-            icon: Icons.support_agent,
+            icon: Icons.directions_bike_outlined,
             text: 'Coachs',
           ),
           const GButton(

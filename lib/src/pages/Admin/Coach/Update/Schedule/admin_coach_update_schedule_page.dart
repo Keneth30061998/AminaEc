@@ -1,38 +1,36 @@
-import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_controller.dart';
-import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AdminCoachRegisterSchedulePage extends StatelessWidget {
-  final AdminCoachRegisterController con =
-      Get.put(AdminCoachRegisterController());
+import '../../../../../utils/color.dart';
+import 'admin_coach_update_schedule_controller.dart';
+
+class AdminCoachUpdateSchedulePage extends StatelessWidget {
+  final AdminCoachUpdateScheduleController con =
+      Get.put(AdminCoachUpdateScheduleController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Horario Semanal',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        title: Text('Editar Horario',
+            style: GoogleFonts.montserrat(fontWeight: FontWeight.w800)),
         backgroundColor: whiteLight,
         foregroundColor: darkGrey,
       ),
-      backgroundColor: whiteLight,
-      body: GetBuilder<AdminCoachRegisterController>(
-        builder: (_) => SingleChildScrollView(
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              for (var dia in con.dias.sublist(0, 7)) // Lunes a Viernes
-                _seccionDia(context, dia),
-              _buttonRegister(context),
-            ],
-          ),
-        ),
+      backgroundColor: Colors.white,
+      body: GetBuilder<AdminCoachUpdateScheduleController>(
+        builder: (_) => con.horariosPorDia.isEmpty
+            ? Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: EdgeInsets.all(10),
+                child: Column(
+                  children: [
+                    for (var dia in con.dias) _seccionDia(context, dia),
+                    _buttonUpdate(context),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -41,7 +39,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
     return Card(
       color: color_background_box,
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 15),
-      elevation: 5,
+      elevation: 8,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
         child: Column(
@@ -49,7 +47,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
           children: [
             Text(dia,
                 style: TextStyle(
-                    color: whiteGrey,
+                    color: darkGrey,
                     fontSize: 20,
                     fontWeight: FontWeight.bold)),
             ...List.generate(con.horariosPorDia[dia]!.length, (index) {
@@ -89,7 +87,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
+            border: Border.all(color: Colors.grey.shade500),
             borderRadius: BorderRadius.circular(5),
           ),
           alignment: Alignment.center,
@@ -102,14 +100,14 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
     );
   }
 
-  Widget _buttonRegister(BuildContext context) {
+  Widget _buttonUpdate(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
       width: double.infinity,
       child: FloatingActionButton.extended(
-        onPressed: () => con.registerCoach(context),
-        label: Text('Registrar',
-            style: TextStyle(fontSize: 16, color: almostBlack)),
+        onPressed: () => con.updateSchedule(context),
+        label:
+            Text('Guardar', style: TextStyle(fontSize: 16, color: almostBlack)),
         icon: Icon(Icons.save, color: almostBlack),
         backgroundColor: limeGreen,
       ),
