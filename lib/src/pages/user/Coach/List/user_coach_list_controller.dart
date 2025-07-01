@@ -1,23 +1,24 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../../../../components/Socket/socket_service.dart';
 import '../../../../models/coach.dart';
+import '../../../../models/schedule.dart';
 import '../../../../providers/coachs_provider.dart';
 
 class UserCoachScheduleController extends GetxController {
   final CoachProvider _provider = CoachProvider();
 
-  // Base para generar la lista visible de fechas (siempre la fecha real de hoy).
   var baseDate = DateTime.now().obs;
-  // Fecha marcada por el usuario (inicialmente, también es hoy).
   var selectedDate = DateTime.now().obs;
   var allCoaches = <Coach>[].obs;
   var filteredCoaches = <Coach>[].obs;
 
-  final int daysToShow = 7;
+  final calendarDataSource = Rx<ScheduleDataSource>(ScheduleDataSource([]));
+
   Timer? _midnightTimer;
 
   @override
@@ -26,19 +27,11 @@ class UserCoachScheduleController extends GetxController {
     loadCoaches();
     _scheduleMidnightTimer();
 
-    // Escuchamos eventos en tiempo real
-    SocketService().on('coach:new', (_) {
-      loadCoaches();
-    });
-    SocketService().on('coach:delete', (_) {
-      loadCoaches();
-    });
-    SocketService().on('coach:update', (_) {
-      loadCoaches();
-    });
+    SocketService().on('coach:new', (_) => loadCoaches());
+    SocketService().on('coach:delete', (_) => loadCoaches());
+    SocketService().on('coach:update', (_) => loadCoaches());
   }
 
-  //moverse entre pantallas
   void goToUserCoachReservePage() {
     Get.toNamed('/user/coach/reserve');
   }
@@ -46,50 +39,48 @@ class UserCoachScheduleController extends GetxController {
   void loadCoaches() async {
     final list = await _provider.getAll();
     allCoaches.value = list;
-    _filterCoachesByDay(selectedDate.value);
+    _filterCoachesByDate(selectedDate.value);
+    _actualizarCalendario();
   }
 
-  // El usuario selecciona manualmente una fecha sin afectar la base.
   void selectDate(DateTime date) {
     selectedDate.value = date;
-    _filterCoachesByDay(date);
+    _filterCoachesByDate(date);
   }
 
-  void _filterCoachesByDay(DateTime date) {
-    final String dayName = DateFormat('EEEE', 'es_ES').format(date);
+  void _filterCoachesByDate(DateTime date) {
     final filtered = allCoaches.where((coach) {
-      return coach.schedules?.any(
-            (s) => s.day?.toLowerCase().trim() == dayName.toLowerCase(),
-          ) ??
+      return coach.schedules?.any((s) {
+            final sDate = DateTime.tryParse(s.date ?? '');
+            return sDate != null &&
+                sDate.year == date.year &&
+                sDate.month == date.month &&
+                sDate.day == date.day;
+          }) ??
           false;
     }).toList();
-
     filteredCoaches.value = filtered;
   }
 
-  // Genera la lista de fechas utilizando la base (día real).
-  List<DateTime> generateDateRange() {
-    final bd = baseDate.value;
-    return List.generate(daysToShow,
-        (i) => DateTime(bd.year, bd.month, bd.day).add(Duration(days: i)));
+  void _actualizarCalendario() {
+    final allSchedules = allCoaches
+        .expand((c) => c.schedules ?? [])
+        .whereType<Schedule>()
+        .toList();
+    calendarDataSource.value = ScheduleDataSource(allSchedules);
   }
 
-  // Programa un Timer para detectar cuando llegue la medianoche y actualizar la base.
   void _scheduleMidnightTimer() {
     final now = DateTime.now();
     final nextMidnight =
         DateTime(now.year, now.month, now.day).add(Duration(days: 1));
     final difference = nextMidnight.difference(now);
     _midnightTimer = Timer(difference, () {
-      // Guarda la base anterior.
       final oldBase = baseDate.value;
-      // Actualiza la base a la nueva fecha real.
       baseDate.value = DateTime.now();
-      // Si el usuario no había cambiado manualmente (la selección seguía en el antiguo día),
-      // también actualizamos el selectedDate.
       if (_isSameDate(selectedDate.value, oldBase)) {
         selectedDate.value = baseDate.value;
-        _filterCoachesByDay(selectedDate.value);
+        _filterCoachesByDate(selectedDate.value);
       }
       loadCoaches();
       _scheduleMidnightTimer();
@@ -104,5 +95,34 @@ class UserCoachScheduleController extends GetxController {
   void onClose() {
     _midnightTimer?.cancel();
     super.onClose();
+  }
+}
+
+class ScheduleDataSource extends CalendarDataSource {
+  ScheduleDataSource(List<Schedule> source) {
+    appointments = source
+        .map((s) {
+          final date = DateTime.tryParse(s.date ?? '');
+          if (date == null) return null;
+
+          final start = _parseTime(date, s.start_time);
+          final end = _parseTime(date, s.end_time);
+
+          return Appointment(
+            startTime: start,
+            endTime: end,
+            subject: 'Disponible',
+            color: const Color(0xFF4CAF50), // verde elegante
+            isAllDay: false,
+          );
+        })
+        .whereType<Appointment>()
+        .toList();
+  }
+
+  DateTime _parseTime(DateTime base, String? time) {
+    final parts = (time ?? '00:00').split(':');
+    return DateTime(base.year, base.month, base.day, int.parse(parts[0]),
+        int.parse(parts[1]));
   }
 }

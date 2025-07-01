@@ -3,99 +3,96 @@ import 'package:amina_ec/src/models/schedule.dart';
 import 'package:amina_ec/src/providers/coachs_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../../../../../components/Socket/socket_service.dart';
 
 class AdminCoachUpdateScheduleController extends GetxController {
   final CoachProvider _coachProvider = CoachProvider();
-  final List<String> dias = [
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
-    'Domingo',
-  ];
 
-  Map<String, List<Map<String, TimeOfDay?>>> horariosPorDia = {};
   late Coach coach;
+  final selectedSchedules = <Schedule>[].obs;
+  final calendarDataSource = Rx<ScheduleDataSource>(ScheduleDataSource([]));
 
   @override
   void onInit() {
     super.onInit();
     coach = Get.arguments as Coach;
-    _cargarHorariosExistentes();
+    _loadSchedules();
+    ever<List<Schedule>>(selectedSchedules, (_) => _actualizarCalendario());
   }
 
-  void _cargarHorariosExistentes() {
-    for (var dia in dias) {
-      horariosPorDia[dia] = [];
-    }
-
-    for (var horario in coach.schedules) {
-      String dia = _capitalizar(horario.day ?? '');
-      TimeOfDay entrada = _parseTime(horario.start_time!);
-      TimeOfDay salida = _parseTime(horario.end_time!);
-
-      if (dias.contains(dia)) {
-        horariosPorDia[dia]!.add({'entrada': entrada, 'salida': salida});
-      }
-    }
-
-    update();
-  }
-
-  void agregarRango(String dia) {
-    horariosPorDia[dia]?.add({'entrada': null, 'salida': null});
-    update();
-  }
-
-  void eliminarRango(String dia, int index) {
-    horariosPorDia[dia]?.removeAt(index);
-    update();
-  }
-
-  void seleccionarHora(
-      String dia, int index, String tipo, BuildContext context) async {
-    TimeOfDay? hora = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (hora != null) {
-      horariosPorDia[dia]?[index][tipo] = hora;
-      update();
+  void _loadSchedules() {
+    final current = coach.schedules;
+    if (current != null && current.isNotEmpty) {
+      selectedSchedules.assignAll(current);
+      _actualizarCalendario();
     }
   }
 
-  String formatHora(TimeOfDay? hora) {
-    if (hora == null) return '--:--';
-    final horaStr = hora.hour.toString().padLeft(2, '0');
-    final minutoStr = hora.minute.toString().padLeft(2, '0');
-    return '$horaStr:$minutoStr';
-  }
+  Future<void> selectDateAndPromptTime(
+      BuildContext context, DateTime? date) async {
+    if (date == null) return;
 
-  Future<void> updateSchedule(BuildContext context) async {
-    List<Schedule> nuevosHorarios = [];
-
-    horariosPorDia.forEach((dia, rangos) {
-      for (var rango in rangos) {
-        if (rango['entrada'] != null && rango['salida'] != null) {
-          nuevosHorarios.add(Schedule(
-            day: dia,
-            start_time: formatHora(rango['entrada']),
-            end_time: formatHora(rango['salida']),
-          ));
-        }
-      }
-    });
-
-    if (nuevosHorarios.isEmpty) {
-      Get.snackbar('Error', 'Debes ingresar al menos un horario válido');
+    final now = DateTime.now();
+    if (date.isBefore(DateTime(now.year, now.month, now.day))) {
+      Get.snackbar(
+          'Fecha inválida', 'No puedes registrar horarios en el pasado',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
       return;
     }
 
-    final res = await _coachProvider.updateSchedule(coach.id!, nuevosHorarios);
+    TimeOfDay? start =
+        await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (start == null) return;
+
+    TimeOfDay? end = await showTimePicker(context: context, initialTime: start);
+    if (end == null) return;
+
+    if (_compare(start, end) >= 0) {
+      Get.snackbar(
+          'Rango inválido', 'La hora de fin debe ser mayor que la de inicio',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+
+    final schedule = Schedule(
+      date: DateFormat('yyyy-MM-dd').format(date),
+      start_time: _format(start),
+      end_time: _format(end),
+    );
+
+    if (selectedSchedules.any((s) =>
+        s.date == schedule.date &&
+        s.start_time == schedule.start_time &&
+        s.end_time == schedule.end_time)) {
+      Get.snackbar('Duplicado', 'Ese horario ya fue agregado',
+          backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+      return;
+    }
+
+    selectedSchedules.add(schedule);
+  }
+
+  void removeSchedule(int index) {
+    selectedSchedules.removeAt(index);
+  }
+
+  String _format(TimeOfDay time) =>
+      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00';
+
+  int _compare(TimeOfDay a, TimeOfDay b) =>
+      (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute);
+
+  Future<void> updateSchedule(BuildContext context) async {
+    if (selectedSchedules.isEmpty) {
+      Get.snackbar('Vacío', 'Debes agregar al menos un horario');
+      return;
+    }
+
+    final res =
+        await _coachProvider.updateSchedule(coach.id!, selectedSchedules);
     if (res.statusCode == 201) {
       SocketService()
           .emit('coach:update', {'id': coach.id, 'type': 'schedule'});
@@ -106,13 +103,31 @@ class AdminCoachUpdateScheduleController extends GetxController {
     }
   }
 
-  TimeOfDay _parseTime(String timeStr) {
-    final parts = timeStr.split(':');
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  void _actualizarCalendario() {
+    calendarDataSource.value = ScheduleDataSource(selectedSchedules);
+  }
+}
+
+class ScheduleDataSource extends CalendarDataSource {
+  ScheduleDataSource(List<Schedule> source) {
+    appointments = source.map((s) {
+      final date = DateTime.parse(s.date!);
+      final start = _parseTime(date, s.start_time!);
+      final end = _parseTime(date, s.end_time!);
+
+      return Appointment(
+        startTime: start,
+        endTime: end,
+        subject: 'Disponible',
+        color: Colors.green.shade400,
+        isAllDay: false,
+      );
+    }).toList();
   }
 
-  String _capitalizar(String input) {
-    if (input.isEmpty) return input;
-    return input[0].toUpperCase() + input.substring(1).toLowerCase();
+  DateTime _parseTime(DateTime base, String time) {
+    final parts = time.split(':');
+    return DateTime(base.year, base.month, base.day, int.parse(parts[0]),
+        int.parse(parts[1]));
   }
 }

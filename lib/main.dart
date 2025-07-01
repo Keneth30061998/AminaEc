@@ -22,6 +22,7 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 //para mantener abierta la session despues de login
@@ -59,6 +60,13 @@ class _MyAppState extends State<MyApp> {
     return GetMaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
+        timePickerTheme: TimePickerThemeData(
+          helpTextStyle: GoogleFonts.montserrat(
+            color: almostBlack,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: limeGreen),
         useMaterial3: true,
         scaffoldBackgroundColor: whiteLight,

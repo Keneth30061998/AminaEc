@@ -2,122 +2,82 @@ import 'package:amina_ec/src/pages/user/Coach/List/user_coach_list_controller.da
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../../../../models/coach.dart';
 import '../../../../utils/color.dart';
 import '../../../../widgets/no_data_widget.dart';
 
+// imports idénticos
 class UserCoachSchedulePage extends StatelessWidget {
-  final UserCoachScheduleController con =
-      Get.put(UserCoachScheduleController());
+  final con = Get.put(UserCoachScheduleController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: whiteLight,
       appBar: AppBar(
-        title: _textTitleAppBar(),
+        title: Text('Agendar Ride',
+            style: GoogleFonts.montserrat(
+                fontSize: 22, fontWeight: FontWeight.w800)),
         backgroundColor: whiteLight,
         foregroundColor: almostBlack,
       ),
       body: Column(
         children: [
-          _dateSelector(),
+          Obx(() => SfCalendar(
+                minDate: DateTime.now(),
+                view: CalendarView.month,
+                onTap: (details) {
+                  if (details.date != null) con.selectDate(details.date!);
+                },
+                initialSelectedDate: con.selectedDate.value,
+                dataSource: con.calendarDataSource.value,
+                headerStyle: CalendarHeaderStyle(
+                    textAlign: TextAlign.center,
+                    backgroundColor: indigoAmina,
+                    textStyle: TextStyle(color: whiteLight)),
+                selectionDecoration: BoxDecoration(
+                  color: darkGrey.withOpacity(0.2),
+                  border: Border.all(color: darkGrey, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                showNavigationArrow: true,
+                todayHighlightColor: indigoAmina,
+                monthViewSettings: MonthViewSettings(
+                  appointmentDisplayMode: MonthAppointmentDisplayMode.indicator,
+                  showAgenda: false,
+                ),
+              )),
           Expanded(
             child: Obx(() {
               if (con.filteredCoaches.isEmpty) {
                 return Center(
-                    child:
-                        NoDataWidget(text: 'No hay entrenadores disponibles'));
+                    child: NoDataWidget(
+                        text: 'No hay entrenadores disponibles ese día'));
               }
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
                 itemCount: con.filteredCoaches.length,
+                padding: const EdgeInsets.all(16),
                 itemBuilder: (_, index) {
                   final coach = con.filteredCoaches[index];
                   return _coachCard(coach, con.selectedDate.value);
                 },
               );
             }),
-          ),
+          )
         ],
-      ),
-    );
-  }
-
-  Widget _textTitleAppBar() {
-    return Text(
-      'Agendar Ride',
-      style: GoogleFonts.montserrat(
-        fontSize: 22,
-        fontWeight: FontWeight.w800,
-      ),
-    );
-  }
-
-  // Este widget utiliza la base para generar siempre la lista desde el día real (actual)
-  Widget _dateSelector() {
-    // Calculamos el rango de días basado en la base (día real).
-    final bd = con.baseDate.value;
-    final dates = List.generate(con.daysToShow,
-        (i) => DateTime(bd.year, bd.month, bd.day).add(Duration(days: i)));
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: dates.length,
-        itemBuilder: (_, index) {
-          final date = dates[index];
-          // Envolver cada tile en un Obx para que reconozca los cambios de selectedDate.
-          return Obx(() {
-            final selected = con.selectedDate.value;
-            final isSelected = date.day == selected.day &&
-                date.month == selected.month &&
-                date.year == selected.year;
-            return GestureDetector(
-              onTap: () => con.selectDate(date),
-              child: Container(
-                width: 80,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? darkGrey : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade400),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      DateFormat.E('es_ES').format(date),
-                      style: TextStyle(
-                        color: isSelected ? whiteLight : whiteGrey,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      date.day.toString(),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? whiteLight : whiteGrey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          });
-        },
       ),
     );
   }
 
   Widget _coachCard(Coach coach, DateTime date) {
     final schedules = coach.schedules?.where((s) {
-      final day = DateFormat('EEEE', 'es_ES').format(date);
-      return s.day?.toLowerCase().trim() == day.toLowerCase();
+      final sDate = DateTime.tryParse(s.date ?? '');
+      return sDate != null &&
+          sDate.year == date.year &&
+          sDate.month == date.month &&
+          sDate.day == date.day;
     }).toList();
 
     return Container(
@@ -126,7 +86,7 @@ class UserCoachSchedulePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,12 +105,25 @@ class UserCoachSchedulePage extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  '${coach.user?.name ?? ''} ${coach.user?.lastname ?? ''}',
-                  style: GoogleFonts.roboto(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      color: almostBlack),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${coach.user?.name ?? ''} ${coach.user?.lastname ?? ''}',
+                      style: GoogleFonts.roboto(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w900,
+                          color: almostBlack),
+                    ),
+                    Text(
+                      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -163,9 +136,9 @@ class UserCoachSchedulePage extends StatelessWidget {
               children: schedules.map((s) {
                 return ActionChip(
                   onPressed: () {
-                    Get.snackbar('Id: coach: ${coach.id}',
-                        'Time: schedule: ${s.start_time}');
-                    return con.goToUserCoachReservePage();
+                    Get.snackbar(
+                        'Coach ID: ${coach.id}', 'Horario: ${s.start_time}');
+                    con.goToUserCoachReservePage();
                   },
                   label: Text(
                       '${_formatTime(s.start_time)} - ${_formatTime(s.end_time)}'),

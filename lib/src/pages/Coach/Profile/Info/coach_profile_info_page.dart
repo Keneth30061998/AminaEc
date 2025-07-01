@@ -2,6 +2,7 @@ import 'package:amina_ec/src/pages/Coach/Profile/Info/coach_profile_info_control
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CoachProfileInfoPage extends StatelessWidget {
   CoachProfileInfoController con = Get.put(CoachProfileInfoController());
@@ -10,26 +11,33 @@ class CoachProfileInfoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkGrey,
-        foregroundColor: limeGreen,
-        title: const Text(
+        backgroundColor: whiteLight,
+        foregroundColor: almostBlack,
+        title: Text(
           'Perfil Coach',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.w800),
         ),
         actions: [
-          IconButton.filled(
+          IconButton(
+            color: whiteGrey,
             onPressed: () => con.signOut(),
-            icon: const Icon(Icons.exit_to_app),
+            icon: Icon(
+              Icons.exit_to_app,
+              color: darkGrey,
+            ),
           ),
         ],
       ),
-      backgroundColor: darkGrey,
+      backgroundColor: whiteLight,
       body: SingleChildScrollView(
         child: Column(
           children: [
             _photoNameEmail(context),
+            SizedBox(
+              height: 20,
+            ),
             _boxFormData(context),
-            _boxFormDataAditional(context),
+            //_boxFormDataAditional(context),
           ],
         ),
       ),
@@ -51,7 +59,7 @@ class CoachProfileInfoPage extends StatelessWidget {
                 Text(
                   '${con.user.name} ${con.user.lastname}',
                   style: TextStyle(
-                      color: limeGreen,
+                      color: darkGrey,
                       fontSize: 22,
                       fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis, // Por si acaso
@@ -59,7 +67,7 @@ class CoachProfileInfoPage extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   '${con.user.email}',
-                  style: TextStyle(color: Colors.white60, fontSize: 13.5),
+                  style: TextStyle(color: Colors.black26, fontSize: 13.5),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

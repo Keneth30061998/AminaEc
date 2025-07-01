@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class UserCoachReservePage extends StatelessWidget {
-  // Instanciamos el controlador con GetX.
   final UserCoachReserveController con = Get.put(UserCoachReserveController());
 
   UserCoachReservePage({Key? key}) : super(key: key);
@@ -27,16 +26,29 @@ class UserCoachReservePage extends StatelessWidget {
               const SizedBox(height: 20),
               SingleChildScrollView(child: _containerCount()),
               const SizedBox(height: 30),
-              // Asiento grande (Equipo 1) – no se puede seleccionar.
+              _simbolIndicator(),
+              const SizedBox(height: 30),
               _buildBigSeat(),
               const SizedBox(height: 20),
-              // Primera fila: equipos 2 a 9 (8 asientos).
-              _buildSeatRow(context, 2, 8),
+
+              //PRIMERA FILA DIVIDIDA CON SEPARACIÓN ENTRE CASILLA 5 Y 6
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _buildSeatRow(context, 2, 4), // 2, 3, 4, 5
+                  ),
+                  const SizedBox(width: 24), // Espacio entre 5 y 6
+                  Expanded(
+                    child: _buildSeatRow(context, 6, 4), // 6, 7, 8, 9
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 10),
-              // Segunda fila: equipos 10 a 19 (10 asientos).
-              _buildSeatRow(context, 10, 10),
+              _buildSeatRow(context, 10, 10), // Segunda fila: 10-19
               const SizedBox(height: 16),
-              // Botón de guardar.
+
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
@@ -69,8 +81,10 @@ class UserCoachReservePage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _boxDate(),
-        SizedBox(width: 40),
+        const SizedBox(width: 14),
         _boxCoach(),
+        const SizedBox(width: 14),
+        _boxRides(),
       ],
     );
   }
@@ -78,8 +92,8 @@ class UserCoachReservePage extends StatelessWidget {
   Widget _boxDate() {
     return _boxTemplate(
       icon: Icons.date_range,
-      title: 'Dia y hora',
-      subtitle: 'Lunes 8:00 - 10:00',
+      title: 'Hora',
+      subtitle: '18:00 - 20:00',
       color: Colors.blueGrey.shade50,
     );
   }
@@ -88,7 +102,16 @@ class UserCoachReservePage extends StatelessWidget {
     return _boxTemplate(
       icon: Icons.person,
       title: 'Instructor',
-      subtitle: 'Nombre Apellido',
+      subtitle: 'Sebastian',
+      color: Colors.blueGrey.shade50,
+    );
+  }
+
+  Widget _boxRides() {
+    return _boxTemplate(
+      icon: Icons.directions_bike,
+      title: 'Rides',
+      subtitle: '1',
       color: Colors.blueGrey.shade50,
     );
   }
@@ -100,17 +123,17 @@ class UserCoachReservePage extends StatelessWidget {
     required IconData icon,
   }) {
     return Container(
-      height: 100,
-      width: 165,
-      padding: const EdgeInsets.all(5),
+      height: 80,
+      width: 120,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
             color: Colors.black26,
-            blurRadius: 5,
-            offset: Offset(4, 3),
+            blurRadius: 3,
+            offset: const Offset(3, 2),
           ),
         ],
       ),
@@ -121,19 +144,18 @@ class UserCoachReservePage extends StatelessWidget {
           Text(title,
               style: GoogleFonts.roboto(
                 color: almostBlack,
-                fontSize: 16,
+                fontSize: 14,
               )),
           Text(subtitle,
               style: GoogleFonts.kodchasan(
-                color: almostBlack,
-                fontSize: 12,
+                color: darkGrey,
+                fontSize: 13,
               )),
         ],
       ),
     );
   }
 
-  //Widget titulo del appbar
   Widget _textTitleAppBar() {
     return Text(
       'Máquinas',
@@ -144,7 +166,43 @@ class UserCoachReservePage extends StatelessWidget {
     );
   }
 
-  // Widget para simular la "pantalla" (screen) con borde curvado.
+  Widget _simbolIndicator() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 15,
+          height: 15,
+          color: limeGreen,
+        ),
+        Text(
+          ' Tu selección',
+          style: GoogleFonts.robotoCondensed(color: almostBlack),
+        ),
+        SizedBox(
+          width: 20,
+        ),
+        Container(
+          width: 15,
+          height: 15,
+          color: Colors.black12,
+        ),
+        Text(' Disponible',
+            style: GoogleFonts.robotoCondensed(color: almostBlack)),
+        SizedBox(
+          width: 20,
+        ),
+        Container(
+          width: 15,
+          height: 15,
+          color: indigoAmina,
+        ),
+        Text(' Ocupada',
+            style: GoogleFonts.robotoCondensed(color: almostBlack)),
+      ],
+    );
+  }
+
   Widget _buildScreen() {
     return ClipPath(
       clipper: ScreenClipper(),
@@ -164,7 +222,6 @@ class UserCoachReservePage extends StatelessWidget {
     );
   }
 
-  // Widget para el asiento grande (Equipo 1) – no es seleccionable.
   Widget _buildBigSeat() {
     return Center(
       child: Container(
@@ -192,15 +249,14 @@ class UserCoachReservePage extends StatelessWidget {
     );
   }
 
-  // Widget para construir una fila de asientos con ancho dinámico, usando LayoutBuilder.
   Widget _buildSeatRow(BuildContext context, int start, int count) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: LayoutBuilder(
         builder: (context, constraints) {
           double availableWidth = constraints.maxWidth;
-          // Cada asiento tendrá un padding total (8 px) por asiento.
           double seatWidth = (availableWidth - (count * 8)) / count;
+
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(count, (index) {
@@ -213,7 +269,7 @@ class UserCoachReservePage extends StatelessWidget {
                     onTap: () => con.toggleEquipo(seatNumber),
                     child: Container(
                       width: seatWidth,
-                      height: seatWidth, // Mantiene el cuadrado.
+                      height: seatWidth,
                       decoration: BoxDecoration(
                         color: isSelected ? limeGreen : Colors.grey[300],
                         border: Border.all(
@@ -227,7 +283,6 @@ class UserCoachReservePage extends StatelessWidget {
                           "$seatNumber",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            // Ajusta el tamaño del texto en función del ancho.
                             fontSize: seatWidth * 0.3,
                             color: isSelected ? darkGrey : Colors.black,
                           ),
@@ -246,14 +301,11 @@ class UserCoachReservePage extends StatelessWidget {
   }
 }
 
-// CustomClipper para recortar la parte inferior de la "pantalla" y crear un borde curvo.
 class ScreenClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     Path path = Path();
-    // Se inicia en la esquina superior izquierda.
     path.lineTo(0, size.height - 20);
-    // Se crea una curva desde el borde inferior izquierdo hacia el derecho.
     path.quadraticBezierTo(
       size.width / 2,
       size.height,

@@ -50,12 +50,12 @@ class AdminCoachListPage extends StatelessWidget {
   Widget _cardCoach(BuildContext context, Coach coach) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10),
-      elevation: 6,
+      elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         decoration: BoxDecoration(
           color: color_background_box,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.all(16),
         child: Row(

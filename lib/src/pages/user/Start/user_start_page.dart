@@ -49,11 +49,11 @@ class UserStartPage extends StatelessWidget {
 
   Widget _textGreeting() {
     return Text(
-      'Hola, ${con.user.name} ${con.user.lastname}',
-      style: GoogleFonts.roboto(
-        color: almostBlack,
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
+      'Hola, ${con.user.name}',
+      style: GoogleFonts.montserrat(
+        fontSize: 21,
+        fontWeight: FontWeight.w800,
+        color: darkGrey,
       ),
     );
   }
@@ -98,7 +98,7 @@ class UserStartPage extends StatelessWidget {
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.black26,
@@ -138,8 +138,8 @@ class UserStartPage extends StatelessWidget {
         Text(
           'Nuestros Coaches',
           style: GoogleFonts.montserrat(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+            fontSize: 21,
+            fontWeight: FontWeight.w800,
             color: darkGrey,
           ),
         ),
@@ -149,7 +149,7 @@ class UserStartPage extends StatelessWidget {
         Container(
           //padding: EdgeInsets.all(20),
           color: whiteLight,
-          height: 180,
+          height: 145,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: con.coaches.length,
@@ -165,21 +165,20 @@ class UserStartPage extends StatelessWidget {
 
   Widget _cardCoach(Coach coach, BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onDoubleTap: () {
         showCoachBottomSheet(context, coach);
       },
       child: Container(
-        width: 120,
-        height: 140,
+        width: 100,
         margin: const EdgeInsets.only(right: 15),
         decoration: BoxDecoration(
           color: color_background_box,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
-              blurRadius: 5,
-              offset: Offset(5, 0),
+              blurRadius: 4,
+              offset: Offset(3, 2),
             ),
           ],
         ),
@@ -191,20 +190,20 @@ class UserStartPage extends StatelessWidget {
               child: coach.user?.photo_url != null
                   ? Image.network(
                       coach.user!.photo_url!,
-                      width: 100,
-                      height: 100,
+                      width: 70,
+                      height: 70,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => const Icon(
                           Icons.broken_image,
-                          size: 40,
+                          size: 30,
                           color: Colors.grey),
                     )
                   : Container(
-                      width: 100,
-                      height: 100,
+                      width: 70,
+                      height: 70,
                       color: Colors.grey[300],
                       child: const Icon(Icons.person,
-                          size: 40, color: Colors.white),
+                          size: 30, color: Colors.white),
                     ),
             ),
             const SizedBox(height: 12),
@@ -213,11 +212,11 @@ class UserStartPage extends StatelessWidget {
               child: Text(
                 coach.user?.name ?? 'Nombre no disponible',
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.roboto(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w900,
                   color: darkGrey,
                 ),
               ),
@@ -232,7 +231,7 @@ class UserStartPage extends StatelessWidget {
     showMaterialModalBottomSheet(
       context: context,
       expand: false,
-      backgroundColor: whiteLight,
+      backgroundColor: darkGrey,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
@@ -270,16 +269,16 @@ class UserStartPage extends StatelessWidget {
                           size: 60, color: Colors.white),
                     ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               coach.user?.name ?? 'Nombre no disponible',
               style: GoogleFonts.montserrat(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: darkGrey,
+                color: limeGreen,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -294,66 +293,8 @@ class UserStartPage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            _infoTile(
-              icon: Icons.person_outline,
-              label: 'Presentación',
-              content: coach.presentation ?? 'No disponible',
-            ),
-            _infoTile(
-              icon: Icons.description_outlined,
-              label: 'Descripción',
-              content: coach.description ?? 'No disponible',
-            ),
-            _infoTile(
-              icon: Icons.sports_handball,
-              label: 'Hobby',
-              content: coach.hobby ?? 'No disponible',
-            ),
-            const SizedBox(height: 35),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Widget auxiliar para mostrar cada sección de información
-  Widget _infoTile({
-    required IconData icon,
-    required String label,
-    required String content,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 26, color: whiteGrey),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: darkGrey,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  content,
-                  style: GoogleFonts.roboto(
-                    fontSize: 15,
-                    color: Colors.grey[800],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

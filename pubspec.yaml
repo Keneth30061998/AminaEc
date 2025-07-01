@@ -46,6 +46,7 @@ dependencies:
   socket_io_client: ^3.1.2
   flutter_credit_card: ^4.1.0
   intl: ^0.20.2
+  syncfusion_flutter_calendar: ^29.1.38
 
 dev_dependencies:
   flutter_test:

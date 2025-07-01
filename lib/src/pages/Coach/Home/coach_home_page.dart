@@ -60,20 +60,20 @@ class CoachHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: Colors.white10,
+        color: color_background_box,
       ),
       child: GNav(
-        rippleColor: limeGreen,
-        hoverColor: limeGreen,
+        rippleColor: darkGrey,
+        hoverColor: darkGrey,
         haptic: true,
         tabBorderRadius: _gNavTabBorderRadius,
         curve: Curves.easeOutExpo,
         duration: const Duration(milliseconds: _gNavAnimationMillis),
         gap: _gNavGap,
-        color: Colors.white60, // Considera definir este color
-        activeColor: almostBlack,
+        color: whiteGrey, // Considera definir este color
+        activeColor: whiteLight,
         iconSize: _gNavIconSize,
-        tabBackgroundColor: limeGreen,
+        tabBackgroundColor: almostBlack,
         padding: _gNavButtonPadding,
         selectedIndex: con.indexTab.value,
         onTabChange: con.changeTab,
@@ -82,7 +82,7 @@ class CoachHomePage extends StatelessWidget {
             icon: Icons.calendar_month,
             text: 'Agenda',
             backgroundGradient: LinearGradient(
-              colors: [limeGreen, Colors.lightGreenAccent],
+              colors: [almostBlack, darkGrey],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),

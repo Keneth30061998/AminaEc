@@ -41,7 +41,7 @@ class UserPlanListController extends GetxController {
     getPlans();
   }
 
-  void goToPolanBuy() {
-    Get.toNamed('/user/plan/buy');
+  void goToPolanBuy(Plan plan) {
+    Get.toNamed('/user/plan/buy', arguments: plan);
   }
 }

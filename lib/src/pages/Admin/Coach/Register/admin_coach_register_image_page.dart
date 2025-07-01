@@ -1,6 +1,7 @@
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../utils/color.dart';
 
@@ -11,11 +12,12 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: limeGreen,
+        title: _titleAppBar(),
+        backgroundColor: whiteLight,
         foregroundColor: almostBlack,
       ),
       resizeToAvoidBottomInset: true,
-      backgroundColor: limeGreen,
+      backgroundColor: whiteLight,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -27,6 +29,16 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  //itutlos Appbar
+  Widget _titleAppBar() {
+    return Text(
+      'Imágen de Usuario',
+      style: GoogleFonts.montserrat(
+        fontWeight: FontWeight.w800,
       ),
     );
   }
