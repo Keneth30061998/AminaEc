@@ -1,91 +1,127 @@
+import 'package:amina_ec/src/pages/Admin/Start/admin_start_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 
-class AdminStartPage extends StatefulWidget {
-  const AdminStartPage({super.key});
+import '../../../models/student_inscription.dart';
+import '../../../widgets/no_data_widget.dart';
 
-  @override
-  State<AdminStartPage> createState() => _AdminStartPageState();
-}
+class AdminStartPage extends StatelessWidget {
+  final AdminStartController con = Get.put(AdminStartController());
 
-class _AdminStartPageState extends State<AdminStartPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: whiteLight,
-        foregroundColor: darkGrey,
-        title: _appBarTitle(),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _textGreeting(),
-            _textCountUsers(),
-            _textCountCoachs(),
-          ],
-        ),
-      ),
-    );
-  }
+    return Obx(() => DefaultTabController(
+          length: con.coaches.length,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Estudiantes por Coach'),
+              bottom: TabBar(
+                isScrollable: true,
+                indicatorColor: almostBlack,
+                labelColor: almostBlack,
+                unselectedLabelColor: Colors.black,
+                tabs: List<Widget>.generate(con.coaches.length, (index) {
+                  return Tab(
+                    child: Text(con.coaches[index].user?.name ?? ''),
+                  );
+                }),
+              ),
+            ),
+            body: TabBarView(
+              children: con.coaches.map((coach) {
+                return FutureBuilder(
+                    future: con.getStudents(coach.id!),
+                    builder:
+                        (_, AsyncSnapshot<List<StudentInscription>> snapshot) {
+                      if (snapshot.hasData) {
+                        final students = snapshot.data!;
+                        if (students.isEmpty) {
+                          return NoDataWidget(
+                              text: 'No hay estudiantes inscritos');
+                        }
 
-  Widget _appBarTitle() {
-    return Text(
-      'Administrador',
-      style: GoogleFonts.montserrat(
-        fontSize: 26,
-        fontWeight: FontWeight.w800,
-      ),
-    );
-  }
+                        // Agrupar por fecha y hora
+                        final grouped = <String, List<StudentInscription>>{};
+                        for (var s in students) {
+                          final key = '${s.classDate} • ${s.classTime}';
+                          grouped.putIfAbsent(key, () => []).add(s);
+                        }
 
-  Widget _textCountUsers() {
-    return Container(
-      padding: EdgeInsets.only(left: 20),
-      width: double.infinity,
-      child: Text(
-        'Usuarios Registrados: 0',
-        style: GoogleFonts.robotoCondensed(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: almostBlack,
-        ),
-        textAlign: TextAlign.left,
-      ),
-    );
-  }
+                        return ListView(
+                          children: grouped.entries.map((entry) {
+                            final parts = entry.key.split('•');
+                            final rawDate = parts[0].trim();
+                            final rawTime =
+                                parts.length > 1 ? parts[1].trim() : '';
 
-  Widget _textCountCoachs() {
-    return Container(
-      padding: EdgeInsets.only(left: 20),
-      width: double.infinity,
-      child: Text(
-        'Coachs Registrados: 0',
-        style: GoogleFonts.robotoCondensed(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: almostBlack,
-        ),
-        textAlign: TextAlign.left,
-      ),
-    );
-  }
+                            // ✅ Formato de fecha y hora
+                            final formattedDate = DateTime.tryParse(rawDate);
+                            final formattedTime = rawTime.length >= 5
+                                ? rawTime.substring(0, 5)
+                                : rawTime;
 
-  Widget _textGreeting() {
-    return Container(
-      padding: EdgeInsets.only(left: 20, top: 30, bottom: 40),
-      width: double.infinity,
-      //color: Colors.black12,
-      child: Text(
-        'Hola, Keneth',
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: darkGrey,
-        ),
-        textAlign: TextAlign.left,
-      ),
-    );
+                            final readableDate = formattedDate != null
+                                ? '${formattedDate.day.toString().padLeft(2, '0')}/${formattedDate.month.toString().padLeft(2, '0')}/${formattedDate.year}'
+                                : rawDate;
+
+                            return Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Encabezado visual de fecha y hora
+                                    Row(
+                                      children: [
+                                        const Icon(icon_schedule,
+                                            size: 18, color: Colors.grey),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '$readableDate • $formattedTime',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ...entry.value.map((student) {
+                                      return ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundImage: NetworkImage(
+                                              student.photo_url ?? ''),
+                                          radius: 22,
+                                        ),
+                                        title: Text(student.studentName),
+                                        subtitle:
+                                            Text('Máquina: ${student.bicycle}'),
+                                        trailing: Checkbox(
+                                          value: false,
+                                          onChanged: (_) {},
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      } else {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                    });
+              }).toList(),
+            ),
+          ),
+        ));
   }
 }

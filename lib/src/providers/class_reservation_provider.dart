@@ -6,6 +6,8 @@ import 'package:amina_ec/src/models/response_api.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/student_inscription.dart';
+
 class ClassReservationProvider {
   final String _url = '${Environment.API_URL}api/class-reservations/schedule';
   final Map<String, dynamic> _user = GetStorage().read('user');
@@ -72,6 +74,29 @@ class ClassReservationProvider {
       if (data['success'] == true && data['data'] != null) {
         final List<dynamic> reservations = data['data'];
         return reservations.map((r) => ClassReservation.fromJson(r)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  //Para listar los estudiantes de los coachs
+  Future<List<StudentInscription>> getStudentsByCoach(String coachId) async {
+    final url = '${Environment.API_URL}api/class-reservations/coach/$coachId';
+    final headers = {
+      'Authorization': (_user['session_token'] ?? '').toString(),
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      final res = await http.get(Uri.parse(url), headers: headers);
+      final data = json.decode(res.body);
+
+      if (data['success'] == true) {
+        final List<dynamic> list = data['data'];
+        return list.map((e) => StudentInscription.fromJson(e)).toList();
       } else {
         return [];
       }

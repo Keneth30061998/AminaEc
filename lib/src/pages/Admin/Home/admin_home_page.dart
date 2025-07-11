@@ -2,6 +2,7 @@ import 'package:amina_ec/src/pages/Admin/Coach/List/admin_coach_list_page.dart';
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_controller.dart';
 import 'package:amina_ec/src/pages/Admin/Plan/Register/admin_plan_register_page.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -86,7 +87,7 @@ class AdminHomePage extends StatelessWidget {
         tabs: [
           const GButton(
             // Usar const si los parámetros no cambian
-            icon: Icons.home,
+            icon: icon_home,
             text: 'Inicio',
             backgroundGradient: LinearGradient(
               colors: [almostBlack, darkGrey],
@@ -95,7 +96,7 @@ class AdminHomePage extends StatelessWidget {
             ),
           ),
           const GButton(
-            icon: Icons.local_offer_sharp,
+            icon: icon_plan,
             text: 'Planes',
           ),
           const GButton(
@@ -103,7 +104,7 @@ class AdminHomePage extends StatelessWidget {
             text: 'Coachs',
           ),
           const GButton(
-            icon: Icons.person,
+            icon: icon_profile,
             text: 'Perfil',
           ),
         ],
