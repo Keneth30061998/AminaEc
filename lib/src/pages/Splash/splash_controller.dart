@@ -38,7 +38,7 @@ class SplashController extends GetxController
     logoController.forward();
 
     Future.delayed(const Duration(seconds: 5), () {
-      Get.offAllNamed('/login-register'); // Asegúrate de registrar esta ruta
+      Get.offAllNamed('/login'); // Asegúrate de registrar esta ruta
     });
   }
 

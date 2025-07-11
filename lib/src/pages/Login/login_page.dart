@@ -1,159 +1,148 @@
 import 'package:amina_ec/src/pages/Login/login_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:amina_ec/src/utils/textos.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../utils/iconos.dart';
 
 LoginController con = Get.put(LoginController());
 
 class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: whiteLight,
-      body: Stack(
-        children: [
-          _backFontColor(context),
-          _titleLogin(context),
-          _boxForm(context),
-        ],
-      ),
-      bottomNavigationBar: SizedBox(
-        height: 100,
-        child: _textDontHaveAccount(),
-      ),
-    );
-  }
-
-  Widget _backFontColor(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.45,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: limeGreen,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(25),
-          bottomRight: Radius.circular(25),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: SizedBox(
+            height: height * 0.9,
+            child: Column(
+              children: [
+                const Spacer(),
+                _titleLogin()
+                    .animate()
+                    .fade(duration: 500.ms)
+                    .slideY(begin: 0.4),
+                const SizedBox(height: 30),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  child: Column(
+                    children: [
+                      _textFieldEmail()
+                          .animate()
+                          .fade()
+                          .slideY(begin: 0.4, delay: 200.ms),
+                      const SizedBox(height: 20),
+                      _textFieldPassword()
+                          .animate()
+                          .fade()
+                          .slideY(begin: 0.4, delay: 400.ms),
+                      const SizedBox(height: 30),
+                      _buttonLogin(context)
+                          .animate()
+                          .fade()
+                          .slideY(begin: 0.4, delay: 600.ms),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                _textDontHaveAccount()
+                    .animate()
+                    .fade(duration: 400.ms)
+                    .slideY(begin: 0.3, delay: 800.ms),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-Widget _titleLogin(BuildContext context) {
-  return Container(
-    margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.22),
-    width: double.infinity,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Hola! ',
-          style: TextStyle(
-            color: almostBlack,
-            fontWeight: FontWeight.w900,
-            fontSize: 24,
-          ),
+Widget _titleLogin() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Text(
+        txt_title_login_1,
+        style: GoogleFonts.poppins(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: almostBlack,
         ),
-        Text(
-          'Bienvenido de nuevo',
-          style: TextStyle(
-            color: almostBlack,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _boxForm(BuildContext context) {
-  return Container(
-    height: MediaQuery.of(context).size.height * 0.40,
-    //width: MediaQuery.of(context).size.width * 0.8,
-    margin: EdgeInsets.only(
-        top: MediaQuery.of(context).size.height * 0.32, left: 35, right: 35),
-    padding: EdgeInsets.all(30),
-    decoration: BoxDecoration(
-      color: color_background_box,
-      boxShadow: const <BoxShadow>[
-        BoxShadow(
+      ),
+      Text(
+        txt_title_login_2,
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
           color: Colors.black54,
-          blurRadius: 10,
-          offset: Offset(0, 0.75),
         ),
-      ],
-      borderRadius: BorderRadius.all(
-        Radius.circular(30),
       ),
-    ),
-    child: SingleChildScrollView(
-      child: Column(
-        children: [
-          _titleBoxForm(),
-          _textFieldEmail(),
-          _textFieldPassword(),
-          _buttonLogin(context),
-        ],
-      ),
-    ),
-  );
-}
-
-Widget _titleBoxForm() {
-  return Container(
-    margin: EdgeInsets.only(top: 15, bottom: 15),
-    child: Text(
-      'Ingresa tus credenciales',
-      style: TextStyle(
-          color: almostBlack, fontWeight: FontWeight.bold, fontSize: 20),
-    ),
+    ],
   );
 }
 
 Widget _textFieldEmail() {
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 10),
-    child: TextField(
-      controller: con.emailController,
-      keyboardType: TextInputType.emailAddress,
-      decoration: InputDecoration(
-        floatingLabelStyle: TextStyle(color: darkGrey),
-        labelText: "Email",
-        hintText: "Email",
-        prefixIcon: Icon(Icons.alternate_email),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(color: darkGrey),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(color: darkGrey),
-        ),
+  return TextField(
+    controller: con.emailController,
+    keyboardType: TextInputType.emailAddress,
+    decoration: InputDecoration(
+      floatingLabelStyle: TextStyle(color: whiteGrey),
+      labelText: txt_email,
+      hintText: txt_email,
+      prefixIcon: Icon(icon_email),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: indigoAmina),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: indigoAmina),
       ),
     ),
   );
 }
 
 Widget _textFieldPassword() {
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 10),
-    child: TextField(
+  return Obx(
+    () => TextField(
       controller: con.passwordController,
       keyboardType: TextInputType.text,
-      obscureText: true,
+      obscureText: con.obscureText.value,
       decoration: InputDecoration(
-        floatingLabelStyle: TextStyle(color: darkGrey),
-        labelText: "Contraseña",
-        hintText: "Contraseña",
-        prefixIcon: Icon(Icons.password_outlined),
+        floatingLabelStyle: TextStyle(color: whiteGrey),
+        labelText: txt_password,
+        hintText: txt_password,
+        prefixIcon: Icon(icon_password),
+        suffixIcon: AnimatedSwitcher(
+          duration: 300.ms,
+          transitionBuilder: (child, anim) =>
+              RotationTransition(turns: anim, child: child),
+          child: IconButton(
+            key: ValueKey<bool>(con.obscureText.value),
+            icon: Icon(
+              con.obscureText.value ? icon_close_eye : icon_open_eye,
+              color: whiteGrey,
+            ),
+            onPressed: () {
+              con.obscureText.value = !con.obscureText.value;
+            },
+          ),
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(color: darkGrey),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: indigoAmina),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(color: darkGrey),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: indigoAmina),
         ),
       ),
     ),
@@ -161,22 +150,43 @@ Widget _textFieldPassword() {
 }
 
 Widget _buttonLogin(BuildContext context) {
-  return Container(
-    width: double.infinity,
-    margin: const EdgeInsets.symmetric(vertical: 20),
-    child: FloatingActionButton.extended(
-      onPressed: () {
-        return con.login(context);
+  return Obx(() {
+    double scale = con.isPressed.value ? 0.96 : 1.0;
+    return GestureDetector(
+      onTapDown: (_) => con.isPressed.value = true,
+      onTapUp: (_) {
+        con.isPressed.value = false;
+        con.login(context);
       },
-      backgroundColor: almostBlack,
-      elevation: 2,
-      label: const Text(
-        'Login',
-        style: TextStyle(
-            color: whiteLight, fontWeight: FontWeight.bold, fontSize: 17),
+      onTapCancel: () => con.isPressed.value = false,
+      child: AnimatedScale(
+        scale: scale,
+        duration: 120.ms,
+        child: SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton(
+            onPressed: () => con.login(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: almostBlack,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 4,
+            ),
+            child: const Text(
+              txt_login,
+              style: TextStyle(
+                color: whiteLight,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  });
 }
 
 Widget _textDontHaveAccount() {
@@ -184,23 +194,25 @@ Widget _textDontHaveAccount() {
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       const Text(
-        '¿No tienes una cuenta?',
+        txt_no_cuenta,
         style: TextStyle(
-            fontSize: 17, color: darkGrey, fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(
-        width: 10,
-      ),
-      GestureDetector(
-        onTap: () {
-          return con.goToRegisterPage();
-        },
-        child: const Text(
-          'Registrate Aqui',
-          style: TextStyle(
-              color: indigoAmina, fontWeight: FontWeight.bold, fontSize: 18),
+          fontSize: 16,
+          color: darkGrey,
+          fontWeight: FontWeight.w600,
         ),
-      )
+      ),
+      const SizedBox(width: 10),
+      GestureDetector(
+        onTap: () => con.goToRegisterPage(),
+        child: const Text(
+          txt_registrate_aqui,
+          style: TextStyle(
+            color: indigoAmina,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+      ),
     ],
   );
 }

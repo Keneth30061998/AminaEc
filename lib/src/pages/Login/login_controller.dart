@@ -1,4 +1,5 @@
 import 'package:amina_ec/src/models/response_api.dart';
+import 'package:amina_ec/src/utils/textos.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -15,6 +16,9 @@ class LoginController extends GetxController {
   UserProvider usersProvider = UserProvider();
 
   User user = User.fromJson(GetStorage().read('user') ?? {});
+
+  var obscureText = true.obs;
+  var isPressed = false.obs;
 
   //Moverse a Registro de usuario
   void goToRegisterPage() {
@@ -41,7 +45,7 @@ class LoginController extends GetxController {
     if (isValidForm(email, password)) {
       //Para usar progress dialog
       ProgressDialog progressDialog = ProgressDialog(context: context);
-      progressDialog.show(max: 100, msg: 'Iniciando sesión...');
+      progressDialog.show(max: 100, msg: txt_iniciando_sesion);
       ResponseApi responseApi = await usersProvider.login(email, password);
 
       print('Response Api ${responseApi.toJson()}');

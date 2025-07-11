@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/utils/textos.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -38,9 +39,9 @@ class SplashPage extends StatelessWidget {
                     ),
                     child: AnimatedTextKit(
                       animatedTexts: [
-                        TyperAnimatedText('Cargando tu energía...'),
-                        TyperAnimatedText('Conectando con el servidor...'),
-                        TyperAnimatedText('Listo para pedalear!!️'),
+                        TyperAnimatedText(txt_splash_1),
+                        TyperAnimatedText(txt_splash_2),
+                        TyperAnimatedText(txt_splash_3),
                       ],
                       repeatForever: true,
                     ),

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../Register/Terms_Conditions/terms_dialog.dart';
+
 class UserCoachReservePage extends StatelessWidget {
   final UserCoachReserveController con = Get.put(UserCoachReserveController());
 
@@ -12,68 +14,81 @@ class UserCoachReservePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: whiteLight,
-        foregroundColor: almostBlack,
-        automaticallyImplyLeading: false,
-        title: _textTitleAppBar(),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildScreen(),
-              const SizedBox(height: 20),
-              SingleChildScrollView(child: _containerCount()),
-              const SizedBox(height: 30),
-              _simbolIndicator(),
-              const SizedBox(height: 30),
-              _buildBigSeat(),
-              const SizedBox(height: 20),
-
-              //PRIMERA FILA DIVIDIDA CON SEPARACIÓN ENTRE CASILLA 5 Y 6
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        appBar: AppBar(
+          backgroundColor: whiteLight,
+          foregroundColor: almostBlack,
+          automaticallyImplyLeading: false,
+          title: _textTitleAppBar(),
+          actions: [
+            IconButton.filled(
+                style: IconButton.styleFrom(backgroundColor: whiteGrey),
+                onPressed: () {
+                  showTermsAndConditionsDialog(
+                      context: context, onAccepted: () {});
+                },
+                icon: Icon(
+                  Icons.contact_page_outlined,
+                  color: whiteLight,
+                ))
+          ],
+        ),
+        body: Obx(() {
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _buildSeatRow(context, 2, 4), // 2, 3, 4, 5
+                  const SizedBox(height: 40),
+                  SingleChildScrollView(child: _containerCount()),
+                  const SizedBox(height: 30),
+                  _simbolIndicator(),
+                  const SizedBox(height: 30),
+                  _buildBigSeat(),
+                  const SizedBox(height: 20),
+
+                  //PRIMERA FILA DIVIDIDA CON SEPARACIÓN ENTRE CASILLA 5 Y 6
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: _buildSeatRow(context, 2, 4), // 2, 3, 4, 5
+                      ),
+                      const SizedBox(width: 24), // Espacio entre 5 y 6
+                      Expanded(
+                        child: _buildSeatRow(context, 6, 4), // 6, 7, 8, 9
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 24), // Espacio entre 5 y 6
-                  Expanded(
-                    child: _buildSeatRow(context, 6, 4), // 6, 7, 8, 9
+
+                  const SizedBox(height: 10),
+                  _buildSeatRow(context, 10, 10), // Segunda fila: 10-19
+                  const SizedBox(height: 16),
+
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final con = Get.find<UserCoachReserveController>();
+                        con.reserveClass(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 48),
+                        backgroundColor: almostBlack,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        "Reservar",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 10),
-              _buildSeatRow(context, 10, 10), // Segunda fila: 10-19
-              const SizedBox(height: 16),
-
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Aquí podrías agregar la funcionalidad de guardar.
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                    backgroundColor: almostBlack,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text(
-                    "Reservar",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+            ),
+          );
+        }));
   }
 
   Widget _containerCount() {
@@ -81,9 +96,9 @@ class UserCoachReservePage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _boxDate(),
-        const SizedBox(width: 14),
+        const SizedBox(width: 15),
         _boxCoach(),
-        const SizedBox(width: 14),
+        const SizedBox(width: 15),
         _boxRides(),
       ],
     );
@@ -93,7 +108,7 @@ class UserCoachReservePage extends StatelessWidget {
     return _boxTemplate(
       icon: Icons.date_range,
       title: 'Hora',
-      subtitle: '18:00 - 20:00',
+      subtitle: '${formatHora(con.classTime)}',
       color: Colors.blueGrey.shade50,
     );
   }
@@ -102,7 +117,7 @@ class UserCoachReservePage extends StatelessWidget {
     return _boxTemplate(
       icon: Icons.person,
       title: 'Instructor',
-      subtitle: 'Sebastian',
+      subtitle: '${con.coachName}',
       color: Colors.blueGrey.shade50,
     );
   }
@@ -111,7 +126,7 @@ class UserCoachReservePage extends StatelessWidget {
     return _boxTemplate(
       icon: Icons.directions_bike,
       title: 'Rides',
-      subtitle: '1',
+      subtitle: '${con.totalRides.value}',
       color: Colors.blueGrey.shade50,
     );
   }
@@ -124,7 +139,7 @@ class UserCoachReservePage extends StatelessWidget {
   }) {
     return Container(
       height: 80,
-      width: 120,
+      width: 110,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: color,
@@ -143,13 +158,13 @@ class UserCoachReservePage extends StatelessWidget {
           Icon(icon),
           Text(title,
               style: GoogleFonts.roboto(
-                color: almostBlack,
-                fontSize: 14,
-              )),
+                  color: almostBlack,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700)),
           Text(subtitle,
               style: GoogleFonts.kodchasan(
                 color: darkGrey,
-                fontSize: 13,
+                fontSize: 15,
               )),
         ],
       ),
@@ -203,25 +218,6 @@ class UserCoachReservePage extends StatelessWidget {
     );
   }
 
-  Widget _buildScreen() {
-    return ClipPath(
-      clipper: ScreenClipper(),
-      child: Container(
-        color: indigoAmina,
-        height: 70,
-        alignment: Alignment.center,
-        child: Text(
-          "Sala de entrenamiento",
-          style: GoogleFonts.roboto(
-            color: whiteLight,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBigSeat() {
     return Center(
       child: Container(
@@ -264,14 +260,35 @@ class UserCoachReservePage extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Obx(() {
-                  bool isSelected = con.selectedEquipos.contains(seatNumber);
+                  final con = Get.find<UserCoachReserveController>();
+                  final bool isSelected =
+                      con.selectedEquipos.contains(seatNumber);
+                  final bool isOccupied =
+                      con.occupiedEquipos.contains(seatNumber);
+
+                  Color seatColor;
+                  if (isSelected) {
+                    seatColor = limeGreen;
+                  } else if (isOccupied) {
+                    seatColor = indigoAmina;
+                  } else {
+                    seatColor = Colors.grey[300]!;
+                  }
+
                   return GestureDetector(
-                    onTap: () => con.toggleEquipo(seatNumber),
+                    onTap: () {
+                      if (isOccupied) {
+                        Get.snackbar('Máquina ocupada',
+                            'Esta bicicleta ya está reservada');
+                        return;
+                      }
+                      con.toggleEquipo(seatNumber);
+                    },
                     child: Container(
                       width: seatWidth,
                       height: seatWidth,
                       decoration: BoxDecoration(
-                        color: isSelected ? limeGreen : Colors.grey[300],
+                        color: seatColor,
                         border: Border.all(
                           color: isSelected ? Colors.black12 : Colors.black26,
                           width: 2,
@@ -301,22 +318,9 @@ class UserCoachReservePage extends StatelessWidget {
   }
 }
 
-class ScreenClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    path.lineTo(0, size.height - 20);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 20,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+String formatHora(String rawTime) {
+  final parts = rawTime.split(":");
+  final hour = parts[0].padLeft(2, '0');
+  final minute = parts[1].padLeft(2, '0');
+  return "$hour:$minute";
 }

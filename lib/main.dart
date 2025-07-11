@@ -14,12 +14,14 @@ import 'package:amina_ec/src/pages/Roles/roles_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
 import 'package:amina_ec/src/pages/user/Coach/Reserve/user_coach_reserve_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_page.dart';
+import 'package:amina_ec/src/pages/user/Plan/Buy/Resume/user_plan_buy_resume_page.dart';
 import 'package:amina_ec/src/pages/user/Plan/Buy/user_plan_buy_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +33,10 @@ User userSession = User.fromJson(GetStorage().read('user') ?? {});
 void main() async {
   await GetStorage.init();
   //Get.put(UserProfileInfoController());
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp, // Solo modo vertical hacia arriba
+  ]);
   await initializeDateFormatting('es_ES', null);
   if (userSession.session_token != null &&
       userSession.session_token!.isNotEmpty) {
@@ -58,7 +64,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Flutter Demo',
+      title: 'Amina EC',
       theme: ThemeData(
         timePickerTheme: TimePickerThemeData(
           helpTextStyle: GoogleFonts.montserrat(
@@ -67,7 +73,7 @@ class _MyAppState extends State<MyApp> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: limeGreen),
+        colorScheme: ColorScheme.fromSeed(seedColor: whiteLight),
         useMaterial3: true,
         scaffoldBackgroundColor: whiteLight,
         textTheme: const TextTheme(
@@ -95,6 +101,8 @@ class _MyAppState extends State<MyApp> {
         GetPage(
             name: '/user/profile/update', page: () => UserProfileUpdatePage()),
         GetPage(name: '/user/plan/buy', page: () => UserPlanBuyPage()),
+        GetPage(
+            name: '/user/plan/buy/resume', page: () => UserPlanBuyResumePage()),
         GetPage(
             name: '/user/coach/reserve', page: () => UserCoachReservePage()),
         //coach

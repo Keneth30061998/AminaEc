@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/rol.dart';
+import '../../utils/textos.dart';
 
 class RolesPage extends StatelessWidget {
   final RolesController con = Get.put(RolesController());
@@ -19,15 +20,16 @@ class RolesPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Seleccione un rol',
+          txt_selecciona_rol,
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.w900,
-            fontSize: 20,
+            fontSize: 22,
           ),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+        padding: EdgeInsets.symmetric(
+            vertical: 15, horizontal: MediaQuery.of(context).size.width * 0.28),
         child: ListView.builder(
           itemCount: con.user.roles?.length ?? 0,
           itemBuilder: (context, index) {
@@ -43,54 +45,56 @@ class RolesPage extends StatelessWidget {
     return GestureDetector(
       onTap: () => con.goToPage(rol),
       child: Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          decoration: BoxDecoration(
-            color: color_background_box,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                offset: Offset(0, 5),
-              ),
-            ],
-          ),
-          child: _photoAndName(rol)),
-    );
-  }
-
-  Widget _photoAndName(Rol rol) {
-    return Row(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: FadeInImage.assetNetwork(
-            placeholder: 'assets/img/noImage.jpg',
-            image: rol.image ?? '',
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-            fadeInDuration: Duration(milliseconds: 200),
-            imageErrorBuilder: (context, error, stackTrace) {
-              return Image.asset('assets/img/noImage.jpg',
-                  width: 60, height: 60, fit: BoxFit.cover);
-            },
-          ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: Text(
-            rol.name ?? '',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: almostBlack,
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(2, 5),
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
+          ],
         ),
-      ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Imagen
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
+              child: FadeInImage.assetNetwork(
+                placeholder: 'assets/img/noImage.jpg',
+                image: rol.image ?? '',
+                height: 160,
+                fit: BoxFit.contain,
+                imageErrorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/img/noImage.jpg',
+                    height: 160,
+                    fit: BoxFit.fill,
+                  );
+                },
+              ),
+            ),
+            // Nombre
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Text(
+                rol.name ?? 'Sin nombre',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.acme(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: almostBlack,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

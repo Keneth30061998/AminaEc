@@ -32,8 +32,18 @@ class UserCoachScheduleController extends GetxController {
     SocketService().on('coach:update', (_) => loadCoaches());
   }
 
-  void goToUserCoachReservePage() {
-    Get.toNamed('/user/coach/reserve');
+  void goToUserCoachReservePage({
+    required String coachId,
+    required String classTime,
+    required String coachName,
+  }) {
+    final classDate = selectedDate.value.toString().split(' ')[0];
+    Get.toNamed('/user/coach/reserve', arguments: {
+      'coach_id': coachId,
+      'class_date': classDate,
+      'class_time': classTime,
+      'coach_name': coachName
+    });
   }
 
   void loadCoaches() async {

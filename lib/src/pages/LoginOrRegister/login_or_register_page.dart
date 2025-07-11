@@ -1,4 +1,5 @@
 import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_controller.dart';
+import 'package:amina_ec/src/utils/textos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,7 +12,7 @@ class LoginOrRegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: darkGrey,
+      backgroundColor: whiteLight,
       body: Stack(
         children: [
           _textTitle(context),
@@ -26,14 +27,14 @@ class LoginOrRegisterPage extends StatelessWidget {
   Widget _textTitle(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width * 1,
-      margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.15),
+      margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.2),
       child: Text(
-        'Bienvenido a',
+        txt_bienvenida,
         textAlign: TextAlign.center,
         style: GoogleFonts.montserrat(
           fontSize: 30,
           fontWeight: FontWeight.w800,
-          color: limeGreen,
+          color: almostBlack,
         ),
       ),
     );
@@ -43,7 +44,7 @@ class LoginOrRegisterPage extends StatelessWidget {
   Widget _boxForm(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(
-        top: MediaQuery.of(context).size.height * 0.5,
+        top: MediaQuery.of(context).size.height * 0.6,
       ),
       width: double.infinity,
       height: MediaQuery.of(context).size.height * 0.50,
@@ -73,7 +74,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 1,
       padding: EdgeInsets.only(top: 60),
       child: Text(
-        '¡Hora de pedalear con estilo!',
+        txt_bienvenida_2,
         textAlign: TextAlign.center,
         style: TextStyle(
           fontWeight: FontWeight.bold,
@@ -89,7 +90,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 1,
       padding: EdgeInsets.only(left: 45, top: 20),
       child: Text(
-        'Registrate o incia sesión',
+        txt_regiter_or_login,
         style: GoogleFonts.robotoCondensed(
           color: darkGrey,
           fontSize: 18,
@@ -105,12 +106,12 @@ class LoginOrRegisterPage extends StatelessWidget {
       height: 60,
       margin: EdgeInsets.only(top: 35),
       child: FloatingActionButton.extended(
-        heroTag: 'registrar usuario',
+        heroTag: 'registrar-usuario',
         onPressed: () {
           return con.goToRegisterPage();
         },
         label: Text(
-          'Crear nueva cuenta',
+          txt_crear_cuenta,
           style: TextStyle(fontSize: 16, color: Colors.white),
         ),
         backgroundColor: almostBlack, //
@@ -130,7 +131,7 @@ class LoginOrRegisterPage extends StatelessWidget {
           return con.goToLoginPage();
         },
         label: Text(
-          'Iniciar Sesión',
+          txt_iniciar_sesion,
           style: TextStyle(fontSize: 16),
         ),
         backgroundColor: limeGreen, //

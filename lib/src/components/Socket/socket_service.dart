@@ -7,12 +7,11 @@ import '../../models/user.dart';
 class SocketService {
   static final SocketService _singleton = SocketService._internal();
   factory SocketService() => _singleton;
-  User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
+  User userSession = User.fromJson(GetStorage().read('user') ?? {});
   late IO.Socket socket;
 
   SocketService._internal() {
-    // Inicializa socket con el token actual (aunque sea null al principio)
     socket = IO.io(
       Environment.API_URL_SOCKET,
       IO.OptionBuilder()
@@ -27,20 +26,20 @@ class SocketService {
     userSession = user;
   }
 
-  // Actualiza el usuario y reconecta el socket
   void updateUserSession(User newUser) {
     userSession = newUser;
 
-    // Si el socket está conectado, desconéctalo antes de reconectar
-    if (socket != null && socket.connected) {
+    if (socket.connected) {
       socket.disconnect();
     }
+
     connect();
   }
 
   void connect() {
     print('🔌 Intentando conectar al socket...');
     print('🔑 Token usado: ${userSession.session_token}');
+
     socket = IO.io(
       Environment.API_URL_SOCKET,
       IO.OptionBuilder()
@@ -50,10 +49,11 @@ class SocketService {
           .build(),
     );
 
-    socket.connect(); // conectar manualmente
+    socket.connect();
 
     socket.onConnect((_) {
       print('🟢 Socket conectado');
+      socket.emit('join', userSession.id); // 🔑 Unirse a sala privada
     });
 
     socket.onDisconnect((_) {
@@ -75,5 +75,10 @@ class SocketService {
 
   void emit(String event, dynamic data) {
     socket.emit(event, data);
+  }
+
+  void dispose() {
+    socket.dispose();
+    socket.destroy();
   }
 }

@@ -121,16 +121,16 @@ class UserPlanListPage extends StatelessWidget {
           ),
           Flexible(
             child: Padding(
-              padding: const EdgeInsets.only(right: 10, left: 10, top: 10),
+              padding: const EdgeInsets.only(right: 15, left: 15, top: 10),
               child: SizedBox(
-                height: 128, // Puedes ajustar según tu necesidad
+                height: 128,
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        plan.name?.toUpperCase() ?? 'SIN NOMBRE',
+                        plan.name?.toUpperCase() ?? 'Sin nombre',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.montserrat(
@@ -141,11 +141,11 @@ class UserPlanListPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '# Rides: ${plan.rides ?? '0'}',
+                        '${plan.rides ?? '0'} Rides',
                         style: GoogleFonts.montserrat(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: almostBlack,
+                          color: Colors.purple,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -161,7 +161,7 @@ class UserPlanListPage extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => con.goToPolanBuy(plan),
+                          onPressed: () => con.goToPlanBuyResume(plan),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: almostBlack,
                             foregroundColor: Colors.white,

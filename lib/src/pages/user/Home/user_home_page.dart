@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
+import '../../../utils/iconos.dart';
 import '../Start/user_start_page.dart';
 
 class UserHomePage extends StatelessWidget {
@@ -83,7 +84,7 @@ class UserHomePage extends StatelessWidget {
         tabs: [
           const GButton(
             // Usar const si los parámetros no cambian
-            icon: Icons.home,
+            icon: icon_home,
             text: 'Inicio',
             backgroundGradient: LinearGradient(
               colors: [almostBlack, darkGrey],
@@ -92,15 +93,15 @@ class UserHomePage extends StatelessWidget {
             ),
           ),
           const GButton(
-            icon: Icons.local_offer_sharp,
+            icon: icon_plan,
             text: 'Planes',
           ),
           const GButton(
-            icon: Icons.calendar_month,
+            icon: icon_schedule,
             text: 'Agenda',
           ),
           const GButton(
-            icon: Icons.person,
+            icon: icon_profile,
             text: 'Perfil',
           ),
         ],

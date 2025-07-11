@@ -8,7 +8,6 @@ import '../../../../models/coach.dart';
 import '../../../../utils/color.dart';
 import '../../../../widgets/no_data_widget.dart';
 
-// imports idénticos
 class UserCoachSchedulePage extends StatelessWidget {
   final con = Get.put(UserCoachScheduleController());
 
@@ -136,9 +135,10 @@ class UserCoachSchedulePage extends StatelessWidget {
               children: schedules.map((s) {
                 return ActionChip(
                   onPressed: () {
-                    Get.snackbar(
-                        'Coach ID: ${coach.id}', 'Horario: ${s.start_time}');
-                    con.goToUserCoachReservePage();
+                    con.goToUserCoachReservePage(
+                        coachId: coach.id ?? '',
+                        classTime: s.start_time ?? '00:00:00',
+                        coachName: coach.user?.name ?? '');
                   },
                   label: Text(
                       '${_formatTime(s.start_time)} - ${_formatTime(s.end_time)}'),

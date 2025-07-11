@@ -6,31 +6,44 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import '../../../models/coach.dart';
+import '../../../models/scheduled_class.dart';
 
 class UserStartPage extends StatelessWidget {
-  UserSatartController con = Get.put(UserSatartController(), permanent: true);
+  final UserStartController con =
+      Get.put(UserStartController(), permanent: true);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: whiteLight,
-      appBar: AppBar(
-        foregroundColor: darkGrey,
-        backgroundColor: whiteLight,
-        title: _appBarTitle(),
-      ),
       body: Obx(() {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _textGreeting(),
-              const SizedBox(height: 20),
-              _containerCount(),
-              const SizedBox(height: 20),
-              _reelCoach(context),
-            ],
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _appBarTitle(),
+                _textGreeting(),
+                const SizedBox(height: 15),
+                _containerCount(),
+                const SizedBox(height: 15),
+                _reelCoach(context),
+                const SizedBox(height: 15),
+                Text(
+                  'Tus clases agendadas',
+                  style: GoogleFonts.roboto(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: darkGrey,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                Flexible(
+                  child: _scheduledClassesScrollableSection(),
+                ),
+              ],
+            ),
           ),
         );
       }),
@@ -43,6 +56,7 @@ class UserStartPage extends StatelessWidget {
       style: GoogleFonts.montserrat(
         fontSize: 26,
         fontWeight: FontWeight.w800,
+        color: almostBlack,
       ),
     );
   }
@@ -50,21 +64,24 @@ class UserStartPage extends StatelessWidget {
   Widget _textGreeting() {
     return Text(
       'Hola, ${con.user.name}',
-      style: GoogleFonts.montserrat(
-        fontSize: 21,
-        fontWeight: FontWeight.w800,
+      style: GoogleFonts.roboto(
+        fontSize: 20,
+        fontWeight: FontWeight.w900,
         color: darkGrey,
       ),
     );
   }
 
   Widget _containerCount() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _boxBikesComplete(),
-        _boxBikesPending(),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _boxBikesComplete(),
+          _boxBikesPending(),
+        ],
+      ),
     );
   }
 
@@ -78,12 +95,12 @@ class UserStartPage extends StatelessWidget {
   }
 
   Widget _boxBikesPending() {
-    return _boxTemplate(
-      title: 'Rides',
-      count: '0',
-      subtitle: 'Pendientes',
-      color: Colors.blueGrey.shade50,
-    );
+    return Obx(() => _boxTemplate(
+          title: 'Rides',
+          count: '${con.totalRides.value}',
+          subtitle: 'Pendientes',
+          color: Colors.blueGrey.shade50,
+        ));
   }
 
   Widget _boxTemplate({
@@ -93,9 +110,8 @@ class UserStartPage extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      height: 100,
-      width: 150,
-      padding: const EdgeInsets.all(5),
+      height: 90,
+      width: 145,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(15),
@@ -124,7 +140,7 @@ class UserStartPage extends StatelessWidget {
           Text(subtitle,
               style: GoogleFonts.kodchasan(
                 color: almostBlack,
-                fontSize: 16,
+                fontSize: 15,
               )),
         ],
       ),
@@ -137,19 +153,16 @@ class UserStartPage extends StatelessWidget {
       children: [
         Text(
           'Nuestros Coaches',
-          style: GoogleFonts.montserrat(
-            fontSize: 21,
-            fontWeight: FontWeight.w800,
+          style: GoogleFonts.roboto(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
             color: darkGrey,
           ),
         ),
-        SizedBox(
-          height: 20,
-        ),
+        const SizedBox(height: 10),
         Container(
-          //padding: EdgeInsets.all(20),
           color: whiteLight,
-          height: 145,
+          height: 130,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: con.coaches.length,
@@ -169,18 +182,22 @@ class UserStartPage extends StatelessWidget {
         showCoachBottomSheet(context, coach);
       },
       child: Container(
-        width: 100,
+        width: 95,
         margin: const EdgeInsets.only(right: 15),
         decoration: BoxDecoration(
-          color: color_background_box,
+          color: whiteLight,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 4,
-              offset: Offset(3, 2),
+              offset: Offset(1, 2),
             ),
           ],
+          border: BoxBorder.all(
+            color: color_background_box,
+            width: 1,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -206,9 +223,9 @@ class UserStartPage extends StatelessWidget {
                           size: 30, color: Colors.white),
                     ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
               child: Text(
                 coach.user?.name ?? 'Nombre no disponible',
                 textAlign: TextAlign.center,
@@ -297,5 +314,87 @@ class UserStartPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _scheduledClassCard(ScheduledClass c) {
+    // Formato elegante
+    final formattedDate =
+        c.classDate.split('T').first.split('-').reversed.join('/');
+    final formattedTime = c.classTime.substring(0, 5);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: c.photo_url.isNotEmpty
+                ? Image.network(
+                    c.photo_url,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.broken_image, size: 30),
+                  )
+                : Container(
+                    width: 60,
+                    height: 60,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.person, color: Colors.white),
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$formattedDate · $formattedTime',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: almostBlack,
+                    )),
+                Text('Coach: ${c.coachName}',
+                    style: GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
+                Text('Bicicleta: ${c.bicycle}',
+                    style: GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _scheduledClassesScrollableSection() {
+    return Obx(() {
+      if (con.scheduledClasses.isEmpty) {
+        return Center(
+          child: Text(
+            'No tienes clases agendadas.',
+            style: GoogleFonts.roboto(
+              fontSize: 16,
+              color: Colors.grey[700],
+            ),
+          ),
+        );
+      }
+
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: BouncingScrollPhysics(),
+        itemCount: con.scheduledClasses.length,
+        itemBuilder: (context, index) {
+          return _scheduledClassCard(con.scheduledClasses[index]);
+        },
+      );
+    });
   }
 }

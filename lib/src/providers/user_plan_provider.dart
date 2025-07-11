@@ -33,4 +33,24 @@ class UserPlanProvider {
       return ResponseApi(success: false, message: 'Exception: $e');
     }
   }
+
+  Future<int> getTotalActiveRides(String token) async {
+    try {
+      final uri = Uri.parse('$_url/active/rides');
+
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token,
+      });
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['total_rides'] ?? 0;
+      } else {
+        return 0;
+      }
+    } catch (e) {
+      return 0;
+    }
+  }
 }

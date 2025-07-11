@@ -26,6 +26,10 @@ class RegisterController extends GetxController {
   File? imageFile;
   ImagePicker picker = ImagePicker(); //arriba
 
+  //Ver - ocultar cobntraseña
+  var obscurePassword = true.obs;
+  var obscureConfirmPassword = true.obs;
+
   void register(BuildContext context) async {
     String email = emailController.text.trim();
     String name = nameController.text;
