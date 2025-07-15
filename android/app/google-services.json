@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "410208690638",
+    "project_id": "aminaec-a8742",
+    "storage_bucket": "aminaec-a8742.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410208690638:android:afaf7800858662243d8b9f",
+        "android_client_info": {
+          "package_name": "com.aminaec.amina_ec"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8tJuiQu0TiA-Nwkjiv4yP9hx7Q9vP2rE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

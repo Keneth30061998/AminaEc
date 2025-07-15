@@ -11,6 +11,7 @@ import 'package:amina_ec/src/pages/Coach/Home/coach_home_page.dart';
 import 'package:amina_ec/src/pages/Login/login_page.dart';
 import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_page.dart';
 import 'package:amina_ec/src/pages/Roles/roles_page.dart';
+import 'package:amina_ec/src/pages/Signature/signature_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
 import 'package:amina_ec/src/pages/user/Coach/Reserve/user_coach_reserve_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_page.dart';
@@ -20,12 +21,15 @@ import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+
+import 'firebase_options.dart';
 
 //para mantener abierta la session despues de login
 User userSession = User.fromJson(GetStorage().read('user') ?? {});
@@ -34,6 +38,9 @@ void main() async {
   await GetStorage.init();
   //Get.put(UserProfileInfoController());
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp, // Solo modo vertical hacia arriba
   ]);
@@ -96,6 +103,7 @@ class _MyAppState extends State<MyApp> {
         GetPage(name: '/register', page: () => RegisterPage()),
         GetPage(name: '/register-image', page: () => RegisterPageImage()),
         GetPage(name: '/roles', page: () => RolesPage()),
+        GetPage(name: '/signature', page: () => SignaturePage()),
         //usuario
         GetPage(name: '/user/home', page: () => UserHomePage()),
         GetPage(

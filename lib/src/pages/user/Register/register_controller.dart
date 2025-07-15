@@ -197,6 +197,10 @@ class RegisterController extends GetxController {
     Get.offNamedUntil('user/home', (route) => false);
   }
 
+  void goToSignaturePage(User user) {
+    Get.toNamed('/signature', arguments: user);
+  }
+
   void goToRegisterImage() {
     Get.toNamed('/register-image');
   }

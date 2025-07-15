@@ -11,6 +11,9 @@ const icon_ci = RemixIcons.id_card_fill;
 const icon_phone = RemixIcons.smartphone_line;
 const icon_password = RemixIcons.lock_password_fill;
 const icon_confirm_password = RemixIcons.lock_password_line;
+const icon_eraser = RemixIcons.eraser_fill;
+const icon_save = RemixIcons.save_fill;
+const icon_signature = RemixIcons.quill_pen_ai_fill;
 
 const icon_next = RemixIcons.arrow_right_wide_line;
 const icon_open_eye = RemixIcons.eye_2_line;

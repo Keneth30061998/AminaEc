@@ -1,127 +1,165 @@
-import 'package:amina_ec/src/pages/Admin/Start/admin_start_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
-import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
-import '../../../models/student_inscription.dart';
 import '../../../widgets/no_data_widget.dart';
+import 'admin_start_controller.dart';
 
 class AdminStartPage extends StatelessWidget {
   final AdminStartController con = Get.put(AdminStartController());
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => DefaultTabController(
-          length: con.coaches.length,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Estudiantes por Coach'),
-              bottom: TabBar(
+    return Obx(() {
+      if (con.coaches.isEmpty) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      return DefaultTabController(
+        length: con.coaches.length,
+        child: Scaffold(
+          appBar: AppBar(
+            title: _appBarTitle(),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: TabBar(
                 isScrollable: true,
                 indicatorColor: almostBlack,
-                labelColor: almostBlack,
-                unselectedLabelColor: Colors.black,
-                tabs: List<Widget>.generate(con.coaches.length, (index) {
-                  return Tab(
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.black54,
+                tabs: List.generate(
+                  con.coaches.length,
+                  (index) => Tab(
                     child: Text(con.coaches[index].user?.name ?? ''),
-                  );
-                }),
+                  ),
+                ),
               ),
             ),
-            body: TabBarView(
+          ),
+          body: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: TabBarView(
               children: con.coaches.map((coach) {
-                return FutureBuilder(
-                    future: con.getStudents(coach.id!),
-                    builder:
-                        (_, AsyncSnapshot<List<StudentInscription>> snapshot) {
-                      if (snapshot.hasData) {
-                        final students = snapshot.data!;
-                        if (students.isEmpty) {
-                          return NoDataWidget(
-                              text: 'No hay estudiantes inscritos');
-                        }
+                final coachId = coach.id!;
+                final selectedDate =
+                    con.selectedDatePerCoach[coachId]?.value ?? con.today;
+                final students =
+                    con.getStudentsByCoachAndDate(coachId, selectedDate);
 
-                        // Agrupar por fecha y hora
-                        final grouped = <String, List<StudentInscription>>{};
-                        for (var s in students) {
-                          final key = '${s.classDate} • ${s.classTime}';
-                          grouped.putIfAbsent(key, () => []).add(s);
-                        }
+                return Column(
+                  children: [
+                    _dateSelector(con, coachId),
+                    Expanded(
+                      child: students.isEmpty
+                          ? NoDataWidget(text: 'No hay estudiantes inscritos')
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 20),
+                              itemCount: students.length,
+                              itemBuilder: (_, index) {
+                                final s = students[index];
+                                final timeFormatted =
+                                    s.classTime.substring(0, 5);
 
-                        return ListView(
-                          children: grouped.entries.map((entry) {
-                            final parts = entry.key.split('•');
-                            final rawDate = parts[0].trim();
-                            final rawTime =
-                                parts.length > 1 ? parts[1].trim() : '';
-
-                            // ✅ Formato de fecha y hora
-                            final formattedDate = DateTime.tryParse(rawDate);
-                            final formattedTime = rawTime.length >= 5
-                                ? rawTime.substring(0, 5)
-                                : rawTime;
-
-                            final readableDate = formattedDate != null
-                                ? '${formattedDate.day.toString().padLeft(2, '0')}/${formattedDate.month.toString().padLeft(2, '0')}/${formattedDate.year}'
-                                : rawDate;
-
-                            return Card(
-                              elevation: 2,
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Encabezado visual de fecha y hora
-                                    Row(
-                                      children: [
-                                        const Icon(icon_schedule,
-                                            size: 18, color: Colors.grey),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '$readableDate • $formattedTime',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ],
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border:
+                                        Border.all(color: Colors.grey.shade300),
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage:
+                                          NetworkImage(s.photo_url ?? ''),
+                                      radius: 22,
                                     ),
-                                    const SizedBox(height: 10),
-                                    ...entry.value.map((student) {
-                                      return ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundImage: NetworkImage(
-                                              student.photo_url ?? ''),
-                                          radius: 22,
-                                        ),
-                                        title: Text(student.studentName),
-                                        subtitle:
-                                            Text('Máquina: ${student.bicycle}'),
-                                        trailing: Checkbox(
-                                          value: false,
-                                          onChanged: (_) {},
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      } else {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                    });
+                                    title: Text(s.studentName),
+                                    subtitle: Text(
+                                        'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
+                                    trailing: Checkbox(
+                                      value: false,
+                                      onChanged: (_) {},
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
               }).toList(),
             ),
           ),
-        ));
+        ),
+      );
+    });
+  }
+
+  Widget _appBarTitle() {
+    return Text(
+      'Administrador',
+      style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w900),
+    );
+  }
+
+  Widget _dateSelector(AdminStartController con, String coachId) {
+    final dates = con.generateDateRange();
+
+    return Obx(() {
+      final selectedDate =
+          (con.selectedDatePerCoach[coachId])?.value ?? con.today;
+
+      return SizedBox(
+        height: 72,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: dates.length,
+          itemBuilder: (_, index) {
+            final date = dates[index];
+            final isSelected = DateFormat('yyyy-MM-dd').format(date) ==
+                DateFormat('yyyy-MM-dd').format(selectedDate);
+
+            return GestureDetector(
+              onTap: () => con.selectDateForCoach(coachId, date),
+              child: Container(
+                width: 80,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? almostBlack : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      DateFormat.E('es_ES').format(date),
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      date.day.toString(),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 }

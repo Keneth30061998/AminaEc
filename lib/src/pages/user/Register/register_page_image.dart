@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../models/user.dart';
 import '../../../utils/color.dart';
 import 'Terms_Conditions/terms_dialog.dart';
 
@@ -142,7 +143,19 @@ class RegisterPageImage extends StatelessWidget {
           showTermsAndConditionsDialog(
             context: context,
             onAccepted: () {
-              con.register(context);
+              final user = User(
+                email: con.emailController.text.trim(),
+                name: con.nameController.text,
+                lastname: con.lastnameController.text,
+                ci: con.ciController.text,
+                phone: con.phoneController.text,
+                password: con.passwordController.text.trim(),
+              );
+
+              // Navegar y enviar el usuario
+              con.goToSignaturePage(user);
+              //con.goToSignaturePage();
+              //con.register(context);
             },
           );
         },

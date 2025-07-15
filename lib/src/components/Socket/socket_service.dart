@@ -81,4 +81,8 @@ class SocketService {
     socket.dispose();
     socket.destroy();
   }
+
+  void join(String room) {
+    socket.emit('join', {'room': room});
+  }
 }

@@ -32,6 +32,7 @@ void showTermsAndConditionsDialog({
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Cierra el modal
+
               onAccepted(); // Ejecuta la función si acepta
             },
             child: Text(
