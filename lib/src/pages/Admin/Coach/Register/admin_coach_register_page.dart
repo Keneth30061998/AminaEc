@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../utils/color.dart';
+import '../../../../utils/iconos.dart';
 import 'admin_coach_register_controller.dart';
 
 class AdminCoachRegisterPage extends StatelessWidget {
@@ -10,262 +13,193 @@ class AdminCoachRegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: limeGreen,
-        appBar: AppBar(
-          backgroundColor: limeGreen,
-          title: _textTitle(context),
-        ),
-        body: _boxForm(context));
-  }
+      backgroundColor: whiteLight,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // HEADER animado
+                _header()
+                    .animate()
+                    .fade(duration: 500.ms)
+                    .slideY(begin: 0.3)
+                    .then(delay: 150.ms),
 
-  //widgets
-  Widget _textTitle(BuildContext context) {
-    return Text(
-      'Registro de Coach',
-      style: TextStyle(
-        color: almostBlack,
-        fontWeight: FontWeight.w700,
-        fontSize: 24,
+                const SizedBox(height: 30),
+
+                // TextFields animados con delay progresivo
+                _textField("Correo Electrónico", con.emailController,
+                        icon_email, TextInputType.emailAddress)
+                    .animate(delay: 200.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                _textField("Nombre", con.nameController, icon_profile,
+                        TextInputType.name)
+                    .animate(delay: 350.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                _textField("Apellido", con.lastnameController,
+                        icon_profile_invert, TextInputType.name)
+                    .animate(delay: 500.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                _textField("Cédula", con.ciController, icon_ci,
+                        TextInputType.number)
+                    .animate(delay: 650.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                _textField("Teléfono", con.phoneController, icon_phone,
+                        TextInputType.phone)
+                    .animate(delay: 800.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                _passwordField("Contraseña", con.passwordController,
+                        icon_password, con.obscurePassword)
+                    .animate(delay: 950.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                _passwordField(
+                        "Confirmar Contraseña",
+                        con.confirmPasswordController,
+                        icon_confirm_password,
+                        con.obscureConfirmPassword)
+                    .animate(delay: 1100.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+
+                const SizedBox(height: 30),
+
+                // Botón animado
+                _buttonRegister(context)
+                    .animate(delay: 1250.ms)
+                    .fade()
+                    .slideY(begin: 0.3),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _subTitle(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 1,
-      margin: EdgeInsets.only(top: 10, left: 35, bottom: 10),
-      child: Text(
-        '*Registre todos los campos solicitados',
-        style: TextStyle(
-          color: Colors.black45,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          'Registro de Coach',
+          style: GoogleFonts.poppins(
+            color: almostBlack,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-      ),
+        const SizedBox(height: 6),
+        Text(
+          'Ingresa la información del coach',
+          style: GoogleFonts.poppins(
+            color: Colors.black54,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
-  //Widget BoxForm
-  Widget _boxForm(BuildContext context) {
+  Widget _textField(String label, TextEditingController controller,
+      IconData icon, TextInputType inputType) {
     return Container(
-      width: MediaQuery.of(context).size.width * 1,
-      height: MediaQuery.of(context).size.height * 0.9,
-      margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
-      padding: EdgeInsets.only(top: 20, left: 10, right: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(35),
-          topRight: Radius.circular(35),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _subTitle(context),
-            _textFieldEmail(),
-            _textFieldName(),
-            _textFieldLastName(),
-            _textFieldCI(),
-            _textFieldPhone(),
-            _textFieldPassword(),
-            _textFieldConfirmPassword(),
-            _buttonRegister(context)
-          ],
-        ),
-      ),
-    );
-  }
-
-  //Widgets internos del BoxForm
-  Widget _textFieldEmail() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
-        controller: con.emailController,
-        keyboardType: TextInputType.emailAddress,
+        controller: controller,
+        keyboardType: inputType,
+        style: GoogleFonts.poppins(),
         decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Correo Electronico",
-          hintText: "Correo Electrónico",
-          prefixIcon: Icon(Icons.alternate_email),
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.black),
+          labelStyle: GoogleFonts.poppins(color: Colors.black54),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.black12),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.black),
           ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
   }
 
-  Widget _textFieldName() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-      child: TextField(
-        controller: con.nameController,
-        keyboardType: TextInputType.name,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Nombre",
-          hintText: "Nombre",
-          prefixIcon: Icon(Icons.person_2),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
+  Widget _passwordField(String label, TextEditingController controller,
+      IconData icon, RxBool toggleValue) {
+    return Obx(() => Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: TextField(
+            controller: controller,
+            obscureText: toggleValue.value,
+            keyboardType: TextInputType.visiblePassword,
+            style: GoogleFonts.poppins(),
+            decoration: InputDecoration(
+              labelText: label,
+              prefixIcon: Icon(icon, color: Colors.black),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  toggleValue.value ? icon_close_eye : icon_open_eye,
+                  color: Colors.black54,
+                ),
+                onPressed: () => toggleValue.value = !toggleValue.value,
+              ),
+              labelStyle: GoogleFonts.poppins(color: Colors.black54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: Colors.black12),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: Colors.black),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldLastName() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-      child: TextField(
-        controller: con.lastnameController,
-        keyboardType: TextInputType.name,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Apellido",
-          hintText: "Apellido",
-          prefixIcon: Icon(Icons.person_2_outlined),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldCI() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-      child: TextField(
-        controller: con.ciController,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Cédula",
-          hintText: "Cédula",
-          prefixIcon: Icon(Icons.assignment_ind),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldPhone() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-      child: TextField(
-        controller: con.phoneController,
-        keyboardType: TextInputType.phone,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Telefono",
-          hintText: "Telefono",
-          prefixIcon: Icon(Icons.phone_android),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldPassword() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-      child: TextField(
-        controller: con.passwordController,
-        keyboardType: TextInputType.visiblePassword,
-        obscureText: true,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Contraseña",
-          hintText: "Contraseña",
-          prefixIcon: Icon(Icons.password),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldConfirmPassword() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-      child: TextField(
-        controller: con.confirmPasswordController,
-        keyboardType: TextInputType.visiblePassword,
-        obscureText: true,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Confirmar Contraseña",
-          hintText: "Confirmar Contraseña",
-          prefixIcon: Icon(Icons.password_outlined),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
+        ));
   }
 
   Widget _buttonRegister(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 5),
-      width: MediaQuery.of(context).size.width * 0.77,
-      height: 50,
-      child: FloatingActionButton.extended(
-        onPressed: () {
-          return con.goToRegisterAdminCoachImage();
-        },
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton.icon(
+        onPressed: () => con.goToRegisterAdminCoachImage(),
+        icon: Icon(icon_next, color: whiteLight),
         label: Text(
           'Siguiente',
-          style: TextStyle(fontSize: 16, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: whiteLight,
+          ),
         ),
-        icon: Icon(
-          Icons.arrow_forward_ios,
-          color: Colors.white,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: almostBlack,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 5,
         ),
-        backgroundColor: almostBlack,
       ),
     );
   }

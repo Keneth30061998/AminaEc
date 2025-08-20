@@ -56,6 +56,8 @@ dependencies:
   firebase_core: ^3.15.1
   firebase_storage: ^12.4.9
   path_provider: ^2.1.5
+  flutter_launcher_icons: ^0.14.4
+  webview_flutter: ^4.13.0
 
 
 dev_dependencies:
@@ -87,7 +89,10 @@ flutter:
     - assets/img/noImage.jpg
     - assets/img/addImage.png
     - assets/img/no_files.png
-    - assets/img/visa.png
+    - assets/img/amina_logo.png
+    - assets/img/amina_logo_lime.png
+    - assets/img/amina_logo_indigo.png
+    - assets/img/amina_logo_lime_indigo.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -111,3 +116,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/img/amina_logo_lime_indigo.png"
+  adaptive_icon_background: "#ffffff" # o una imagen si prefieres

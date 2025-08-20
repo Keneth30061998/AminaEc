@@ -27,3 +27,6 @@ const String txt_selecciona_rol = 'Selecciona un rol';
 const String txt_email = 'Email';
 const String txt_password = 'Contrseña';
 const String txt_login = 'Login';
+
+//admin - reports
+const String txt_search = 'Buscar';

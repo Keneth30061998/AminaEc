@@ -15,14 +15,16 @@ class RegisterPageImage extends StatelessWidget {
     return Scaffold(
       backgroundColor: whiteLight,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Column(
-              children: [
-                _boxFormData(context),
-              ],
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 25,
+            vertical: 130,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _boxFormData(context),
+            ],
           ),
         ),
       ),
@@ -34,12 +36,12 @@ class RegisterPageImage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 20),
       decoration: BoxDecoration(
         color: color_background_box,
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 3),
+            blurRadius: 5,
+            offset: Offset(3, 3),
           ),
         ],
       ),

@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 import '../Profile/Info/admin_profile_info_page.dart';
+import '../Reports/admin_reports_page.dart';
 import '../Start/admin_start_page.dart';
 
 class AdminHomePage extends StatelessWidget {
@@ -19,7 +20,8 @@ class AdminHomePage extends StatelessWidget {
     AdminStartPage(),
     AdminPlanRegisterPage(),
     AdminCoachListPage(),
-    AdminProfileInfoPage()
+    AdminReportsPage(),
+    AdminProfileInfoPage(),
   ];
 
   // Constantes para el BottomNavigationBar
@@ -27,7 +29,7 @@ class AdminHomePage extends StatelessWidget {
   static const EdgeInsets _bottomNavPadding =
       EdgeInsets.symmetric(horizontal: 20, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
-      EdgeInsets.symmetric(horizontal: 15, vertical: 10);
+      EdgeInsets.symmetric(horizontal: 8, vertical: 10);
   static const double _gNavIconSize = 26.5;
   static const double _gNavGap = 10.0;
   static const int _gNavAnimationMillis = 460;
@@ -102,6 +104,10 @@ class AdminHomePage extends StatelessWidget {
           const GButton(
             icon: Icons.directions_bike_outlined,
             text: 'Coachs',
+          ),
+          const GButton(
+            icon: Icons.stacked_bar_chart_rounded,
+            text: 'Reportes',
           ),
           const GButton(
             icon: icon_profile,

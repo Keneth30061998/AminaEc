@@ -16,6 +16,7 @@ import 'package:amina_ec/src/pages/Splash/splash_page.dart';
 import 'package:amina_ec/src/pages/user/Coach/Reserve/user_coach_reserve_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_page.dart';
 import 'package:amina_ec/src/pages/user/Plan/Buy/Resume/user_plan_buy_resume_page.dart';
+import 'package:amina_ec/src/pages/user/Plan/Buy/WebView/user_plan_web_view_page.dart';
 import 'package:amina_ec/src/pages/user/Plan/Buy/user_plan_buy_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
@@ -109,6 +110,7 @@ class _MyAppState extends State<MyApp> {
         GetPage(
             name: '/user/profile/update', page: () => UserProfileUpdatePage()),
         GetPage(name: '/user/plan/buy', page: () => UserPlanBuyPage()),
+        GetPage(name: '/user/plan/buy/webview', page: () => WebviewPage()),
         GetPage(
             name: '/user/plan/buy/resume', page: () => UserPlanBuyResumePage()),
         GetPage(

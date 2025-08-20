@@ -19,9 +19,9 @@ class Coach {
 
   Coach({
     this.id,
-    this.hobby,
-    this.description,
-    this.presentation,
+    this.hobby = 'n/a',
+    this.description = 'n/a',
+    this.presentation = 'n/a',
     this.state = 1,
     this.user,
     this.schedules = const [],

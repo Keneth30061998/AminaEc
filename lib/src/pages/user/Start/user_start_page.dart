@@ -118,8 +118,8 @@ class UserStartPage extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(3, 4),
+            blurRadius: 5,
+            offset: Offset(2, 3),
           ),
         ],
       ),
@@ -134,7 +134,7 @@ class UserStartPage extends StatelessWidget {
           Text(count,
               style: GoogleFonts.montserrat(
                 color: darkGrey,
-                fontSize: 28,
+                fontSize: 26,
                 fontWeight: FontWeight.w700,
               )),
           Text(subtitle,
@@ -196,7 +196,7 @@ class UserStartPage extends StatelessWidget {
           ],
           border: BoxBorder.all(
             color: color_background_box,
-            width: 1,
+            width: 2,
           ),
         ),
         child: Column(

@@ -37,6 +37,10 @@ class AdminCoachRegisterController extends GetxController {
 
   final CoachProvider coachProvider = CoachProvider();
 
+  //Ver - ocultar cobntraseña
+  var obscurePassword = true.obs;
+  var obscureConfirmPassword = true.obs;
+
   @override
   void onInit() {
     // TODO: implement onInit
@@ -215,12 +219,7 @@ class AdminCoachRegisterController extends GetxController {
       Get.snackbar('Imagen requerida', 'Debes elegir una imagen');
       return false;
     }
-    if (hobbyController.text.isEmpty ||
-        descriptionController.text.isEmpty ||
-        presentationController.text.isEmpty) {
-      Get.snackbar('Campos incompletos', 'Completa la información del coach');
-      return false;
-    }
+
     if (selectedSchedules.isEmpty) {
       Get.snackbar('Sin disponibilidad', 'Agrega al menos un horario');
       return false;

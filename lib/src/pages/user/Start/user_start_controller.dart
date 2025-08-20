@@ -48,6 +48,13 @@ class UserStartController extends GetxController {
       print('📡 Evento rides:updated recibido');
       refreshTotalRides();
     });
+    SocketService().on('class:coach:reserved', (payload) {
+      if (payload['user_id'].toString() == user.id.toString()) {
+        print('📡 Detected class:coach:reserved for current user');
+        getScheduledClasses(); // 🔄 Actualiza listado en tiempo real
+      }
+    });
+
     SocketService().on('class:reserved', (_) => getScheduledClasses());
   }
 

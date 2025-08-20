@@ -69,7 +69,7 @@ class UserCoachReserveController extends GetxController {
     }
   }
 
-  // 🚀 Agendar clase
+  //  Agendar clase
   Future<void> reserveClass(BuildContext context) async {
     if (selectedEquipos.isEmpty) {
       Get.snackbar('Máquina no seleccionada', 'Debes elegir una bicicleta');
@@ -78,7 +78,7 @@ class UserCoachReserveController extends GetxController {
 
     int bicycle = selectedEquipos.first;
 
-    // 👉 Hacer la petición al backend
+    // Hacer la petición al backend
     ResponseApi response = await _provider.scheduleClass(
       coachId: coachId,
       bicycle: bicycle,
@@ -87,7 +87,7 @@ class UserCoachReserveController extends GetxController {
     );
 
     if (response.success! && response.data != null) {
-      // ✔ Éxito
+      // Éxito
       ClassReservation reservation = response.data as ClassReservation;
 
       Get.snackbar('Clase agendada', '¡Tu ride está confirmado!');
@@ -102,12 +102,12 @@ class UserCoachReserveController extends GetxController {
         'status': 'occupied'
       });
 
-      // 🧭 Navegar (puedes redirigir al historial o calendario)
+      // Navegar (puedes redirigir al historial o calendario)
       Future.delayed(const Duration(seconds: 2), () {
         Navigator.of(context).pop(); // ← Ajusta según tu flujo
       });
     } else {
-      // ❌ Error
+      // Error
       Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
     }
   }

@@ -3,12 +3,16 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 class UserPlanBuyResumePage extends StatelessWidget {
   UserPlanBuyResumeController con = Get.put(UserPlanBuyResumeController());
 
   @override
   Widget build(BuildContext context) {
+    if (_dropDownItem().isEmpty) {
+      Future.microtask(() => showTargetBottomSheet(context));
+    }
     return Scaffold(
       appBar: AppBar(
         title: _appBarTitle(),
@@ -18,7 +22,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _textSubtitlePage(),
-          _boxBuyData(),
+          _boxBuyData(context),
         ],
       ),
     );
@@ -45,7 +49,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
     );
   }
 
-  Widget _boxBuyData() {
+  Widget _boxBuyData(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       padding: EdgeInsets.all(20),
@@ -76,7 +80,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
             _Total(),
             SizedBox(height: 20),
             _textTitleMetodoPago(),
-            _dropDownTagert(),
+            _dropDownTagert(context),
           ],
         ),
       ),
@@ -213,7 +217,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
     );
   }
 
-  Widget _dropDownTagert() {
+  Widget _dropDownTagert(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: DropdownButton(
@@ -231,7 +235,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
           style: TextStyle(color: limeGreen, fontSize: 16),
         ),
         items: _dropDownItem(),
-        value: 1,
+        value: 3,
         onChanged: (option) {
           print('Opcion seleccionada:  $option');
         },
@@ -239,15 +243,66 @@ class UserPlanBuyResumePage extends StatelessWidget {
     );
   }
 
-  //Listar Categorias
+  //Listar tarjetas
   List<DropdownMenuItem<String?>> _dropDownItem() {
     List<DropdownMenuItem<String>> list = [];
-    /*for (var category in categories) {
+    /*for (var target in target) {
       list.add(DropdownMenuItem(
         value: category.id,
         child: Text(category.name ?? ''),
       ));
     }*/
     return list;
+  }
+
+  //Para mostrar la opcion de targetas en el modal
+  void showTargetBottomSheet(BuildContext context) {
+    showMaterialModalBottomSheet(
+      context: context,
+      expand: false,
+      backgroundColor: darkGrey,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 5,
+              width: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.only(bottom: 20),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Para realizar la compra selecciona una tarjeta',
+              style: GoogleFonts.montserrat(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 30),
+            GestureDetector(
+              onTap: () => con.goToWebView(),
+              child: Text(
+                '+ Añadir targeta',
+                style: GoogleFonts.roboto(
+                  fontSize: 15,
+                  color: limeGreen,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
   }
 }

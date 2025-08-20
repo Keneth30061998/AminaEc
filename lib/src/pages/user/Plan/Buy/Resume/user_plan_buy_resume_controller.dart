@@ -23,4 +23,8 @@ class UserPlanBuyResumeController extends GetxController {
   double calculate_total() {
     return calculate_subtotal() + calculate_iva();
   }
+
+  void goToWebView() {
+    Get.toNamed('/user/plan/buy/webview');
+  }
 }

@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
+import '../../../../utils/iconos.dart';
+
 class AdminPlanRegisterPage extends StatelessWidget {
   AdminPlanRegisterController con = Get.put(AdminPlanRegisterController());
 
@@ -36,7 +38,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
   Widget _buttonAddPlan(BuildContext context) {
     return FloatingActionButton.extended(
       label: Text('Añadir plan'),
-      icon: Icon(Icons.add_outlined),
+      icon: Icon(icon_add),
       backgroundColor: limeGreen,
       onPressed: () {
         showMaterialModalBottomSheet(
@@ -66,6 +68,9 @@ class AdminPlanRegisterPage extends StatelessWidget {
                 _textFieldRides(),
                 _textFieldPrice(),
                 _textFieldDurationDays(),
+                const SizedBox(
+                  height: 10,
+                ),
                 _buttonSave(context),
                 const SizedBox(
                     height: 30), // espacio extra para no estar justo al borde
@@ -83,9 +88,9 @@ class AdminPlanRegisterPage extends StatelessWidget {
       margin: EdgeInsets.only(top: 10, bottom: 10),
       child: Text(
         'Registro de planes',
-        style: GoogleFonts.roboto(
+        style: GoogleFonts.montserrat(
           color: almostBlack,
-          fontSize: 22,
+          fontSize: 26,
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -113,11 +118,11 @@ class AdminPlanRegisterPage extends StatelessWidget {
       },
       child: Obx(
         () => Card(
-          elevation: 3,
+          elevation: 2,
           child: Container(
               color: Colors.transparent,
               height: 100,
-              width: MediaQuery.of(context).size.width * 0.25,
+              width: MediaQuery.of(context).size.width * 0.3,
               padding: EdgeInsets.all(2),
               child: con.imageFile.value != null
                   ? Image.file(
@@ -140,7 +145,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Nombre",
           hintText: "Nombre",
-          prefixIcon: Icon(Icons.list),
+          prefixIcon: Icon(icon_plan),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -160,12 +165,12 @@ class AdminPlanRegisterPage extends StatelessWidget {
       child: TextField(
         controller: con.descriptionController,
         keyboardType: TextInputType.name,
-        maxLines: 3,
+        maxLines: 2,
         decoration: InputDecoration(
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Descripción",
           hintText: "Descripción",
-          prefixIcon: Icon(Icons.description),
+          prefixIcon: Icon(icon_description),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -189,7 +194,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Rides",
           hintText: "Rides",
-          prefixIcon: Icon(Icons.directions_bike_outlined),
+          prefixIcon: Icon(icon_rides),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -216,7 +221,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Precio",
           hintText: "Precio",
-          prefixIcon: Icon(Icons.attach_money_outlined),
+          prefixIcon: Icon(icon_money),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -240,7 +245,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Duración en días",
           hintText: "Duración en días",
-          prefixIcon: Icon(Icons.date_range),
+          prefixIcon: Icon(icon_schedule),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -265,12 +270,15 @@ class AdminPlanRegisterPage extends StatelessWidget {
           'Guardar',
           style: TextStyle(
             fontSize: 16,
-            color: almostBlack,
+            color: whiteLight,
             fontWeight: FontWeight.w700,
           ),
         ),
-        icon: Icon(Icons.save),
-        backgroundColor: limeGreen,
+        icon: Icon(
+          icon_save,
+          color: whiteLight,
+        ),
+        backgroundColor: almostBlack,
       ),
     );
   }

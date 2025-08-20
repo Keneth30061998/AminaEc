@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../models/plan.dart';
+import '../../../../utils/iconos.dart';
 import '../../../../widgets/no_data_widget.dart';
 
 class AdminPlanListPage extends StatelessWidget {
@@ -16,7 +17,7 @@ class AdminPlanListPage extends StatelessWidget {
         return Center(child: NoDataWidget(text: 'No hay planes disponibles'));
       } else {
         return ListView.builder(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
           itemCount: con.plans.length,
           itemBuilder: (context, index) {
             final plan = con.plans[index];
@@ -30,7 +31,7 @@ class AdminPlanListPage extends StatelessWidget {
   Widget _cardPlan(BuildContext context, Plan plan) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10),
-      elevation: 6,
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         decoration: BoxDecoration(
@@ -93,7 +94,8 @@ class AdminPlanListPage extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
+              color: whiteLight,
+              icon: Icon(icon_more),
               onSelected: (value) {
                 if (value == 'edit') {
                   Get.toNamed('/admin/plans/update', arguments: {'plan': plan});
@@ -106,7 +108,7 @@ class AdminPlanListPage extends StatelessWidget {
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit, color: Colors.blue),
+                      Icon(icon_edit, color: indigoAmina),
                       SizedBox(width: 8),
                       Text('Editar'),
                     ],
@@ -116,7 +118,7 @@ class AdminPlanListPage extends StatelessWidget {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete, color: Colors.red),
+                      Icon(icon_eraser, color: darkGrey),
                       SizedBox(width: 8),
                       Text('Eliminar'),
                     ],

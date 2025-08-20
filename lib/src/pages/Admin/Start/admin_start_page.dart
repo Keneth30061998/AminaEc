@@ -14,8 +14,21 @@ class AdminStartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (con.coaches.isEmpty) {
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+        return Scaffold(
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              NoDataWidget(text: 'No hay Horarios disponibles'),
+              SizedBox(height: 10),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 125),
+                child: LinearProgressIndicator(
+                  color: almostBlack,
+                  backgroundColor: color_background_box,
+                ),
+              ),
+            ],
+          ),
         );
       }
 
@@ -64,30 +77,39 @@ class AdminStartPage extends StatelessWidget {
                                 final s = students[index];
                                 final timeFormatted =
                                     s.classTime.substring(0, 5);
+                                final key = con.getStudentKey(s);
 
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border:
-                                        Border.all(color: Colors.grey.shade300),
-                                  ),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundImage:
-                                          NetworkImage(s.photo_url ?? ''),
-                                      radius: 22,
+                                return Obx(() {
+                                  final isPresent =
+                                      con.attendanceMap[key]?.value ?? false;
+
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
                                     ),
-                                    title: Text(s.studentName),
-                                    subtitle: Text(
-                                        'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
-                                    trailing: Checkbox(
-                                      value: false,
-                                      onChanged: (_) {},
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundImage:
+                                            NetworkImage(s.photo_url ?? ''),
+                                        radius: 22,
+                                      ),
+                                      title: Text(s.studentName),
+                                      subtitle: Text(
+                                          'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
+                                      trailing: Checkbox(
+                                        value: isPresent,
+                                        onChanged: (value) {
+                                          con.attendanceMap[key]?.value =
+                                              value!;
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                });
                               },
                             ),
                     ),
@@ -96,6 +118,7 @@ class AdminStartPage extends StatelessWidget {
               }).toList(),
             ),
           ),
+          floatingActionButton: _buttonRegister(),
         ),
       );
     });
@@ -104,7 +127,10 @@ class AdminStartPage extends StatelessWidget {
   Widget _appBarTitle() {
     return Text(
       'Administrador',
-      style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w900),
+      style: GoogleFonts.montserrat(
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
+      ),
     );
   }
 
@@ -161,5 +187,16 @@ class AdminStartPage extends StatelessWidget {
         ),
       );
     });
+  }
+
+  Widget _buttonRegister() {
+    return FloatingActionButton.extended(
+      label: Text('Registrar'),
+      backgroundColor: almostBlack,
+      foregroundColor: whiteLight,
+      onPressed: () {
+        con.registerAllAttendances();
+      },
+    );
   }
 }

@@ -1,6 +1,10 @@
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../utils/color.dart';
 import 'admin_plan_update_controller.dart';
 
 class AdminPlanUpdatePage extends StatelessWidget {
@@ -9,10 +13,12 @@ class AdminPlanUpdatePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar Plan')),
+      appBar: AppBar(
+        title: _appBarTitle(),
+      ),
       body: GetBuilder<AdminPlanUpdateController>(
         builder: (_) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 30),
           child: Column(
             children: [
               GestureDetector(
@@ -28,33 +34,174 @@ class AdminPlanUpdatePage extends StatelessWidget {
                           ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                  controller: con.nameController,
-                  decoration: const InputDecoration(labelText: 'Nombre')),
-              TextField(
-                  controller: con.descriptionController,
-                  decoration: const InputDecoration(labelText: 'Descripción')),
-              TextField(
-                  controller: con.priceController,
-                  decoration: const InputDecoration(labelText: 'Precio'),
-                  keyboardType: TextInputType.number),
-              TextField(
-                  controller: con.ridesController,
-                  decoration: const InputDecoration(labelText: 'Viajes'),
-                  keyboardType: TextInputType.number),
-              TextField(
-                  controller: con.durationController,
-                  decoration:
-                      const InputDecoration(labelText: 'Duración (días)'),
-                  keyboardType: TextInputType.number),
+              _textFieldName(),
+              _textFieldDescription(),
+              _textFieldPrice(),
+              _textFieldRides(),
+              _textFieldDurationDays(),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: con.updatePlan,
-                child: const Text('Actualizar Plan'),
-              ),
+              _buttonUpdate(context),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _appBarTitle() {
+    return Text(
+      'Editar plan',
+      style: GoogleFonts.montserrat(
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+
+  Widget _textFieldName() {
+    return Container(
+      margin: EdgeInsets.only(top: 10, bottom: 5),
+      child: TextField(
+        controller: con.nameController,
+        keyboardType: TextInputType.name,
+        decoration: InputDecoration(
+          floatingLabelStyle: TextStyle(color: darkGrey),
+          labelText: "Nombre",
+          hintText: "Nombre",
+          prefixIcon: Icon(icon_plan),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textFieldDescription() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      child: TextField(
+        controller: con.descriptionController,
+        keyboardType: TextInputType.name,
+        maxLines: 2,
+        decoration: InputDecoration(
+          floatingLabelStyle: TextStyle(color: darkGrey),
+          labelText: "Descripción",
+          hintText: "Descripción",
+          prefixIcon: Icon(icon_description),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textFieldPrice() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      child: TextField(
+        controller: con.priceController,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*\,?\d{0,2}')),
+        ],
+        decoration: InputDecoration(
+          floatingLabelStyle: TextStyle(color: darkGrey),
+          labelText: "Precio",
+          hintText: "Precio",
+          prefixIcon: Icon(icon_money),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textFieldRides() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      child: TextField(
+        controller: con.ridesController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          floatingLabelStyle: TextStyle(color: darkGrey),
+          labelText: "Rides",
+          hintText: "Rides",
+          prefixIcon: Icon(icon_rides),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textFieldDurationDays() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      child: TextField(
+        controller: con.durationController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          floatingLabelStyle: TextStyle(color: darkGrey),
+          labelText: "Duración en días",
+          hintText: "Duración en días",
+          prefixIcon: Icon(icon_schedule),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(5),
+            borderSide: BorderSide(color: darkGrey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buttonUpdate(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      width: double.infinity,
+      height: 50,
+      child: FloatingActionButton.extended(
+        onPressed: () => con.updatePlan(),
+        label: Text(
+          'Actualizar',
+          style: TextStyle(
+            fontSize: 16,
+            color: whiteLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        icon: Icon(
+          icon_save,
+          color: whiteLight,
+        ),
+        backgroundColor: almostBlack,
       ),
     );
   }
