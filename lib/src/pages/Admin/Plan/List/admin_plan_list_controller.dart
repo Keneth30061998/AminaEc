@@ -18,17 +18,17 @@ class AdminPlanListController extends GetxController {
 
     // 🔄 Escuchar cambios en tiempo real
     SocketService().on('plan:new', (data) {
-      print('📡 Evento recibido: $data');
+      //print('📡 Evento recibido: $data');
       getPlans(); // Recarga la lista
     });
 
     SocketService().on('plan:delete', (data) {
-      print('🗑️ Evento plan:delete recibido');
+      //print('🗑️ Evento plan:delete recibido');
       getPlans();
     });
 
     SocketService().on('plan:update', (data) {
-      print('🗑️ Evento plan:update recibido');
+      //print('🗑️ Evento plan:update recibido');
       getPlans();
     });
   }
@@ -38,6 +38,7 @@ class AdminPlanListController extends GetxController {
     plans.value = result;
   }
 
+  @override
   void refresh() {
     getPlans();
   }

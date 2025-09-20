@@ -82,7 +82,7 @@ class ClassReservationProvider {
     }
   }
 
-  //Para listar los estudiantes de los coachs
+  // Para listar los estudiantes de los coachs
   Future<List<StudentInscription>> getStudentsByCoach(String coachId) async {
     final url = '${Environment.API_URL}api/class-reservations/coach/$coachId';
     final headers = {

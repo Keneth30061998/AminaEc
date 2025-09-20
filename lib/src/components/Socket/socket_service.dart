@@ -37,8 +37,8 @@ class SocketService {
   }
 
   void connect() {
-    print('🔌 Intentando conectar al socket...');
-    print('🔑 Token usado: ${userSession.session_token}');
+    //print('🔌 Intentando conectar al socket...');
+    //print('🔑 Token usado: ${userSession.session_token}');
 
     socket = IO.io(
       Environment.API_URL_SOCKET,
@@ -52,20 +52,20 @@ class SocketService {
     socket.connect();
 
     socket.onConnect((_) {
-      print('🟢 Socket conectado');
+      //print('🟢 Socket conectado');
       socket.emit('join', userSession.id); // 🔑 Unirse a sala privada
     });
 
     socket.onDisconnect((_) {
-      print('🔴 Socket desconectado');
+      //print('🔴 Socket desconectado');
     });
 
     socket.onConnectError((err) {
-      print('⚠️ Error de conexión al socket: $err');
+      //print('⚠️ Error de conexión al socket: $err');
     });
 
     socket.onError((err) {
-      print('❌ Socket error: $err');
+      //print('❌ Socket error: $err');
     });
   }
 

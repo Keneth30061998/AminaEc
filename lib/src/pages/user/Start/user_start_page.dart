@@ -12,6 +12,8 @@ class UserStartPage extends StatelessWidget {
   final UserStartController con =
       Get.put(UserStartController(), permanent: true);
 
+  UserStartPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -195,7 +197,7 @@ class UserStartPage extends StatelessWidget {
             ),
           ],
           border: BoxBorder.all(
-            color: color_background_box,
+            color: colorBackgroundBox,
             width: 2,
           ),
         ),

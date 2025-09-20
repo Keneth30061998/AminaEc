@@ -10,6 +10,8 @@ import 'admin_plan_update_controller.dart';
 class AdminPlanUpdatePage extends StatelessWidget {
   final AdminPlanUpdateController con = Get.put(AdminPlanUpdateController());
 
+  AdminPlanUpdatePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,7 +70,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Nombre",
           hintText: "Nombre",
-          prefixIcon: Icon(icon_plan),
+          prefixIcon: Icon(iconPlan),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -93,7 +95,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Descripción",
           hintText: "Descripción",
-          prefixIcon: Icon(icon_description),
+          prefixIcon: Icon(iconDescription),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -120,7 +122,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Precio",
           hintText: "Precio",
-          prefixIcon: Icon(icon_money),
+          prefixIcon: Icon(iconMoney),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -144,7 +146,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Rides",
           hintText: "Rides",
-          prefixIcon: Icon(icon_rides),
+          prefixIcon: Icon(iconRides),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -168,7 +170,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Duración en días",
           hintText: "Duración en días",
-          prefixIcon: Icon(icon_schedule),
+          prefixIcon: Icon(iconSchedule),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -198,7 +200,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
           ),
         ),
         icon: Icon(
-          icon_save,
+          iconSave,
           color: whiteLight,
         ),
         backgroundColor: almostBlack,

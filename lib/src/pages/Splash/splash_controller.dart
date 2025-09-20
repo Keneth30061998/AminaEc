@@ -13,7 +13,7 @@ class SplashController extends GetxController
     super.onInit();
 
     logoController = AnimationController(
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
@@ -37,7 +37,7 @@ class SplashController extends GetxController
 
     logoController.forward();
 
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 6), () {
       Get.offAllNamed('/login'); // Asegúrate de registrar esta ruta
     });
   }

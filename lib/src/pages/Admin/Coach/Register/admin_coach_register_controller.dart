@@ -93,36 +93,32 @@ class AdminCoachRegisterController extends GetxController {
     }
   }
 
-  Future<void> selectDateAndPromptTime(
-      BuildContext context, DateTime? date) async {
+  Future<void> selectDateAndPromptTime(DateTime? date) async {
     if (date == null) return;
 
     final formattedDate = DateFormat('dd MMM y', 'es_ES').format(date);
 
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
+    await Get.dialog(
+      AlertDialog(
         title: Text('Seleccionar disponibilidad'),
         content: Text(
           'Escoge el rango horario para el día $formattedDate',
-          style: TextStyle(
-            color: Colors.black,
-          ),
+          style: const TextStyle(color: Colors.black),
         ),
         actions: [
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Get.back(); // cierra el AlertDialog
 
               TimeOfDay? start = await showTimePicker(
-                context: context,
+                context: Get.context!,
                 helpText: 'Hora de inicio',
-                initialTime: TimeOfDay(hour: 8, minute: 0),
+                initialTime: const TimeOfDay(hour: 8, minute: 0),
               );
               if (start == null) return;
 
               TimeOfDay? end = await showTimePicker(
-                context: context,
+                context: Get.context!,
                 helpText: 'Hora de fin',
                 initialTime:
                     TimeOfDay(hour: start.hour + 1, minute: start.minute),
@@ -131,11 +127,11 @@ class AdminCoachRegisterController extends GetxController {
 
               await _validarYAgregarHorario(date, start, end);
             },
-            child: Text('Escoger horas'),
+            child: const Text('Escoger horas'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
           ),
         ],
       ),
@@ -227,10 +223,10 @@ class AdminCoachRegisterController extends GetxController {
     return true;
   }
 
-  Future<void> registerCoach(BuildContext context) async {
+  Future<void> registerCoach() async {
     if (!isValidForm()) return;
 
-    final progressDialog = ProgressDialog(context: context);
+    final progressDialog = ProgressDialog(context: Get.context!);
     progressDialog.show(max: 100, msg: 'Registrando Coach...');
 
     final user = User(
@@ -264,7 +260,7 @@ class AdminCoachRegisterController extends GetxController {
         if (SocketService().socket.connected) {
           SocketService().emit('coach:new', coach.toJson());
         }
-        Get.offAllNamed('/admin/home');
+        Get.offAllNamed('/admin/home'); // navegación segura sin context
       } else {
         Get.snackbar('Error', 'No se pudo registrar el coach');
       }

@@ -37,10 +37,10 @@ class Plan {
   //Se requiere para listar el plan que llega como json
   static List<Plan> fromJsonList(List<dynamic> jsonList) {
     List<Plan> toList = [];
-    jsonList.forEach((item) {
+    for (var item in jsonList) {
       Plan plan = Plan.fromJson(item);
       toList.add(plan);
-    });
+    }
     return toList;
   }
 

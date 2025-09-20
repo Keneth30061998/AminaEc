@@ -9,7 +9,10 @@ import '../../../../utils/color.dart';
 import 'admin_coach_register_controller.dart';
 
 class AdminCoachRegisterSchedulePage extends StatelessWidget {
-  final con = Get.put(AdminCoachRegisterController());
+  final AdminCoachRegisterController con =
+      Get.put(AdminCoachRegisterController());
+
+  AdminCoachRegisterSchedulePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,21 +30,22 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
           Obx(() => SfCalendar(
                 view: CalendarView.month,
                 minDate: DateTime.now(),
-                onTap: (details) =>
-                    con.selectDateAndPromptTime(context, details.date),
+                onTap: (details) => con
+                    .selectDateAndPromptTime(details.date), // ✔ Solo DateTime
                 initialSelectedDate: DateTime.now(),
                 showNavigationArrow: true,
                 todayHighlightColor: indigoAmina,
                 dataSource: con.calendarDataSource.value,
                 selectionDecoration: BoxDecoration(
-                  color: darkGrey.withOpacity(0.1),
+                  color: darkGrey
+                      .withAlpha(25), // ✔ Reemplaza deprecated withOpacity
                   border: Border.all(color: darkGrey, width: 2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 headerStyle: CalendarHeaderStyle(
                   textAlign: TextAlign.center,
                   backgroundColor: indigoAmina,
-                  textStyle: TextStyle(color: whiteLight),
+                  textStyle: const TextStyle(color: Colors.white),
                 ),
                 appointmentBuilder:
                     (context, CalendarAppointmentDetails details) {
@@ -57,7 +61,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
                     child: Center(
                       child: Text(
                         appointment.subject,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
@@ -73,8 +77,8 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
                   dayFormat: 'EEE',
                   numberOfWeeksInView: 6,
                   monthCellStyle: MonthCellStyle(
-                    textStyle:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    textStyle: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
                     trailingDatesTextStyle:
                         TextStyle(color: Colors.grey.shade300),
                   ),
@@ -94,11 +98,12 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
               }
 
               if (grouped.isEmpty) {
-                return Center(child: Text('No hay horarios seleccionados'));
+                return const Center(
+                    child: Text('No hay horarios seleccionados'));
               }
 
               return ListView(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 children: grouped.entries.map((entry) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +122,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
                       ...entry.value.map((item) {
                         return Card(
                           elevation: 2,
-                          color: color_background_box,
+                          color: colorBackgroundBox,
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           child: ListTile(
                             title: Text(
@@ -128,7 +133,8 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
                               '${formatTime(item.start_time!)} - ${formatTime(item.end_time!)}',
                             ),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete, color: Colors.redAccent),
+                              icon: const Icon(Icons.delete,
+                                  color: Colors.redAccent),
                               onPressed: () => con.removeSchedule(
                                   con.selectedSchedules.indexOf(item)),
                             ),
@@ -143,7 +149,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _buttonSave(context),
+      bottomNavigationBar: _buttonSave(), // ✔ No context necesario
     );
   }
 
@@ -157,15 +163,15 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
     );
   }
 
-  Widget _buttonSave(BuildContext context) {
+  Widget _buttonSave() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20, top: 5, left: 20, right: 20),
       child: FloatingActionButton.extended(
         backgroundColor: almostBlack,
-        onPressed: () => con.registerCoach(context),
-        label: Text('Guardar y Registrar',
-            style: TextStyle(fontSize: 16, color: whiteLight)),
-        icon: Icon(Icons.save, color: whiteLight),
+        onPressed: () => con.registerCoach(), // ✔ Sin context
+        label: const Text('Guardar y Registrar',
+            style: TextStyle(fontSize: 16, color: Colors.white)),
+        icon: const Icon(Icons.save, color: Colors.white),
       ),
     );
   }

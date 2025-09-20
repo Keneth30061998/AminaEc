@@ -12,15 +12,17 @@ import 'package:path/path.dart';
 
 class CoachProvider extends GetConnect {
   User userSession = User.fromJson(GetStorage().read('user') ?? {});
-  String url = Environment.API_URL + 'api/coachs';
+  String url = '${Environment.API_URL}api/coachs';
 
+  // Registrar coach con imagen y horarios
   Future<Stream> registerCoach({
     required User user,
     required Coach coach,
     required List<Schedule> schedule,
     required File image,
   }) async {
-    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/coachs/createWithImage');
+    Uri uri =
+        Uri.parse('${Environment.API_URL_OLD}/api/coachs/createWithImage');
     final request = http.MultipartRequest('POST', uri);
 
     request.headers['Authorization'] = userSession.session_token ?? '';
@@ -41,28 +43,22 @@ class CoachProvider extends GetConnect {
     return response.stream.transform(utf8.decoder);
   }
 
+  // Obtener todos los coaches
   Future<List<Coach>> getAll() async {
-    print('Token que se envía al backend: ${userSession.session_token}');
     final response = await get('$url/getAll', headers: {
       'Content-Type': 'application/json',
       'Authorization': userSession.session_token ?? ''
     });
 
-    print('STATUS: ${response.statusCode}');
-    print('BODY: ${response.body}');
+    if (response.statusCode == 401) return [];
 
-    if (response.statusCode == 401) {
-      return [];
-    }
-
-    // El endpoint envuelve la lista real en la clave "data"
     final Map<String, dynamic> body = response.body;
     final List<dynamic> list = body['data'] ?? [];
 
     return Coach.fromJsonList(list);
   }
 
-  // Eliminar Coach
+  // Eliminar coach
   Future<http.Response> deleteCoach(String id) async {
     final res = await http.delete(
       Uri.parse('$url/delete/$id'),
@@ -71,11 +67,12 @@ class CoachProvider extends GetConnect {
         'Authorization': userSession.session_token ?? ''
       },
     );
-    print('COACH DELETE: ${res.statusCode}');
+
+    //print('COACH DELETE: ${res.statusCode}');
     return res;
   }
 
-  // Actualizar coach SIN imagen
+  // Actualizar coach sin imagen
   Future<http.Response> updateWithoutImage({
     required User user,
     required Coach coach,
@@ -99,14 +96,15 @@ class CoachProvider extends GetConnect {
     return response;
   }
 
-// Actualizar coach CON imagen
+  // Actualizar coach con imagen
   Future<Stream> updateWithImage({
     required User user,
     required Coach coach,
     required List<Schedule> schedules,
     required File image,
   }) async {
-    Uri uri = Uri.http(Environment.API_URL_OLD, '/api/coachs/updateWithImage');
+    Uri uri =
+        Uri.parse('${Environment.API_URL_OLD}/api/coachs/updateWithImage');
     final request = http.MultipartRequest('PUT', uri);
 
     request.headers['Authorization'] = userSession.session_token ?? '';
@@ -127,7 +125,7 @@ class CoachProvider extends GetConnect {
     return response.stream.transform(utf8.decoder);
   }
 
-  //Actualizar horarios
+  // Actualizar horarios
   Future<http.Response> updateSchedule(
       String coachId, List<Schedule> schedules) async {
     final body = {

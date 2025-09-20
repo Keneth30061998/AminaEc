@@ -12,7 +12,7 @@ class HomeController extends GetxController {
 
   //Constructor
   HomeController() {
-    print('Usuario de session: ${user.toJson()}');
+    //print('Usuario de session: ${user.toJson()}');
   }
 
   void signOut() {

@@ -2,19 +2,23 @@ import 'package:amina_ec/src/pages/user/Profile/Update/user_update_profile_contr
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class UserProfileUpdatePage extends StatelessWidget {
-  UserProfileUpdateController con = Get.put(UserProfileUpdateController());
+  final UserProfileUpdateController con =
+      Get.put(UserProfileUpdateController());
+
+  UserProfileUpdatePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: almostBlack,
-        foregroundColor: limeGreen,
+        backgroundColor: whiteLight,
+        foregroundColor: almostBlack,
         title: _textTitle(context),
       ),
-      backgroundColor: almostBlack,
+      backgroundColor: whiteLight,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -30,10 +34,10 @@ class UserProfileUpdatePage extends StatelessWidget {
   Widget _textTitle(BuildContext context) {
     return Text(
       'Actualizar perfil',
-      style: TextStyle(
-        color: limeGreen,
-        fontWeight: FontWeight.w600,
-        fontSize: 26,
+      style: GoogleFonts.montserrat(
+        color: almostBlack,
+        fontWeight: FontWeight.w900,
+        fontSize: 22,
       ),
     );
   }
@@ -44,7 +48,7 @@ class UserProfileUpdatePage extends StatelessWidget {
       margin: EdgeInsets.only(top: 10, right: 20, left: 20),
       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorBackgroundBox,
         borderRadius: BorderRadius.all(
           Radius.circular(35),
         ),
@@ -66,7 +70,7 @@ class UserProfileUpdatePage extends StatelessWidget {
 
   Widget _textFieldName() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
       child: TextField(
         controller: con.nameController,
         keyboardType: TextInputType.name,
@@ -90,7 +94,7 @@ class UserProfileUpdatePage extends StatelessWidget {
 
   Widget _textFieldLastName() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
       child: TextField(
         controller: con.lastnameController,
         keyboardType: TextInputType.name,
@@ -114,7 +118,7 @@ class UserProfileUpdatePage extends StatelessWidget {
 
   Widget _textFieldCI() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
       child: TextField(
         controller: con.ciController,
         keyboardType: TextInputType.number,
@@ -138,7 +142,7 @@ class UserProfileUpdatePage extends StatelessWidget {
 
   Widget _textFieldPhone() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
       child: TextField(
         controller: con.phoneController,
         keyboardType: TextInputType.phone,
@@ -162,7 +166,7 @@ class UserProfileUpdatePage extends StatelessWidget {
 
   Widget _buttonUpdate(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
       width: MediaQuery.of(context).size.width * 0.77,
       height: 50,
       child: FloatingActionButton.extended(
@@ -221,13 +225,16 @@ class UserProfileUpdatePage extends StatelessWidget {
     return IconButton.filled(
       onPressed: () => con.showAlertDialog(context),
       icon: const Icon(Icons.edit),
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.all(almostBlack),
+      ),
     );
   }
 
   Widget _textIndications(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width * 1,
-      margin: EdgeInsets.only(top: 10, left: 40),
+      margin: EdgeInsets.only(top: 10, left: 30),
       child: Text(
         'Actualiza tus datos',
         style: TextStyle(

@@ -10,7 +10,10 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import '../../../../utils/iconos.dart';
 
 class AdminPlanRegisterPage extends StatelessWidget {
-  AdminPlanRegisterController con = Get.put(AdminPlanRegisterController());
+  final AdminPlanRegisterController con =
+      Get.put(AdminPlanRegisterController());
+
+  AdminPlanRegisterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +40,15 @@ class AdminPlanRegisterPage extends StatelessWidget {
 
   Widget _buttonAddPlan(BuildContext context) {
     return FloatingActionButton.extended(
-      label: Text('Añadir plan'),
-      icon: Icon(icon_add),
-      backgroundColor: limeGreen,
+      label: Text(
+        'Añadir plan',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      icon: Icon(iconAdd),
+      backgroundColor: almostBlack,
+      foregroundColor: whiteLight,
       onPressed: () {
         showMaterialModalBottomSheet(
             context: context, builder: (context) => _formAddPlan(context));
@@ -145,7 +154,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Nombre",
           hintText: "Nombre",
-          prefixIcon: Icon(icon_plan),
+          prefixIcon: Icon(iconPlan),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -170,7 +179,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Descripción",
           hintText: "Descripción",
-          prefixIcon: Icon(icon_description),
+          prefixIcon: Icon(iconDescription),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -194,7 +203,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Rides",
           hintText: "Rides",
-          prefixIcon: Icon(icon_rides),
+          prefixIcon: Icon(iconRides),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -208,6 +217,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
     );
   }
 
+  // TextField para el precio
   Widget _textFieldPrice() {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 5),
@@ -215,13 +225,14 @@ class AdminPlanRegisterPage extends StatelessWidget {
         controller: con.priceController,
         keyboardType: TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d*\,?\d{0,2}')),
+          // Permite números con coma o punto y hasta 2 decimales
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}')),
         ],
         decoration: InputDecoration(
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Precio",
           hintText: "Precio",
-          prefixIcon: Icon(icon_money),
+          prefixIcon: Icon(iconMoney),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -245,7 +256,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Duración en días",
           hintText: "Duración en días",
-          prefixIcon: Icon(icon_schedule),
+          prefixIcon: Icon(iconSchedule),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(color: darkGrey),
@@ -275,7 +286,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
           ),
         ),
         icon: Icon(
-          icon_save,
+          iconSave,
           color: whiteLight,
         ),
         backgroundColor: almostBlack,

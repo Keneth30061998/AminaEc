@@ -10,6 +10,8 @@ import '../../../../widgets/no_data_widget.dart';
 class UserPlanListPage extends StatelessWidget {
   final UserPlanListController con = Get.put(UserPlanListController());
 
+  UserPlanListPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -42,7 +44,7 @@ class UserPlanListPage extends StatelessWidget {
                     builder: (context, constraints) {
                       final isLandscape = MediaQuery.of(context).orientation ==
                           Orientation.landscape;
-                      final screenWidth = constraints.maxWidth;
+                      //final screenWidth = constraints.maxWidth;
 
                       final crossAxisExtent = isLandscape ? 320.0 : 270.0;
                       final childAspectRatio = isLandscape ? 0.95 : 0.65;
@@ -100,7 +102,7 @@ class UserPlanListPage extends StatelessWidget {
             ),
           ],
           border: Border.all(
-            color: color_background_box,
+            color: colorBackgroundBox,
             width: 2,
           ),
         ),
@@ -111,7 +113,7 @@ class UserPlanListPage extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(
-                    12), // 🔹 Aplica a la imagen directamente
+                    15), // 🔹 Aplica a la imagen directamente
                 child: plan.image != null
                     ? Image.network(
                         plan.image!,
@@ -128,7 +130,7 @@ class UserPlanListPage extends StatelessWidget {
             ),
             Flexible(
               child: Padding(
-                padding: const EdgeInsets.only(right: 15, left: 15, top: 10),
+                padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
                 child: SizedBox(
                   height: 130,
                   child: SingleChildScrollView(
@@ -152,7 +154,7 @@ class UserPlanListPage extends StatelessWidget {
                           style: GoogleFonts.montserrat(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Colors.purple,
+                            color: Colors.grey,
                           ),
                         ),
                         const SizedBox(height: 2),

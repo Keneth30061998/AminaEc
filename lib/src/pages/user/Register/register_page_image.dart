@@ -10,6 +10,8 @@ import 'Terms_Conditions/terms_dialog.dart';
 class RegisterPageImage extends StatelessWidget {
   final RegisterController con = Get.put(RegisterController());
 
+  RegisterPageImage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +37,7 @@ class RegisterPageImage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 20),
       decoration: BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(

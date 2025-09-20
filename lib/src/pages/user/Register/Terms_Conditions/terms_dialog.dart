@@ -37,7 +37,7 @@ void showTermsAndConditionsDialog({
               Navigator.of(context).pop(); // Cierra el modal
               onAccepted(); // Ejecuta la función si acepta
             },
-            icon: Icon(icon_signature),
+            icon: Icon(iconSignature),
             label: Text(
               'Aceptar',
               style: TextStyle(fontWeight: FontWeight.w900),

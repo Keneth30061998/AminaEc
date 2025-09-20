@@ -14,17 +14,17 @@ class AdminCoachListController extends GetxController {
     getCoaches();
 
     SocketService().on('coach:new', (data) {
-      print('📡 Evento coach:new recibido');
+      //print('📡 Evento coach:new recibido');
       getCoaches();
     });
 
     SocketService().on('coach:delete', (data) {
-      print('🗑️ Evento coach:delete recibido');
+      //print('🗑️ Evento coach:delete recibido');
       getCoaches();
     });
 
     SocketService().on('coach:update', (data) {
-      print('📡 Evento coach:update recibido');
+      //print('📡 Evento coach:update recibido');
       getCoaches();
     });
   }
@@ -34,6 +34,7 @@ class AdminCoachListController extends GetxController {
     coaches.value = result;
   }
 
+  @override
   void refresh() {
     getCoaches();
   }

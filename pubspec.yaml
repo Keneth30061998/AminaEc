@@ -46,18 +46,20 @@ dependencies:
   socket_io_client: ^3.1.2
   flutter_credit_card: ^4.1.0
   intl: ^0.20.2
-  syncfusion_flutter_calendar: ^29.1.38
+  syncfusion_flutter_calendar: ^31.1.20
   cached_network_image: ^3.4.1
   remixicon: ^1.4.1
   flutter_animate: ^4.5.2
   signature: ^6.3.0
   pdf: ^3.11.3
   printing: ^5.14.2
-  firebase_core: ^3.15.1
-  firebase_storage: ^12.4.9
+  firebase_core: ^4.1.0
+  firebase_storage: ^13.0.1
   path_provider: ^2.1.5
   flutter_launcher_icons: ^0.14.4
   webview_flutter: ^4.13.0
+  firebase_messaging: ^16.0.1
+  flutter_local_notifications: ^19.4.2
 
 
 dev_dependencies:
@@ -69,7 +71,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -93,6 +95,7 @@ flutter:
     - assets/img/amina_logo_lime.png
     - assets/img/amina_logo_indigo.png
     - assets/img/amina_logo_lime_indigo.png
+    - assets/img/splashImage.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

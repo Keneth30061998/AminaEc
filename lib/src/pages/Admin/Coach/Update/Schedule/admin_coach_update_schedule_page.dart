@@ -10,6 +10,8 @@ import 'admin_coach_update_schedule_controller.dart';
 class AdminCoachUpdateSchedulePage extends StatelessWidget {
   final con = Get.put(AdminCoachUpdateScheduleController());
 
+  AdminCoachUpdateSchedulePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,8 +27,7 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
                 view: CalendarView.month,
                 allowedViews: [CalendarView.month, CalendarView.timelineDay],
                 dataSource: con.calendarDataSource.value,
-                onTap: (details) =>
-                    con.selectDateAndPromptTime(context, details.date),
+                onTap: (details) => con.selectDateAndPromptTime(details.date),
                 monthViewSettings: MonthViewSettings(
                   showAgenda: false,
                   appointmentDisplayMode: MonthAppointmentDisplayMode.indicator,
@@ -38,7 +39,7 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
                     backgroundColor: indigoAmina,
                     textStyle: TextStyle(color: whiteLight)),
                 selectionDecoration: BoxDecoration(
-                  color: darkGrey.withOpacity(0.1),
+                  color: darkGrey.withAlpha((0.2 * 255).round()),
                   border: Border.all(color: darkGrey, width: 2),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -79,7 +80,7 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
                       ...entry.value.map((item) {
                         return Card(
                           elevation: 3,
-                          color: color_background_box,
+                          color: colorBackgroundBox,
                           margin: const EdgeInsets.symmetric(vertical: 5),
                           child: ListTile(
                             title: Text(

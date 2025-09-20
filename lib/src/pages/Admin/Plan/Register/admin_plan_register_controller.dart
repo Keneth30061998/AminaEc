@@ -20,56 +20,56 @@ class AdminPlanRegisterController extends GetxController {
 
   PlanProvider plansProvider = PlanProvider();
 
-  //Variables para subir una imagen
+  // Variables para subir una imagen
   Rx<File?> imageFile = Rx<File?>(null);
-  File? imageFile2;
   ImagePicker picker = ImagePicker();
 
-  //Metodos para registar un plan
+  // Método para registrar un plan
   void registerPlan(BuildContext context) async {
-    String name = nameController.text;
-    String description = descriptionController.text;
-    String rides = ridesController.text;
-    String price = priceController.text;
-    String durationDays = durationDaysController.text;
+    String name = nameController.text.trim();
+    String description = descriptionController.text.trim();
+    String rides = ridesController.text.trim();
+    String price = priceController.text.trim();
+    String durationDays = durationDaysController.text.trim();
 
     if (isValidForm(name, description, rides, price, durationDays)) {
       ProgressDialog progressDialog = ProgressDialog(context: context);
-      progressDialog.show(max: 100, msg: 'Registrando Usuario...');
+      progressDialog.show(max: 100, msg: 'Registrando Plan...');
+
+      // Convertir valores numéricos de forma segura
+      int ridesInt = int.tryParse(rides) ?? 0;
+      int durationInt = int.tryParse(durationDays) ?? 0;
+      double priceDouble = double.tryParse(price.replaceAll(',', '.')) ?? 0.0;
+
       Plan plan = Plan(
-          name: name,
-          description: description,
-          rides: int.parse(rides),
-          price: double.parse(price),
-          duration_days: int.parse(durationDays));
+        name: name,
+        description: description,
+        rides: ridesInt,
+        price: priceDouble,
+        duration_days: durationInt,
+      );
 
       Stream stream =
           await plansProvider.createWithImage(plan, imageFile.value!);
       stream.listen((res) {
         ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
         progressDialog.close();
-        print('Reponse: ${responseApi.success}');
         if (responseApi.success == true) {
-          // ✅ Emitir evento por socket si fue exitoso
+          // Emitir evento por socket si fue exitoso
           SocketService().emit('plan:new', plan.toJson());
 
           clear();
           Get.back();
+        } else {
+          Get.snackbar('Error', responseApi.message ?? 'Error desconocido');
         }
       });
     }
   }
 
-//Metodo para validar los campos
+  // Validación de campos
   bool isValidForm(String name, String description, String rides, String price,
       String durationDays) {
-    //Validaciones - datos
-    if (!GetUtils.isNum(rides)) {
-      Get.snackbar('Rides incorrecto', 'Ingrese un número de rides válido');
-      return false;
-    }
-
-    //Validaciones - campos vacios
     if (name.isEmpty) {
       Get.snackbar('Nombre vacío', 'Ingrese un nombre');
       return false;
@@ -78,49 +78,45 @@ class AdminPlanRegisterController extends GetxController {
       Get.snackbar('Descripción vacía', 'Ingrese una descripción');
       return false;
     }
-    if (rides.isEmpty) {
-      Get.snackbar('Rides vacío', 'Ingrese un número de rides');
+    if (rides.isEmpty || int.tryParse(rides) == null) {
+      Get.snackbar('Rides incorrecto', 'Ingrese un número válido');
       return false;
     }
-    if (price.isEmpty) {
-      Get.snackbar('Precio vacío', 'Ingrese un precio');
+    if (price.isEmpty || double.tryParse(price.replaceAll(',', '.')) == null) {
+      Get.snackbar('Precio incorrecto', 'Ingrese un precio válido');
       return false;
     }
-
-    if (durationDays.isEmpty) {
-      Get.snackbar('Duracion vacío', 'Ingrese duración en dias');
+    if (durationDays.isEmpty || int.tryParse(durationDays) == null) {
+      Get.snackbar('Duración incorrecta', 'Ingrese duración válida');
       return false;
     }
-
-    //Validacion de imagen
     if (imageFile.value == null) {
-      Get.snackbar('Imagen vacía', 'Seleccione una imágen');
+      Get.snackbar('Imagen vacía', 'Seleccione una imagen');
       return false;
     }
     return true;
   }
 
-  //Metodo para limpiar los campos
+  // Limpiar campos
   void clear() {
-    nameController.text = '';
-    descriptionController.text = '';
-    ridesController.text = '';
-    priceController.text = '';
+    nameController.clear();
+    descriptionController.clear();
+    ridesController.clear();
+    priceController.clear();
+    durationDaysController.clear();
     imageFile.value = null;
-    durationDaysController.text = '';
     update();
   }
 
-  //Metodo para seleccionar una imagen
+  // Selección de imagen
   void showAlertDialog(BuildContext context) {
     Widget galleryButton = FloatingActionButton.extended(
       onPressed: () {
         Get.back();
         selectImage(ImageSource.gallery);
       },
-      label: Text('Galeria'),
+      label: Text('Galería'),
       icon: Icon(Icons.photo_library_outlined),
-      elevation: 3,
     );
     Widget cameraButton = FloatingActionButton.extended(
       onPressed: () {
@@ -129,27 +125,14 @@ class AdminPlanRegisterController extends GetxController {
       },
       label: Text('Cámara'),
       icon: Icon(Icons.camera),
-      elevation: 3,
     );
 
     AlertDialog alertDialog = AlertDialog(
-      title: Text(
-        'Seleccione una opción',
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      actions: [
-        galleryButton,
-        cameraButton,
-      ],
+      title: Text('Seleccione una opción'),
+      actions: [galleryButton, cameraButton],
     );
 
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return alertDialog;
-        });
+    showDialog(context: context, builder: (_) => alertDialog);
   }
 
   Future selectImage(ImageSource imageSource) async {

@@ -13,8 +13,7 @@ class UserStartController extends GetxController {
   User user = User.fromJson(GetStorage().read('user') ?? {});
 
   final CoachProvider coachProvider = CoachProvider();
-  final UserPlanProvider userPlanProvider =
-      UserPlanProvider(context: Get.context!);
+  final UserPlanProvider userPlanProvider = UserPlanProvider();
   final ScheduledClassProvider scheduledClassProvider =
       ScheduledClassProvider();
 
@@ -31,26 +30,26 @@ class UserStartController extends GetxController {
     getTotalRides();
     getScheduledClasses();
     SocketService().on('coach:new', (data) {
-      print('📡 Evento coach:new recibido');
+      //print('📡 Evento coach:new recibido');
       getCoaches();
     });
 
     SocketService().on('coach:delete', (data) {
-      print('🗑️ Evento coach:delete recibido');
+      //print('🗑️ Evento coach:delete recibido');
       getCoaches();
     });
     SocketService().on('coach:update', (data) {
-      print('🗑️ Evento coach:update recibido');
+      //print('🗑️ Evento coach:update recibido');
       getCoaches();
     });
     SocketService().updateUserSession(user);
     SocketService().on('rides:updated', (_) {
-      print('📡 Evento rides:updated recibido');
+      //print('📡 Evento rides:updated recibido');
       refreshTotalRides();
     });
     SocketService().on('class:coach:reserved', (payload) {
       if (payload['user_id'].toString() == user.id.toString()) {
-        print('📡 Detected class:coach:reserved for current user');
+        //print('📡 Detected class:coach:reserved for current user');
         getScheduledClasses(); // 🔄 Actualiza listado en tiempo real
       }
     });
@@ -69,7 +68,7 @@ class UserStartController extends GetxController {
           await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
-    print('***Total de Rides: $totalRides');
+    //print('***Total de Rides: $totalRides');
   }
 
   void refreshTotalRides() {

@@ -105,11 +105,10 @@ class AdminStartController extends GetxController {
             await attendanceProvider.registerAttendance(attendance);
 
         if (response.success == true) {
-          print(
-              '✅ Asistencia registrada: ${s.studentName} - ${attendance.status}');
+          //print('✅ Asistencia registrada: ${s.studentName} - ${attendance.status}');
         } else {
-          print('❌ Error al registrar asistencia: ${s.studentName}');
-          print('responmse: ${response.success}');
+          //print('❌ Error al registrar asistencia: ${s.studentName}');
+          //print('responmse: ${response.success}');
         }
       }
     }

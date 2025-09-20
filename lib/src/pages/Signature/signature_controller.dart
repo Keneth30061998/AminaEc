@@ -24,9 +24,9 @@ class SignaturePDFController extends GetxController {
       isUploading.value = true;
 
       final signature = await signatureController.toPngBytes();
-      if (signature == null)
+      if (signature == null) {
         throw Exception("No se pudo generar imagen de la firma");
-
+      }
       final pdf = await PdfService.generatePdfWithSignature(
         signatureBytes: signature,
         user: user,
@@ -42,7 +42,7 @@ class SignaturePDFController extends GetxController {
       clearSignature();
     } catch (e) {
       Get.snackbar("Error", e.toString());
-      print('Error: ${e}');
+      //print('Error: ${e}');
     } finally {
       isUploading.value = false;
     }

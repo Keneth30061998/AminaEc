@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AdminProfileInfoPage extends StatelessWidget {
-  AdminProfileInfoController con = Get.put(AdminProfileInfoController());
+  final AdminProfileInfoController con = Get.put(AdminProfileInfoController());
+
+  AdminProfileInfoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -52,13 +54,6 @@ class AdminProfileInfoPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _texttitleAppbar() {
-    return Text(
-      'Perfil de usuario',
-      style: TextStyle(fontWeight: FontWeight.bold),
     );
   }
 

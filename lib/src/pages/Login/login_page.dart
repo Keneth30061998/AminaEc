@@ -11,6 +11,8 @@ import '../../utils/iconos.dart';
 LoginController con = Get.put(LoginController());
 
 class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -70,7 +72,7 @@ Widget _titleLogin() {
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Text(
-        txt_title_login_1,
+        txtTitleLogin1,
         style: GoogleFonts.poppins(
           fontSize: 28,
           fontWeight: FontWeight.bold,
@@ -78,7 +80,7 @@ Widget _titleLogin() {
         ),
       ),
       Text(
-        txt_title_login_2,
+        txtTitleLogin2,
         style: GoogleFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.w500,
@@ -95,9 +97,9 @@ Widget _textFieldEmail() {
     keyboardType: TextInputType.emailAddress,
     decoration: InputDecoration(
       floatingLabelStyle: TextStyle(color: whiteGrey),
-      labelText: txt_email,
-      hintText: txt_email,
-      prefixIcon: Icon(icon_email),
+      labelText: txtEmail,
+      hintText: txtEmail,
+      prefixIcon: Icon(iconEmail),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: indigoAmina),
@@ -118,9 +120,9 @@ Widget _textFieldPassword() {
       obscureText: con.obscureText.value,
       decoration: InputDecoration(
         floatingLabelStyle: TextStyle(color: whiteGrey),
-        labelText: txt_password,
-        hintText: txt_password,
-        prefixIcon: Icon(icon_password),
+        labelText: txtPassword,
+        hintText: txtPassword,
+        prefixIcon: Icon(iconPassword),
         suffixIcon: AnimatedSwitcher(
           duration: 300.ms,
           transitionBuilder: (child, anim) =>
@@ -128,7 +130,7 @@ Widget _textFieldPassword() {
           child: IconButton(
             key: ValueKey<bool>(con.obscureText.value),
             icon: Icon(
-              con.obscureText.value ? icon_close_eye : icon_open_eye,
+              con.obscureText.value ? iconCloseEye : iconOpenEye,
               color: whiteGrey,
             ),
             onPressed: () {
@@ -175,7 +177,7 @@ Widget _buttonLogin(BuildContext context) {
               elevation: 4,
             ),
             child: const Text(
-              txt_login,
+              txtLogin,
               style: TextStyle(
                 color: whiteLight,
                 fontWeight: FontWeight.bold,
@@ -194,7 +196,7 @@ Widget _textDontHaveAccount() {
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       const Text(
-        txt_no_cuenta,
+        txtNoCuenta,
         style: TextStyle(
           fontSize: 16,
           color: darkGrey,
@@ -205,7 +207,7 @@ Widget _textDontHaveAccount() {
       GestureDetector(
         onTap: () => con.goToRegisterPage(),
         child: const Text(
-          txt_registrate_aqui,
+          txtRegistrateAqui,
           style: TextStyle(
             color: indigoAmina,
             fontWeight: FontWeight.bold,

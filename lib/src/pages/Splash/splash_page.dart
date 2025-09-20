@@ -1,56 +1,85 @@
-import 'package:amina_ec/src/utils/textos.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../utils/color.dart';
 import 'splash_controller.dart';
 
 class SplashPage extends StatelessWidget {
-  SplashPage({Key? key}) : super(key: key);
+  SplashPage({super.key});
 
   final controller = Get.put(SplashController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: almostBlack,
-      body: FadeTransition(
-        opacity: controller.fadeAnim,
-        child: SlideTransition(
-          position: controller.slideAnim,
-          child: ScaleTransition(
-            scale: controller.scaleAnim,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/img/bicicleta.png',
-                    height: 180,
+      body: Stack(
+        children: [
+          // Imagen de fondo
+          Positioned.fill(
+            child: Image.asset(
+              'assets/img/splashImage.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // Capa oscura para contraste
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withAlpha((0.5 * 255).round()),
+            ),
+          ),
+
+          // Animaciones y contenido
+          FadeTransition(
+            opacity: controller.fadeAnim,
+            child: SlideTransition(
+              position: controller.slideAnim,
+              child: ScaleTransition(
+                scale: controller.scaleAnim,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 30),
+
+                      // Texto animado principal
+                      DefaultTextStyle(
+                        style: GoogleFonts.roboto(
+                          fontSize: 43,
+                          color: limeGreen,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.8,
+                        ),
+                        child: AnimatedTextKit(
+                          animatedTexts: [
+                            TyperAnimatedText("GET FIT"),
+                            TyperAnimatedText("STAY STRONG"),
+                            TyperAnimatedText("LIVE WELL"),
+                          ],
+                          repeatForever: true,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Subtexto motivacional
+                      Text(
+                        "Entrena con energía, vive con propósito.",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 25),
-                  DefaultTextStyle(
-                    style: const TextStyle(
-                      fontSize: 20.0,
-                      fontFamily: 'Roboto',
-                      color: limeGreen,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    child: AnimatedTextKit(
-                      animatedTexts: [
-                        TyperAnimatedText(txt_splash_1),
-                        TyperAnimatedText(txt_splash_2),
-                        TyperAnimatedText(txt_splash_3),
-                      ],
-                      repeatForever: true,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

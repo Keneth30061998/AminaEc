@@ -15,41 +15,108 @@ import 'package:amina_ec/src/pages/Signature/signature_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
 import 'package:amina_ec/src/pages/user/Coach/Reserve/user_coach_reserve_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_page.dart';
+import 'package:amina_ec/src/pages/user/Plan/Buy/AddCard/user_plan_buy_addCard_webview_page.dart';
 import 'package:amina_ec/src/pages/user/Plan/Buy/Resume/user_plan_buy_resume_page.dart';
-import 'package:amina_ec/src/pages/user/Plan/Buy/WebView/user_plan_web_view_page.dart';
-import 'package:amina_ec/src/pages/user/Plan/Buy/user_plan_buy_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'firebase_options.dart';
 
-//para mantener abierta la session despues de login
 User userSession = User.fromJson(GetStorage().read('user') ?? {});
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> initializeLocalNotifications() async {
+  const AndroidInitializationSettings androidSettings =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initSettings =
+      InitializationSettings(android: androidSettings);
+
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
+}
+
+Future<void> setupFCM() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  await messaging.requestPermission();
+
+  String? newToken = await messaging.getToken();
+  //print('FCM Token actual: $newToken');
+
+  if (userSession.id != null && newToken != null) {
+    await http.post(
+      Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
+      headers: {'Content-Type': 'application/json'},
+      body: '{"user_id": ${userSession.id}, "token": "$newToken"}',
+    );
+  }
+
+  // 🔄 Detectar cambios de token en tiempo real
+  FirebaseMessaging.instance.onTokenRefresh.listen((updatedToken) async {
+    //print('🔄 Token FCM actualizado: $updatedToken');
+    if (userSession.id != null) {
+      await http.post(
+        Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
+        headers: {'Content-Type': 'application/json'},
+        body: '{"user_id": ${userSession.id}, "token": "$updatedToken"}',
+      );
+    }
+  });
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    //print('📲 Notificación recibida: ${message.notification?.title}');
+
+    if (message.notification != null) {
+      flutterLocalNotificationsPlugin.show(
+        0,
+        message.notification!.title,
+        message.notification!.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'default_channel',
+            'Notificaciones',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+      );
+    }
+  });
+}
 
 void main() async {
   await GetStorage.init();
-  //Get.put(UserProfileInfoController());
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp, // Solo modo vertical hacia arriba
+    DeviceOrientation.portraitUp,
   ]);
   await initializeDateFormatting('es_ES', null);
+
   if (userSession.session_token != null &&
       userSession.session_token!.isNotEmpty) {
-    SocketService().connect(); // conecta automáticamente con token guardado
+    SocketService().connect();
   }
+
+  await initializeLocalNotifications();
+  await setupFCM();
+
   runApp(const MyApp());
 }
 
@@ -61,12 +128,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // This widget is the root of your application.
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    print('Token de session del usuario: ${userSession.session_token}');
+    //print('Token de session del usuario: ${userSession.session_token}');
   }
 
   @override
@@ -85,8 +150,7 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
         scaffoldBackgroundColor: whiteLight,
         textTheme: const TextTheme(
-          bodyMedium:
-              TextStyle(color: Colors.white), // color global para textos
+          bodyMedium: TextStyle(color: Colors.white),
         ),
       ),
       debugShowCheckedModeBanner: false,
@@ -105,19 +169,16 @@ class _MyAppState extends State<MyApp> {
         GetPage(name: '/register-image', page: () => RegisterPageImage()),
         GetPage(name: '/roles', page: () => RolesPage()),
         GetPage(name: '/signature', page: () => SignaturePage()),
-        //usuario
         GetPage(name: '/user/home', page: () => UserHomePage()),
         GetPage(
             name: '/user/profile/update', page: () => UserProfileUpdatePage()),
-        GetPage(name: '/user/plan/buy', page: () => UserPlanBuyPage()),
-        GetPage(name: '/user/plan/buy/webview', page: () => WebviewPage()),
+        GetPage(
+            name: '/user/plan/buy/addCard', page: () => AddCardWebViewPage()),
         GetPage(
             name: '/user/plan/buy/resume', page: () => UserPlanBuyResumePage()),
         GetPage(
             name: '/user/coach/reserve', page: () => UserCoachReservePage()),
-        //coach
         GetPage(name: '/coach/home', page: () => CoachHomePage()),
-        //admin
         GetPage(name: '/admin/home', page: () => AdminHomePage()),
         GetPage(
             name: '/admin/coach/register',

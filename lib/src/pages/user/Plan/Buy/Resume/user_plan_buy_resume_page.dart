@@ -3,306 +3,271 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+
+import '../../../../../models/card.dart';
+import '../../../../../utils/iconos.dart';
+import '../AddCard/user_plan_buy_addCard_webview_page.dart';
 
 class UserPlanBuyResumePage extends StatelessWidget {
-  UserPlanBuyResumeController con = Get.put(UserPlanBuyResumeController());
+  final UserPlanBuyResumeController con =
+      Get.put(UserPlanBuyResumeController());
+
+  UserPlanBuyResumePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (_dropDownItem().isEmpty) {
-      Future.microtask(() => showTargetBottomSheet(context));
-    }
     return Scaffold(
       appBar: AppBar(
-        title: _appBarTitle(),
-        backgroundColor: whiteLight,
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _textSubtitlePage(),
-          _boxBuyData(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _appBarTitle() {
-    return Text(
-      'Resumen de la compra',
-      style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w800),
-    );
-  }
-
-  Widget _textSubtitlePage() {
-    return Container(
-      padding: EdgeInsets.only(left: 20, top: 10),
-      child: Text(
-        '* Revise que los datos esten correctos',
-        style: GoogleFonts.roboto(
-          color: darkGrey,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _boxBuyData(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: darkGrey,
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Colors.black54,
-            blurRadius: 10,
-            offset: Offset(0, 0.75),
-          ),
-        ],
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _textTitlePlan(),
-            _textNamePlan(),
-            SizedBox(height: 10),
-            _textTitleRides(),
-            _textRides(),
-            SizedBox(height: 20),
-            _subTotal(),
-            _IVA(),
-            Divider(),
-            _Total(),
-            SizedBox(height: 20),
-            _textTitleMetodoPago(),
-            _dropDownTagert(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _textTitlePlan() {
-    return Text(
-      'Paquete seleccionado',
-      style: GoogleFonts.roboto(
-        fontSize: 16,
-        color: Colors.white54,
-      ),
-    );
-  }
-
-  Widget _textNamePlan() {
-    return Text(
-      '${con.plan.name}',
-      style: GoogleFonts.roboto(
-        fontSize: 19,
-        fontWeight: FontWeight.w700,
-        color: whiteLight,
-      ),
-    );
-  }
-
-  Widget _textTitleRides() {
-    return Text(
-      'Rides acreditados',
-      style: GoogleFonts.roboto(
-        fontSize: 16,
-        color: Colors.white54,
-      ),
-    );
-  }
-
-  Widget _textRides() {
-    return Text(
-      '${con.plan.rides}',
-      style: GoogleFonts.roboto(
-        fontSize: 19,
-        fontWeight: FontWeight.w700,
-        color: whiteLight,
-      ),
-    );
-  }
-
-  Widget _subTotal() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Subtotal',
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              color: Colors.white54,
-            ),
-          ),
-          Text(
-            '${con.calculate_subtotal()} USD',
-            style: GoogleFonts.roboto(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: whiteLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _IVA() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'IVA (15%)',
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              color: Colors.white54,
-            ),
-          ),
-          Text(
-            '${con.calculate_iva()} USD',
-            style: GoogleFonts.roboto(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: whiteLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _Total() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Total',
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              color: whiteLight,
-            ),
-          ),
-          Text(
-            '${con.calculate_total()} USD',
-            style: GoogleFonts.roboto(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: limeGreen,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _textTitleMetodoPago() {
-    return Text(
-      'Método de pago',
-      style: GoogleFonts.roboto(
-        fontSize: 16,
-        color: Colors.white54,
-      ),
-    );
-  }
-
-  Widget _dropDownTagert(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: DropdownButton(
-        underline: Container(
-          alignment: Alignment.centerRight,
-          child: const Icon(
-            Icons.arrow_drop_down_circle,
-            color: limeGreen,
+        title: Text(
+          'Resumen de la compra',
+          style: GoogleFonts.montserrat(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: almostBlack,
           ),
         ),
-        elevation: 3,
-        isExpanded: true,
-        hint: const Text(
-          'Seleccionar tarjeta',
-          style: TextStyle(color: limeGreen, fontSize: 16),
-        ),
-        items: _dropDownItem(),
-        value: 3,
-        onChanged: (option) {
-          print('Opcion seleccionada:  $option');
-        },
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.white,
       ),
-    );
-  }
-
-  //Listar tarjetas
-  List<DropdownMenuItem<String?>> _dropDownItem() {
-    List<DropdownMenuItem<String>> list = [];
-    /*for (var target in target) {
-      list.add(DropdownMenuItem(
-        value: category.id,
-        child: Text(category.name ?? ''),
-      ));
-    }*/
-    return list;
-  }
-
-  //Para mostrar la opcion de targetas en el modal
-  void showTargetBottomSheet(BuildContext context) {
-    showMaterialModalBottomSheet(
-      context: context,
-      expand: false,
-      backgroundColor: darkGrey,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
-      builder: (context) => SingleChildScrollView(
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 5,
-              width: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              margin: const EdgeInsets.only(bottom: 20),
+        children: [
+          Text(
+            '* Revise que los datos estén correctos',
+            style: GoogleFonts.roboto(
+              color: darkGrey,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Para realizar la compra selecciona una tarjeta',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Datos del plan
+          Card(
+            elevation: 0,
+            color: colorBackgroundBox,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow("Paquete seleccionado", con.plan.name!),
+                  _buildInfoRow("Rides acreditados", "${con.plan.rides}"),
+                  const Divider(height: 32),
+                  _buildInfoRow("Subtotal",
+                      "${con.calculateSubtotal().toStringAsFixed(2)} USD"),
+                  _buildInfoRow("IVA (15%)",
+                      "${con.calculateIVA().toStringAsFixed(2)} USD"),
+                  const Divider(height: 32),
+                  _buildInfoRow(
+                    "Total",
+                    "${con.calculateTotal().toStringAsFixed(2)} USD",
+                    highlight: true,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 30),
-            GestureDetector(
-              onTap: () => con.goToWebView(),
-              child: Text(
-                '+ Añadir targeta',
-                style: GoogleFonts.roboto(
-                  fontSize: 15,
-                  color: limeGreen,
-                ),
+          ),
+
+          const SizedBox(height: 30),
+
+          Text(
+            'Método de pago',
+            style: GoogleFonts.roboto(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: darkGrey,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Obx(() {
+            if (con.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (con.cards.isEmpty) {
+              return Text(
+                'No tienes tarjetas registradas',
+                style: GoogleFonts.roboto(color: Colors.grey),
+              );
+            }
+
+            // Tarjetas estilizadas
+            return Column(
+              children: con.cards.map((card) {
+                return GestureDetector(
+                  onTap: () {
+                    con.payWithToken(card);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      /* gradient: const LinearGradient(
+                        colors: [
+                          Colors.black38,
+                          Colors.black26,
+                          Colors.black12,
+                          Colors.white70
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ), */
+                      color: darkGrey,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black38,
+                          blurRadius: 10,
+                          offset: Offset(2, 4),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: 10,
+                          top: 35,
+                          child: IconButton(
+                            onPressed: () {
+                              _confirmDelete(card);
+                            },
+                            icon: Icon(
+                              iconDelete,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+
+                        // Contenido principal tarjeta
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Número Datos Tarjetas
+                              Text(
+                                "${card.bank}",
+                                style: GoogleFonts.robotoMono(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                "${card.bin} ** **** ${card.last4 ?? '0000'}",
+                                style: GoogleFonts.robotoMono(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Titular y fecha
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "${card.expiryMonth?.toString().padLeft(2, '0')}/${card.expiryYear?.toString().substring(2) ?? '00'}",
+                                    style: GoogleFonts.roboto(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          }),
+
+          const SizedBox(height: 30),
+
+          FilledButton.icon(
+            onPressed: () async {
+              // Lanza la WebView directamente
+              final added = await Get.to<bool?>(
+                () => AddCardWebViewPage(),
+                arguments: {
+                  'userId': con.user.id.toString(),
+                  'email': con.user.email!,
+                },
+              );
+
+              // Si viene true, recarga la lista
+              if (added == true) {
+                con.loadCards();
+              }
+            },
+            icon: const Icon(iconAdd),
+            label: const Text("Agregar Tarjeta"),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(55),
+              backgroundColor: almostBlack,
+              foregroundColor: Colors.white,
+              textStyle: GoogleFonts.montserrat(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
-            const SizedBox(height: 30),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.roboto(
+              fontSize: 15,
+              color: Colors.black54,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: highlight ? indigoAmina : almostBlack,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(CardModel card) {
+    Get.defaultDialog(
+      title: 'Eliminar tarjeta',
+      middleText: '¿Deseas eliminar ${card.displayName}?',
+      onConfirm: () {
+        con.deleteCard(card.token!);
+        Get.back();
+      },
+      onCancel: () => Get.back(),
     );
   }
 }

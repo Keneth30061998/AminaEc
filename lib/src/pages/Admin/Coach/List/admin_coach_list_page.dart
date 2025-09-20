@@ -12,6 +12,8 @@ import 'admin_coach_list_controller.dart';
 class AdminCoachListPage extends StatelessWidget {
   final AdminCoachListController con = Get.put(AdminCoachListController());
 
+  AdminCoachListPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,7 +69,7 @@ class AdminCoachListPage extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Container(
         decoration: BoxDecoration(
-          color: color_background_box,
+          color: colorBackgroundBox,
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -86,7 +88,7 @@ class AdminCoachListPage extends StatelessWidget {
                       width: 70,
                       height: 70,
                       color: Colors.grey[300],
-                      child: Icon(icon_profile, size: 36),
+                      child: Icon(iconProfile, size: 36),
                     ),
             ),
             const SizedBox(width: 16),
@@ -95,7 +97,7 @@ class AdminCoachListPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${coach.user?.name ?? ''}',
+                    coach.user?.name ?? '',
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -109,7 +111,7 @@ class AdminCoachListPage extends StatelessWidget {
             const SizedBox(width: 8),
             PopupMenuButton<String>(
               color: whiteLight,
-              icon: const Icon(icon_more, color: darkGrey),
+              icon: const Icon(iconMore, color: darkGrey),
               onSelected: (value) {
                 if (value == 'edit_data') {
                   con.goToUpdateCoachPage(coach);
@@ -124,7 +126,7 @@ class AdminCoachListPage extends StatelessWidget {
                   value: 'edit_data',
                   child: Row(
                     children: [
-                      Icon(icon_profile, color: Colors.orange),
+                      Icon(iconProfile, color: Colors.orange),
                       SizedBox(width: 8),
                       Text('Editar datos'),
                     ],
@@ -134,7 +136,7 @@ class AdminCoachListPage extends StatelessWidget {
                   value: 'edit_schedule',
                   child: Row(
                     children: [
-                      Icon(icon_schedule, color: indigoAmina),
+                      Icon(iconSchedule, color: indigoAmina),
                       SizedBox(width: 8),
                       Text('Editar horarios'),
                     ],
@@ -144,7 +146,7 @@ class AdminCoachListPage extends StatelessWidget {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(icon_eraser, color: Colors.red),
+                      Icon(iconEraser, color: Colors.red),
                       SizedBox(width: 8),
                       Text('Eliminar'),
                     ],
@@ -160,15 +162,15 @@ class AdminCoachListPage extends StatelessWidget {
 
   Widget _buttonAddCoach(BuildContext context) {
     return FloatingActionButton.extended(
-      backgroundColor: limeGreen,
+      backgroundColor: almostBlack,
+      foregroundColor: whiteLight,
       label: Text(
         'Añadir Coach',
         style: GoogleFonts.poppins(
           fontWeight: FontWeight.bold,
-          color: almostBlack,
         ),
       ),
-      icon: const Icon(icon_add, color: almostBlack),
+      icon: const Icon(iconAdd),
       onPressed: () => con.goToAdminCoachRegisterPage(),
     );
   }

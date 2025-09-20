@@ -11,6 +11,8 @@ import '../../../../widgets/no_data_widget.dart';
 class UserCoachSchedulePage extends StatelessWidget {
   final con = Get.put(UserCoachScheduleController());
 
+  UserCoachSchedulePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +39,7 @@ class UserCoachSchedulePage extends StatelessWidget {
                     backgroundColor: indigoAmina,
                     textStyle: TextStyle(color: whiteLight)),
                 selectionDecoration: BoxDecoration(
-                  color: darkGrey.withOpacity(0.2),
+                  color: darkGrey.withAlpha((0.2 * 255).toInt()),
                   border: Border.all(color: darkGrey, width: 2),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -71,7 +73,7 @@ class UserCoachSchedulePage extends StatelessWidget {
   }
 
   Widget _coachCard(Coach coach, DateTime date) {
-    final schedules = coach.schedules?.where((s) {
+    final schedules = coach.schedules.where((s) {
       final sDate = DateTime.tryParse(s.date ?? '');
       return sDate != null &&
           sDate.year == date.year &&
@@ -127,7 +129,7 @@ class UserCoachSchedulePage extends StatelessWidget {
               ),
             ],
           ),
-          if (schedules != null && schedules.isNotEmpty) ...[
+          if (schedules.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 5,
@@ -142,7 +144,7 @@ class UserCoachSchedulePage extends StatelessWidget {
                   },
                   label: Text(
                       '${_formatTime(s.start_time)} - ${_formatTime(s.end_time)}'),
-                  backgroundColor: color_background_box,
+                  backgroundColor: colorBackgroundBox,
                 );
               }).toList(),
             ),

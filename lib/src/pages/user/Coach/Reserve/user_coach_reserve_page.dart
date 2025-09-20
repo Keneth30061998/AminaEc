@@ -9,7 +9,7 @@ import '../../Register/Terms_Conditions/terms_dialog.dart';
 class UserCoachReservePage extends StatelessWidget {
   final UserCoachReserveController con = Get.put(UserCoachReserveController());
 
-  UserCoachReservePage({Key? key}) : super(key: key);
+  UserCoachReservePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +68,7 @@ class UserCoachReservePage extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         final con = Get.find<UserCoachReserveController>();
-                        con.reserveClass(context);
+                        con.reserveClass();
                       },
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 48),
@@ -108,7 +108,7 @@ class UserCoachReservePage extends StatelessWidget {
     return _boxTemplate(
       icon: Icons.date_range,
       title: 'Hora',
-      subtitle: '${formatHora(con.classTime)}',
+      subtitle: formatHora(con.classTime),
       color: Colors.blueGrey.shade50,
     );
   }
@@ -117,7 +117,7 @@ class UserCoachReservePage extends StatelessWidget {
     return _boxTemplate(
       icon: Icons.person,
       title: 'Instructor',
-      subtitle: '${con.coachName}',
+      subtitle: con.coachName,
       color: Colors.blueGrey.shade50,
     );
   }

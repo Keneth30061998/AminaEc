@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import '../home/home_controller.dart';
 
 class HomePage extends StatelessWidget {
-  HomeController con = Get.put(HomeController());
+  final HomeController con = Get.put(HomeController());
+
+  HomePage({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,7 +153,7 @@ class HomePage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 30, left: 40, right: 40),
       decoration: BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
         border: Border.all(
           color: darkGrey,
           width: 1,
@@ -173,7 +175,7 @@ class HomePage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
       decoration: BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
         border: Border.all(
           color: darkGrey,
           width: 1,

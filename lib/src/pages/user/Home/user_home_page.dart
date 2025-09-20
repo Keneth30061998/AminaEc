@@ -22,7 +22,7 @@ class UserHomePage extends StatelessWidget {
   ];
 
   // Constantes para el BottomNavigationBar
-  static const double _bottomNavBorderRadius = 20.0;
+  //static const double _bottomNavBorderRadius = 20.0;
   static const EdgeInsets _bottomNavPadding =
       EdgeInsets.symmetric(horizontal: 20, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
@@ -31,6 +31,8 @@ class UserHomePage extends StatelessWidget {
   static const double _gNavGap = 10.0;
   static const int _gNavAnimationMillis = 460;
   static const double _gNavTabBorderRadius = 15.0;
+
+  UserHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +66,7 @@ class UserHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
       ),
       child: GNav(
         rippleColor: darkGrey,
@@ -84,7 +86,7 @@ class UserHomePage extends StatelessWidget {
         tabs: [
           const GButton(
             // Usar const si los parámetros no cambian
-            icon: icon_home,
+            icon: iconHome,
             text: 'Inicio',
             backgroundGradient: LinearGradient(
               colors: [almostBlack, darkGrey],
@@ -93,15 +95,15 @@ class UserHomePage extends StatelessWidget {
             ),
           ),
           const GButton(
-            icon: icon_plan,
+            icon: iconPlan,
             text: 'Planes',
           ),
           const GButton(
-            icon: icon_schedule,
+            icon: iconSchedule,
             text: 'Agenda',
           ),
           const GButton(
-            icon: icon_profile,
+            icon: iconProfile,
             text: 'Perfil',
           ),
         ],

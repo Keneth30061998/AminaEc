@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 class UserProfileInfoPage extends StatelessWidget {
   final UserProfileInfoController con = Get.put(UserProfileInfoController());
 
+  UserProfileInfoPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

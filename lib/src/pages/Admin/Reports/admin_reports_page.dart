@@ -28,7 +28,7 @@ class AdminReportsPage extends StatelessWidget {
                 onChanged: (value) => con.name.value = value,
                 decoration: const InputDecoration(
                   labelText: 'Nombre',
-                  prefixIcon: Icon(icon_profile),
+                  prefixIcon: Icon(iconProfile),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -39,7 +39,7 @@ class AdminReportsPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Obx(() => DropdownButtonFormField<String>(
-                          value: con.selectedYear.value.isEmpty
+                          initialValue: con.selectedYear.value.isEmpty
                               ? null
                               : con.selectedYear.value,
                           items: con.years.map((year) {
@@ -52,7 +52,7 @@ class AdminReportsPage extends StatelessWidget {
                               con.selectedYear.value = value ?? '',
                           decoration: const InputDecoration(
                             labelText: 'Año',
-                            prefixIcon: Icon(icon_schedule),
+                            prefixIcon: Icon(iconSchedule),
                             border: OutlineInputBorder(),
                           ),
                         )),
@@ -60,7 +60,7 @@ class AdminReportsPage extends StatelessWidget {
                   const SizedBox(width: 5),
                   Expanded(
                     child: Obx(() => DropdownButtonFormField<String>(
-                          value: con.selectedMonth.value.isEmpty
+                          initialValue: con.selectedMonth.value.isEmpty
                               ? null
                               : con.selectedMonth.value,
                           items: con.months.map((month) {
@@ -73,7 +73,7 @@ class AdminReportsPage extends StatelessWidget {
                               con.selectedMonth.value = value ?? '',
                           decoration: const InputDecoration(
                             labelText: 'Mes',
-                            prefixIcon: Icon(icon_schedule),
+                            prefixIcon: Icon(iconSchedule),
                             border: OutlineInputBorder(),
                           ),
                         )),
@@ -138,11 +138,11 @@ class AdminReportsPage extends StatelessWidget {
           elevation: 4,
         ),
         icon: Icon(
-          icon_search,
+          iconSearch,
           color: whiteLight,
         ),
         label: const Text(
-          txt_search,
+          txtSearch,
           style: TextStyle(
             color: whiteLight,
             fontWeight: FontWeight.bold,

@@ -10,6 +10,8 @@ import '../../../utils/iconos.dart';
 class RegisterPage extends StatelessWidget {
   final RegisterController con = Get.put(RegisterController());
 
+  RegisterPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,38 +33,38 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 30),
 
                 // TextFields animados con delay progresivo
-                _textField("Correo Electrónico", con.emailController,
-                        icon_email, TextInputType.emailAddress)
+                _textField("Correo Electrónico", con.emailController, iconEmail,
+                        TextInputType.emailAddress)
                     .animate(delay: 200.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
-                _textField("Nombre", con.nameController, icon_profile,
+                _textField("Nombre", con.nameController, iconProfile,
                         TextInputType.name)
                     .animate(delay: 350.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _textField("Apellido", con.lastnameController,
-                        icon_profile_invert, TextInputType.name)
+                        iconProfileInvert, TextInputType.name)
                     .animate(delay: 500.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
-                _textField("Cédula", con.ciController, icon_ci,
+                _textField("Cédula", con.ciController, iconCi,
                         TextInputType.number)
                     .animate(delay: 650.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
-                _textField("Teléfono", con.phoneController, icon_phone,
+                _textField("Teléfono", con.phoneController, iconPhone,
                         TextInputType.phone)
                     .animate(delay: 800.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _passwordField("Contraseña", con.passwordController,
-                        icon_password, con.obscurePassword)
+                        iconPassword, con.obscurePassword)
                     .animate(delay: 950.ms)
                     .fade()
                     .slideY(begin: 0.3),
@@ -70,7 +72,7 @@ class RegisterPage extends StatelessWidget {
                 _passwordField(
                         "Confirmar Contraseña",
                         con.confirmPasswordController,
-                        icon_confirm_password,
+                        iconConfirmPassword,
                         con.obscureConfirmPassword)
                     .animate(delay: 1100.ms)
                     .fade()
@@ -157,7 +159,7 @@ class RegisterPage extends StatelessWidget {
               prefixIcon: Icon(icon, color: Colors.black),
               suffixIcon: IconButton(
                 icon: Icon(
-                  toggleValue.value ? icon_close_eye : icon_open_eye,
+                  toggleValue.value ? iconCloseEye : iconOpenEye,
                   color: Colors.black54,
                 ),
                 onPressed: () => toggleValue.value = !toggleValue.value,
@@ -184,7 +186,7 @@ class RegisterPage extends StatelessWidget {
       height: 55,
       child: ElevatedButton.icon(
         onPressed: () => con.goToRegisterImage(),
-        icon: Icon(icon_next, color: whiteLight),
+        icon: Icon(iconNext, color: whiteLight),
         label: Text(
           'Siguiente',
           style: GoogleFonts.poppins(

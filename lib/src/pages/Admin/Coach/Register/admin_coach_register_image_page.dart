@@ -6,7 +6,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../utils/color.dart';
 
 class AdminCoachRegisterImagePage extends StatelessWidget {
-  AdminCoachRegisterController con = Get.put(AdminCoachRegisterController());
+  final AdminCoachRegisterController con =
+      Get.put(AdminCoachRegisterController());
+
+  AdminCoachRegisterImagePage({super.key});
 
   @override
   Widget build(BuildContext context) {

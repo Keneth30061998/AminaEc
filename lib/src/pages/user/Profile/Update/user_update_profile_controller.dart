@@ -59,7 +59,7 @@ class UserProfileUpdateController extends GetxController {
 
       if (imageFile == null) {
         ResponseApi responseApi = await usersProvider.update(myUser);
-        print('Response Api Update : ${responseApi.data}');
+        //print('Response Api Update : ${responseApi.data}');
         if (responseApi.success == true) {
           //almacernar en sesion los cambios
           GetStorage().write('user', responseApi.data);
@@ -70,12 +70,12 @@ class UserProfileUpdateController extends GetxController {
       } else {
         Stream stream = await usersProvider.updateWithImage(myUser, imageFile!);
         stream.listen((res) {
-          print('Respuesta cruda: $res');
+          //print('Respuesta cruda: $res');
           progressDialog.close();
 
           ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
 
-          print('Response Api Update : ${responseApi.data}');
+          //print('Response Api Update : ${responseApi.data}');
           Get.snackbar('Registro', responseApi.message ?? '');
 
           if (responseApi.success == true) {

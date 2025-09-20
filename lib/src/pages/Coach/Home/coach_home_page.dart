@@ -5,22 +5,18 @@ import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 import '../../../utils/color.dart';
+import '../Class/coach_class_page.dart';
 
 class CoachHomePage extends StatelessWidget {
-  CoachHomeController con = Get.put(CoachHomeController());
+  final CoachHomeController con = Get.put(CoachHomeController());
   // Considera hacer estas páginas más significativas o incluso widgets separados si crecen en complejidad.
   final List<Widget> _pageViews = [
-    const Center(
-      child: Text(
-        'Agenda',
-        style: TextStyle(color: Colors.white, fontSize: 24),
-      ),
-    ),
+    CoachClassPage(),
     CoachProfileInfoPage(),
   ];
 
   // Constantes para el BottomNavigationBar
-  static const double _bottomNavBorderRadius = 20.0;
+  //static const double _bottomNavBorderRadius = 20.0;
   static const EdgeInsets _bottomNavPadding =
       EdgeInsets.symmetric(horizontal: 100, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
@@ -29,6 +25,8 @@ class CoachHomePage extends StatelessWidget {
   static const double _gNavGap = 10.0;
   static const int _gNavAnimationMillis = 460;
   static const double _gNavTabBorderRadius = 15.0;
+
+  CoachHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +58,7 @@ class CoachHomePage extends StatelessWidget {
       // width: MediaQuery.of(context).size.width, // Ocupa el ancho completo por defecto en BottomNavigationBar
       padding: _bottomNavPadding,
       decoration: const BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
       ),
       child: GNav(
         rippleColor: darkGrey,

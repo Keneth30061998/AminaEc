@@ -7,7 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../utils/color.dart';
 
 class LoginOrRegisterPage extends StatelessWidget {
-  LoginOrRegisterController con = Get.put(LoginOrRegisterController());
+  final LoginOrRegisterController con = Get.put(LoginOrRegisterController());
+
+  LoginOrRegisterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 1,
       margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.2),
       child: Text(
-        txt_bienvenida,
+        txtBienvenida,
         textAlign: TextAlign.center,
         style: GoogleFonts.montserrat(
           fontSize: 30,
@@ -49,7 +51,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       width: double.infinity,
       height: MediaQuery.of(context).size.height * 0.50,
       decoration: BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(35),
           topRight: Radius.circular(35),
@@ -74,7 +76,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 1,
       padding: EdgeInsets.only(top: 60),
       child: Text(
-        txt_bienvenida_2,
+        txtBienvenida2,
         textAlign: TextAlign.center,
         style: TextStyle(
           fontWeight: FontWeight.bold,
@@ -90,7 +92,7 @@ class LoginOrRegisterPage extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 1,
       padding: EdgeInsets.only(left: 45, top: 20),
       child: Text(
-        txt_regiter_or_login,
+        txtRegiterOrLogin,
         style: GoogleFonts.robotoCondensed(
           color: darkGrey,
           fontSize: 18,
@@ -111,7 +113,7 @@ class LoginOrRegisterPage extends StatelessWidget {
           return con.goToRegisterPage();
         },
         label: Text(
-          txt_crear_cuenta,
+          txtCrearCuenta,
           style: TextStyle(fontSize: 16, color: Colors.white),
         ),
         backgroundColor: almostBlack, //
@@ -131,7 +133,7 @@ class LoginOrRegisterPage extends StatelessWidget {
           return con.goToLoginPage();
         },
         label: Text(
-          txt_iniciar_sesion,
+          txtIniciarSesion,
           style: TextStyle(fontSize: 16),
         ),
         backgroundColor: limeGreen, //

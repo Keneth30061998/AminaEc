@@ -19,12 +19,12 @@ class ScheduledClassProvider extends GetConnect {
       },
     );
 
-    print('📡 STATUS ClassReservadas: ${response.statusCode}');
-    print('📦 BODY: ${response.body}');
+    //print('📡 STATUS ClassReservadas: ${response.statusCode}');
+    //print('📦 BODY: ${response.body}');
     if (response.statusCode != 200 ||
         response.body == null ||
         response.body is! Map) {
-      print('❌ ERROR de conexión o respuesta inválida');
+      //print('❌ ERROR de conexión o respuesta inválida');
       return [];
     }
 

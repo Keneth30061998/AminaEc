@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CoachProfileInfoPage extends StatelessWidget {
-  CoachProfileInfoController con = Get.put(CoachProfileInfoController());
+  final CoachProfileInfoController con = Get.put(CoachProfileInfoController());
+
+  CoachProfileInfoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +17,7 @@ class CoachProfileInfoPage extends StatelessWidget {
         foregroundColor: almostBlack,
         title: Text(
           'Perfil Coach',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.w800),
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
@@ -46,7 +48,7 @@ class CoachProfileInfoPage extends StatelessWidget {
 
   Widget _photoNameEmail(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 30, right: 30, top: 10, bottom: 30),
+      padding: const EdgeInsets.only(left: 25, right: 25, top: 20, bottom: 25),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -58,10 +60,10 @@ class CoachProfileInfoPage extends StatelessWidget {
               children: [
                 Text(
                   '${con.user.name} ${con.user.lastname}',
-                  style: TextStyle(
-                      color: darkGrey,
+                  style: GoogleFonts.roboto(
+                      color: almostBlack,
                       fontSize: 22,
-                      fontWeight: FontWeight.bold),
+                      fontWeight: FontWeight.w900),
                   overflow: TextOverflow.ellipsis, // Por si acaso
                 ),
                 SizedBox(height: 4),
@@ -103,12 +105,12 @@ class CoachProfileInfoPage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(vertical: 40),
       decoration: BoxDecoration(
-        color: darkGrey,
-        borderRadius: BorderRadius.circular(25),
+        color: whiteLight,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
-            color: Colors.black87,
-            blurRadius: 10,
+            color: Colors.black45,
+            blurRadius: 5,
             offset: Offset(0.10, 0.85),
           ),
         ],
@@ -125,12 +127,12 @@ class CoachProfileInfoPage extends StatelessWidget {
   }
 
   Widget _textTitle() {
-    return const Text(
+    return Text(
       'Datos del Coach',
-      style: TextStyle(
-        fontSize: 25,
-        fontWeight: FontWeight.bold,
-        color: Colors.white70,
+      style: GoogleFonts.alfaSlabOne(
+        fontSize: 24,
+        fontWeight: FontWeight.w100,
+        color: darkGrey,
       ),
     );
   }
@@ -138,17 +140,17 @@ class CoachProfileInfoPage extends StatelessWidget {
   Widget _textSubtitle() {
     return Text(
       '*Los datos del coach no se pueden editar',
-      style: TextStyle(fontSize: 12, color: Colors.white30),
+      style: GoogleFonts.roboto(fontSize: 12, color: whiteGrey),
     );
   }
 
   Widget _textCI() {
     return Container(
-      margin: const EdgeInsets.only(top: 30, left: 40, right: 40),
+      margin: const EdgeInsets.only(top: 25, left: 40, right: 40),
       decoration: BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
         border: Border.all(
-          color: darkGrey,
+          color: Colors.black12,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(8),
@@ -168,9 +170,9 @@ class CoachProfileInfoPage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
       decoration: BoxDecoration(
-        color: color_background_box,
+        color: colorBackgroundBox,
         border: Border.all(
-          color: darkGrey,
+          color: Colors.black12,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(8),
@@ -182,110 +184,6 @@ class CoachProfileInfoPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text('Teléfono'),
-      ),
-    );
-  }
-
-  //Box form datos adicionales
-  Widget _boxFormDataAditional(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: darkGrey,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black87,
-            blurRadius: 10,
-            offset: Offset(0.10, 0.85),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _textTitleAditional(),
-          _textHobby(),
-          _textDescription(),
-          _textPresentation(),
-        ],
-      ),
-    );
-  }
-
-  Widget _textTitleAditional() {
-    return const Text(
-      'Datos adicionales',
-      style: TextStyle(
-        fontSize: 25,
-        fontWeight: FontWeight.bold,
-        color: Colors.white70,
-      ),
-    );
-  }
-
-  Widget _textHobby() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.gamepad),
-        title: Text(
-          'Hobby',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Jugar Futbol'),
-      ),
-    );
-  }
-
-  Widget _textDescription() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.person_search),
-        title: Text(
-          'Description',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Jugar Futbol'),
-      ),
-    );
-  }
-
-  Widget _textPresentation() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20, left: 40, right: 40),
-      decoration: BoxDecoration(
-        color: color_background_box,
-        border: Border.all(
-          color: darkGrey,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.description),
-        title: Text(
-          'Presentation',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Jugar Futbol'),
       ),
     );
   }

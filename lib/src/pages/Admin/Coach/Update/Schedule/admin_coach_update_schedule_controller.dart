@@ -25,35 +25,48 @@ class AdminCoachUpdateScheduleController extends GetxController {
 
   void _loadSchedules() {
     final current = coach.schedules;
-    if (current != null && current.isNotEmpty) {
+    if (current.isNotEmpty) {
       selectedSchedules.assignAll(current);
       _actualizarCalendario();
     }
   }
 
-  Future<void> selectDateAndPromptTime(
-      BuildContext context, DateTime? date) async {
+  Future<void> selectDateAndPromptTime(DateTime? date) async {
     if (date == null) return;
 
     final now = DateTime.now();
     if (date.isBefore(DateTime(now.year, now.month, now.day))) {
       Get.snackbar(
-          'Fecha inválida', 'No puedes registrar horarios en el pasado',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+        'Fecha inválida',
+        'No puedes registrar horarios en el pasado',
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
       return;
     }
 
-    TimeOfDay? start =
-        await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    // Mostrar selector de hora de inicio
+    final start = await showTimePicker(
+      context: Get.context!,
+      initialTime: TimeOfDay.now(),
+    );
     if (start == null) return;
 
-    TimeOfDay? end = await showTimePicker(context: context, initialTime: start);
+    // Mostrar selector de hora de fin
+    final end = await showTimePicker(
+      context: Get.context!,
+      initialTime: start,
+    );
     if (end == null) return;
 
+    // Validar rango de horas
     if (_compare(start, end) >= 0) {
       Get.snackbar(
-          'Rango inválido', 'La hora de fin debe ser mayor que la de inicio',
-          backgroundColor: Colors.orange, colorText: Colors.white);
+        'Rango inválido',
+        'La hora de fin debe ser mayor que la de inicio',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
       return;
     }
 
@@ -63,12 +76,17 @@ class AdminCoachUpdateScheduleController extends GetxController {
       end_time: _format(end),
     );
 
+    // Evitar duplicados
     if (selectedSchedules.any((s) =>
         s.date == schedule.date &&
         s.start_time == schedule.start_time &&
         s.end_time == schedule.end_time)) {
-      Get.snackbar('Duplicado', 'Ese horario ya fue agregado',
-          backgroundColor: Colors.orangeAccent, colorText: Colors.white);
+      Get.snackbar(
+        'Duplicado',
+        'Ese horario ya fue agregado',
+        backgroundColor: Colors.orangeAccent,
+        colorText: Colors.white,
+      );
       return;
     }
 

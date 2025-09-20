@@ -1,30 +1,29 @@
 import 'package:amina_ec/src/models/class_reservation.dart';
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/providers/class_reservation_provider.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import '../../../../components/Socket/socket_service.dart';
 import '../../../../models/user.dart';
 import '../../../../providers/user_plan_provider.dart';
+import '../../Start/user_start_controller.dart';
 
 class UserCoachReserveController extends GetxController {
-  //Datos del usuario - token - rides
+  // Datos del usuario - token - rides
   User user = User.fromJson(GetStorage().read('user') ?? {});
-  final UserPlanProvider userPlanProvider =
-      UserPlanProvider(context: Get.context!);
+  late UserPlanProvider userPlanProvider;
 
-  //Equipo seleccionado
+  // Equipo seleccionado
   var selectedEquipos = <int>{}.obs;
 
-  //Máquinas ocupadas
+  // Máquinas ocupadas
   final occupiedEquipos = <int>{}.obs;
 
-  //variable reactiva contadora de rides
+  // Variable reactiva contadora de rides
   final RxInt totalRides = 0.obs;
 
-  //Datos de reserva
+  // Datos de reserva
   late String coachId;
   late String classDate;
   late String classTime;
@@ -38,27 +37,34 @@ class UserCoachReserveController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    //Obtener argumentos de navegación
+
+    // Inicializar provider sin context (evita BuildContext? error)
+    userPlanProvider = UserPlanProvider();
+
+    // Obtener argumentos de navegación
     final args = Get.arguments;
     coachId = args['coach_id'] ?? '';
-    classDate = args['class_date'];
-    classTime = args['class_time'];
-    userId = _user['id'];
-    coachName = args['coach_name'];
+    classDate = args['class_date'] ?? '';
+    classTime = args['class_time'] ?? '';
+    userId = _user['id'] ?? '';
+    coachName = args['coach_name'] ?? '';
     sessionToken = (_user['session_token'] ?? '').toString();
-    //Obtener total de rides
+
+    // Obtener total de rides
     getTotalRides();
+
+    // Sockets
     SocketService().updateUserSession(user);
     SocketService().on('rides:updated', (_) {
-      print('📡 Evento rides:updated recibido');
       getTotalRides();
     });
-    //mauinas ocuapadas
+
+    // Máquinas ocupadas
     listenToMachineStatus();
     fetchOccupiedEquiposInicial();
   }
 
-  //Toggle visual de bicicleta seleccionada
+  // Toggle visual de bicicleta seleccionada
   void toggleEquipo(int equipo) {
     if (occupiedEquipos.contains(equipo)) return;
     if (selectedEquipos.contains(equipo)) {
@@ -69,8 +75,8 @@ class UserCoachReserveController extends GetxController {
     }
   }
 
-  //  Agendar clase
-  Future<void> reserveClass(BuildContext context) async {
+  // Agendar clase
+  Future<void> reserveClass() async {
     if (selectedEquipos.isEmpty) {
       Get.snackbar('Máquina no seleccionada', 'Debes elegir una bicicleta');
       return;
@@ -91,8 +97,11 @@ class UserCoachReserveController extends GetxController {
       ClassReservation reservation = response.data as ClassReservation;
 
       Get.snackbar('Clase agendada', '¡Tu ride está confirmado!');
+      if (Get.isRegistered<UserStartController>()) {
+        Get.find<UserStartController>().getScheduledClasses();
+      }
 
-      // 📡 Emitir sockets para usuario, coach y mapa
+      // Emitir sockets
       SocketService().emit('class:reserved', reservation.toJson());
       SocketService().emit('class:coach:reserved', reservation.toJson());
       SocketService().emit('machine:status:update', {
@@ -102,27 +111,27 @@ class UserCoachReserveController extends GetxController {
         'status': 'occupied'
       });
 
-      // Navegar (puedes redirigir al historial o calendario)
+      // Navegar
       Future.delayed(const Duration(seconds: 2), () {
-        Navigator.of(context).pop(); // ← Ajusta según tu flujo
+        if (Get.isOverlaysOpen) {
+          Get.back();
+        }
       });
     } else {
-      // Error
       Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
     }
   }
 
-  //Obtener total de rides
+  // Obtener total de rides
   void getTotalRides() async {
     if (user.session_token != null) {
       int rides =
           await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
-    //print('***Total de Rides: $totalRides');
   }
 
-  //maquinas ocupadas
+  // Máquinas ocupadas
   void listenToMachineStatus() {
     SocketService().on('machine:status:update', (payload) {
       String date = payload['class_date'];

@@ -43,39 +43,47 @@ class LoginController extends GetxController {
     String password = passwordController.text.trim();
 
     if (isValidForm(email, password)) {
-      //Para usar progress dialog
       ProgressDialog progressDialog = ProgressDialog(context: context);
-      progressDialog.show(max: 100, msg: txt_iniciando_sesion);
-      ResponseApi responseApi = await usersProvider.login(email, password);
+      progressDialog.show(max: 100, msg: txtIniciandoSesion);
 
-      print('Response Api ${responseApi.toJson()}');
+      try {
+        ResponseApi responseApi = await usersProvider.login(email, password);
 
-      if (responseApi.success == true) {
-        //Para guardar el usuario en el inicio de sesion
-        GetStorage().write('user', responseApi.data);
-        User myUser = User.fromJson(GetStorage().read('user') ?? {});
+        if (responseApi.success == true) {
+          // Guardar usuario en almacenamiento local
+          GetStorage().write('user', responseApi.data);
+          User myUser = User.fromJson(GetStorage().read('user') ?? {});
 
-        progressDialog.close();
-        // Actualiza el usuario en SocketService
-        // Actualiza sesión en socket con el nuevo token
-        SocketService().updateUserSession(myUser);
-        //SocketService().setUser(myUser);
-        SocketService().connect();
-        print('Roles del cliente: ${myUser.roles!.length}');
-        if (myUser.roles!.length > 1) {
-          goToRolesPage();
-        } else {
-          print('roles: ${myUser.roles!.first.id}');
-          if (myUser.roles!.first.id == '3') {
-            goToCoachHomePage();
+          // Actualizar sesión en socket
+          SocketService().updateUserSession(myUser);
+          SocketService().connect();
+
+          progressDialog.close();
+
+          // Redirección según rol
+          if (myUser.roles != null && myUser.roles!.length > 1) {
+            goToRolesPage();
           } else {
-            goToUserHomePage();
+            if (myUser.roles != null && myUser.roles!.isNotEmpty) {
+              if (myUser.roles!.first.id == '3') {
+                goToCoachHomePage();
+              } else {
+                goToUserHomePage();
+              }
+            } else {
+              Get.snackbar('Error', 'No se encontraron roles asignados');
+            }
           }
-        }
 
-        Get.snackbar('Login Exitoso', responseApi.message ?? '');
-      } else {
-        Get.snackbar('Login Fallido', responseApi.message ?? '');
+          Get.snackbar('Login Exitoso', responseApi.message ?? '');
+        } else {
+          progressDialog.close(); // 🔥 Cierre garantizado en login fallido
+          Get.snackbar('Login Fallido',
+              responseApi.message ?? 'Credenciales incorrectas');
+        }
+      } catch (e) {
+        progressDialog.close(); // 🔥 Cierre garantizado en excepción
+        Get.snackbar('Error', 'Ocurrió un problema: ${e.toString()}');
       }
     }
   }

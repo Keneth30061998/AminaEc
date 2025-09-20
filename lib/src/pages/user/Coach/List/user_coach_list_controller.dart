@@ -60,23 +60,20 @@ class UserCoachScheduleController extends GetxController {
 
   void _filterCoachesByDate(DateTime date) {
     final filtered = allCoaches.where((coach) {
-      return coach.schedules?.any((s) {
-            final sDate = DateTime.tryParse(s.date ?? '');
-            return sDate != null &&
-                sDate.year == date.year &&
-                sDate.month == date.month &&
-                sDate.day == date.day;
-          }) ??
-          false;
+      return coach.schedules.any((s) {
+        final sDate = DateTime.tryParse(s.date ?? '');
+        return sDate != null &&
+            sDate.year == date.year &&
+            sDate.month == date.month &&
+            sDate.day == date.day;
+      });
     }).toList();
     filteredCoaches.value = filtered;
   }
 
   void _actualizarCalendario() {
-    final allSchedules = allCoaches
-        .expand((c) => c.schedules ?? [])
-        .whereType<Schedule>()
-        .toList();
+    final allSchedules =
+        allCoaches.expand((c) => c.schedules).whereType<Schedule>().toList();
     calendarDataSource.value = ScheduleDataSource(allSchedules);
   }
 

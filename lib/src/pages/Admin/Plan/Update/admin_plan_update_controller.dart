@@ -23,7 +23,8 @@ class AdminPlanUpdateController extends GetxController {
     super.onInit();
     nameController.text = plan.name ?? '';
     descriptionController.text = plan.description ?? '';
-    priceController.text = plan.price?.toStringAsFixed(2) ?? '';
+    priceController.text =
+        plan.price?.toStringAsFixed(2).replaceAll('.', ',') ?? '';
     ridesController.text = plan.rides?.toString() ?? '';
     durationController.text = plan.duration_days?.toString() ?? '';
   }
@@ -38,25 +39,56 @@ class AdminPlanUpdateController extends GetxController {
   }
 
   void updatePlan() async {
-    plan.name = nameController.text;
-    plan.description = descriptionController.text;
-    plan.price = double.tryParse(priceController.text) ?? 0.0;
-    plan.rides = int.tryParse(ridesController.text) ?? 0;
-    plan.duration_days = int.tryParse(durationController.text) ?? 0;
+    String name = nameController.text.trim();
+    String description = descriptionController.text.trim();
+    String priceText = priceController.text.trim();
+    String ridesText = ridesController.text.trim();
+    String durationText = durationController.text.trim();
+
+    // Validaciones
+    if (name.isEmpty ||
+        description.isEmpty ||
+        priceText.isEmpty ||
+        ridesText.isEmpty ||
+        durationText.isEmpty) {
+      Get.snackbar('Error', 'Todos los campos son obligatorios');
+      return;
+    }
+
+    double? price = double.tryParse(priceText.replaceAll(',', '.'));
+    int? rides = int.tryParse(ridesText);
+    int? duration = int.tryParse(durationText);
+
+    if (price == null) {
+      Get.snackbar('Error', 'Precio inválido');
+      return;
+    }
+    if (rides == null) {
+      Get.snackbar('Error', 'Rides inválido');
+      return;
+    }
+    if (duration == null) {
+      Get.snackbar('Error', 'Duración inválida');
+      return;
+    }
+
+    plan.name = name;
+    plan.description = description;
+    plan.price = price;
+    plan.rides = rides;
+    plan.duration_days = duration;
 
     if (imageFile != null) {
       final stream = await planProvider.updateWithImage(plan, imageFile!);
       stream.listen((res) {
         Get.snackbar('Éxito', 'Plan actualizado con imagen');
         Get.offAllNamed('/admin/home');
-        //Get.back();
       });
     } else {
       final res = await planProvider.updateWithoutImage(plan);
       if (res.statusCode == 201) {
         Get.snackbar('Éxito', 'Plan actualizado');
         Get.offAllNamed('/admin/home');
-        //Get.back();
       } else {
         Get.snackbar('Error', 'No se pudo actualizar');
       }

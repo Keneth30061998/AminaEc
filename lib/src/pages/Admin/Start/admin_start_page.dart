@@ -1,4 +1,5 @@
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,8 @@ import 'admin_start_controller.dart';
 
 class AdminStartPage extends StatelessWidget {
   final AdminStartController con = Get.put(AdminStartController());
+
+  AdminStartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +27,7 @@ class AdminStartPage extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 125),
                 child: LinearProgressIndicator(
                   color: almostBlack,
-                  backgroundColor: color_background_box,
+                  backgroundColor: colorBackgroundBox,
                 ),
               ),
             ],
@@ -191,7 +194,13 @@ class AdminStartPage extends StatelessWidget {
 
   Widget _buttonRegister() {
     return FloatingActionButton.extended(
-      label: Text('Registrar'),
+      label: Text(
+        'Registrar',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      icon: Icon(iconCheck),
       backgroundColor: almostBlack,
       foregroundColor: whiteLight,
       onPressed: () {
