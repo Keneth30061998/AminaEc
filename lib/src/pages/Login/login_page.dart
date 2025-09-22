@@ -15,50 +15,48 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-
     return Scaffold(
       backgroundColor: whiteLight,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: SizedBox(
-            height: height * 0.9,
-            child: Column(
-              children: [
-                const Spacer(),
-                _titleLogin()
-                    .animate()
-                    .fade(duration: 500.ms)
-                    .slideY(begin: 0.4),
-                const SizedBox(height: 30),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: Column(
-                    children: [
-                      _textFieldEmail()
-                          .animate()
-                          .fade()
-                          .slideY(begin: 0.4, delay: 200.ms),
-                      const SizedBox(height: 20),
-                      _textFieldPassword()
-                          .animate()
-                          .fade()
-                          .slideY(begin: 0.4, delay: 400.ms),
-                      const SizedBox(height: 30),
-                      _buttonLogin(context)
-                          .animate()
-                          .fade()
-                          .slideY(begin: 0.4, delay: 600.ms),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                _textDontHaveAccount()
-                    .animate()
-                    .fade(duration: 400.ms)
-                    .slideY(begin: 0.3, delay: 800.ms),
-                const SizedBox(height: 20),
-              ],
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 40),
+                  _titleLogin()
+                      .animate()
+                      .fade(duration: 500.ms)
+                      .slideY(begin: 0.4),
+                  const SizedBox(height: 30),
+                  _textFieldEmail()
+                      .animate()
+                      .fade()
+                      .slideY(begin: 0.4, delay: 200.ms),
+                  const SizedBox(height: 20),
+                  _textFieldPassword()
+                      .animate()
+                      .fade()
+                      .slideY(begin: 0.4, delay: 400.ms),
+                  const SizedBox(height: 30),
+                  _buttonLogin(context)
+                      .animate()
+                      .fade()
+                      .slideY(begin: 0.4, delay: 600.ms),
+                  _buttonRecoverPassword(context)
+                      .animate()
+                      .fade()
+                      .slideY(begin: 0.4, delay: 700.ms),
+                  const SizedBox(height: 40),
+                  _textDontHaveAccount()
+                      .animate()
+                      .fade(duration: 400.ms)
+                      .slideY(begin: 0.3, delay: 800.ms),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -94,6 +92,7 @@ Widget _titleLogin() {
 Widget _textFieldEmail() {
   return TextField(
     controller: con.emailController,
+    onChanged: (value) => con.emailText.value = value,
     keyboardType: TextInputType.emailAddress,
     decoration: InputDecoration(
       floatingLabelStyle: TextStyle(color: whiteGrey),
@@ -116,6 +115,7 @@ Widget _textFieldPassword() {
   return Obx(
     () => TextField(
       controller: con.passwordController,
+      onChanged: (value) => con.passwordText.value = value,
       keyboardType: TextInputType.text,
       obscureText: con.obscureText.value,
       decoration: InputDecoration(
@@ -191,30 +191,55 @@ Widget _buttonLogin(BuildContext context) {
   });
 }
 
-Widget _textDontHaveAccount() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      const Text(
-        txtNoCuenta,
-        style: TextStyle(
-          fontSize: 16,
-          color: darkGrey,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(width: 10),
-      GestureDetector(
-        onTap: () => con.goToRegisterPage(),
+Widget _buttonRecoverPassword(BuildContext context) {
+  return Obx(() {
+    final showRecover =
+        con.emailText.value.isNotEmpty && con.passwordText.value.isEmpty;
+
+    return Visibility(
+      visible: showRecover,
+      child: TextButton(
+        onPressed: () => con.showRecoveryDialog(context),
         child: const Text(
-          txtRegistrateAqui,
+          '¿Olvidaste tu contraseña?',
           style: TextStyle(
             color: indigoAmina,
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
           ),
         ),
       ),
-    ],
+    );
+  });
+}
+
+Widget _textDontHaveAccount() {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          txtNoCuenta,
+          style: TextStyle(
+            fontSize: 16,
+            color: darkGrey,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () => con.goToRegisterPage(),
+          child: const Text(
+            txtRegistrateAqui,
+            style: TextStyle(
+              color: indigoAmina,
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 }

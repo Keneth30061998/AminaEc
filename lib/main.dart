@@ -21,6 +21,7 @@ import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:device_preview/device_preview.dart'; // 👈 import agregado
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +56,6 @@ Future<void> setupFCM() async {
   await messaging.requestPermission();
 
   String? newToken = await messaging.getToken();
-  //print('FCM Token actual: $newToken');
 
   if (userSession.id != null && newToken != null) {
     await http.post(
@@ -65,9 +65,7 @@ Future<void> setupFCM() async {
     );
   }
 
-  // 🔄 Detectar cambios de token en tiempo real
   FirebaseMessaging.instance.onTokenRefresh.listen((updatedToken) async {
-    //print('🔄 Token FCM actualizado: $updatedToken');
     if (userSession.id != null) {
       await http.post(
         Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
@@ -78,8 +76,6 @@ Future<void> setupFCM() async {
   });
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    //print('📲 Notificación recibida: ${message.notification?.title}');
-
     if (message.notification != null) {
       flutterLocalNotificationsPlugin.show(
         0,
@@ -117,7 +113,13 @@ void main() async {
   await initializeLocalNotifications();
   await setupFCM();
 
-  runApp(const MyApp());
+  runApp(
+    DevicePreview(
+      // 👈 envolvemos MyApp con DevicePreview
+      enabled: !bool.fromEnvironment('dart.vm.product'), // solo en debug
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -131,7 +133,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    //print('Token de session del usuario: ${userSession.session_token}');
   }
 
   @override
@@ -154,6 +155,8 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       debugShowCheckedModeBanner: false,
+      builder: DevicePreview.appBuilder, // 👈 integración necesaria
+      locale: DevicePreview.locale(context), // 👈 integración necesaria
       initialRoute: userSession.id != null
           ? userSession.roles!.length > 1
               ? '/roles'

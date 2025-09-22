@@ -115,4 +115,36 @@ class UserProvider extends GetConnect {
     ResponseApi responseApi = ResponseApi.fromJson(response.body);
     return responseApi;
   }
+
+  // Recuperar contraseña
+  Future<ResponseApi> sendRecoveryCode(String email) async {
+    Response response = await post(
+      '$url/recover-password',
+      {'email': email},
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.body is Map<String, dynamic>) {
+      return ResponseApi.fromJson(response.body);
+    } else if (response.body is String) {
+      return ResponseApi.fromJson(json.decode(response.body));
+    } else {
+      return ResponseApi(
+          success: false, message: 'Respuesta inesperada del servidor');
+    }
+  }
+
+  Future<ResponseApi> resetPassword(
+      String email, String code, String newPassword) async {
+    Response response = await post(
+      '$url/reset-password',
+      {
+        'email': email,
+        'code': code,
+        'newPassword': newPassword,
+      },
+      headers: {'Content-Type': 'application/json'},
+    );
+    return ResponseApi.fromJson(response.body);
+  }
 }

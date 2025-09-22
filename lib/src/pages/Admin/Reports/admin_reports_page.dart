@@ -4,6 +4,7 @@ import 'package:amina_ec/src/utils/textos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../utils/color.dart';
 
@@ -34,52 +35,119 @@ class AdminReportsPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Filtros de año y mes
-              Row(
-                children: [
-                  Expanded(
-                    child: Obx(() => DropdownButtonFormField<String>(
-                          initialValue: con.selectedYear.value.isEmpty
-                              ? null
-                              : con.selectedYear.value,
-                          items: con.years.map((year) {
-                            return DropdownMenuItem(
-                              value: year,
-                              child: Text(year),
-                            );
-                          }).toList(),
-                          onChanged: (value) =>
-                              con.selectedYear.value = value ?? '',
-                          decoration: const InputDecoration(
-                            labelText: 'Año',
-                            prefixIcon: Icon(iconSchedule),
-                            border: OutlineInputBorder(),
-                          ),
-                        )),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Obx(() => DropdownButtonFormField<String>(
-                          initialValue: con.selectedMonth.value.isEmpty
-                              ? null
-                              : con.selectedMonth.value,
-                          items: con.months.map((month) {
-                            return DropdownMenuItem(
-                              value: month,
-                              child: Text(month),
-                            );
-                          }).toList(),
-                          onChanged: (value) =>
-                              con.selectedMonth.value = value ?? '',
-                          decoration: const InputDecoration(
-                            labelText: 'Mes',
-                            prefixIcon: Icon(iconSchedule),
-                            border: OutlineInputBorder(),
-                          ),
-                        )),
-                  ),
-                ],
+              // Filtros de año y mes (responsive)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 400) {
+                    // 📱 Pantallas pequeñas → Columna
+                    return Column(
+                      children: [
+                        Obx(() => DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              value: con.selectedYear.value.isEmpty
+                                  ? null
+                                  : con.selectedYear.value,
+                              items: con.years.map((year) {
+                                return DropdownMenuItem(
+                                  value: year,
+                                  child: Text(
+                                    year,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) =>
+                                  con.selectedYear.value = value ?? '',
+                              decoration: const InputDecoration(
+                                labelText: 'Año',
+                                prefixIcon: Icon(iconSchedule),
+                                border: OutlineInputBorder(),
+                              ),
+                            )),
+                        const SizedBox(height: 10),
+                        Obx(() => DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              value: con.selectedMonth.value.isEmpty
+                                  ? null
+                                  : con.selectedMonth.value,
+                              items: con.months.map((month) {
+                                return DropdownMenuItem(
+                                  value: month,
+                                  child: Text(
+                                    month,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) =>
+                                  con.selectedMonth.value = value ?? '',
+                              decoration: const InputDecoration(
+                                labelText: 'Mes',
+                                prefixIcon: Icon(iconSchedule),
+                                border: OutlineInputBorder(),
+                              ),
+                            )),
+                      ],
+                    );
+                  } else {
+                    // 💻 Pantallas grandes → Fila
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Obx(() => DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: con.selectedYear.value.isEmpty
+                                    ? null
+                                    : con.selectedYear.value,
+                                items: con.years.map((year) {
+                                  return DropdownMenuItem(
+                                    value: year,
+                                    child: Text(
+                                      year,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) =>
+                                    con.selectedYear.value = value ?? '',
+                                decoration: const InputDecoration(
+                                  labelText: 'Año',
+                                  prefixIcon: Icon(iconSchedule),
+                                  border: OutlineInputBorder(),
+                                ),
+                              )),
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Obx(() => DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: con.selectedMonth.value.isEmpty
+                                    ? null
+                                    : con.selectedMonth.value,
+                                items: con.months.map((month) {
+                                  return DropdownMenuItem(
+                                    value: month,
+                                    child: Text(
+                                      month,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) =>
+                                    con.selectedMonth.value = value ?? '',
+                                decoration: const InputDecoration(
+                                  labelText: 'Mes',
+                                  prefixIcon: Icon(iconSchedule),
+                                  border: OutlineInputBorder(),
+                                ),
+                              )),
+                        ),
+                      ],
+                    );
+                  }
+                },
               ),
+
               const SizedBox(height: 24),
 
               // Botón de búsqueda
@@ -156,33 +224,69 @@ class AdminReportsPage extends StatelessWidget {
   Widget _buildTable() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Fecha')),
-          DataColumn(label: Text('Estudiante')),
-          DataColumn(label: Text('Coach')),
-          DataColumn(label: Text('Bicicleta')),
-          DataColumn(label: Text('Estado')),
-        ],
-        rows: con.attendanceResults.map((r) {
-          return DataRow(cells: [
-            DataCell(Text(
-              r.classDate,
-              style: TextStyle(color: almostBlack),
-            )),
-            DataCell(Text(r.userName, style: TextStyle(color: almostBlack))),
-            DataCell(Text(r.coachName, style: TextStyle(color: almostBlack))),
-            DataCell(Text(r.bicycle.toString(),
-                style: TextStyle(color: almostBlack))),
-            DataCell(Text(
-              r.status == 'present' ? '✅ Presente' : '❌ Ausente',
-              style: TextStyle(
-                color: r.status == 'present' ? Colors.green : Colors.red,
-                fontWeight: FontWeight.bold,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: DataTable(
+          headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
+          headingTextStyle: GoogleFonts.montserrat(
+            fontWeight: FontWeight.bold,
+            color: almostBlack,
+          ),
+          dataTextStyle: GoogleFonts.montserrat(
+            fontSize: 14,
+            color: almostBlack,
+          ),
+          columnSpacing: 20,
+          horizontalMargin: 12,
+          dividerThickness: 0.7,
+          columns: const [
+            DataColumn(label: Text('Fecha')),
+            DataColumn(label: Text('Estudiante')),
+            DataColumn(label: Text('Coach')),
+            DataColumn(label: Text('Bicicleta')),
+            DataColumn(label: Text('Estado')),
+          ],
+          rows: con.attendanceResults.map((r) {
+            return DataRow(
+              color: MaterialStateProperty.resolveWith<Color?>(
+                (states) {
+                  int index = con.attendanceResults.indexOf(r);
+                  return index.isEven ? Colors.white : Colors.grey.shade50;
+                },
               ),
-            )),
-          ]);
-        }).toList(),
+              cells: [
+                DataCell(Text(
+                  DateFormat('dd/MM/yyyy', 'es_ES')
+                      .format(DateTime.parse(r.classDate)),
+                )),
+                DataCell(Text(r.userName)),
+                DataCell(Text(r.coachName)),
+                DataCell(Text(r.bicycle.toString())),
+                DataCell(
+                  Text(
+                    r.status == 'present' ? '✅ Presente' : '❌ Ausente',
+                    style: TextStyle(
+                      color: r.status == 'present' ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

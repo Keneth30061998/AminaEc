@@ -122,7 +122,7 @@ class _RoleCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(height: 10),
 
           // Nombre del rol
           Text(
