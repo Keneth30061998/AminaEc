@@ -1,3 +1,5 @@
+// lib/src/providers/class_reservation_provider.dart
+
 import 'dart:convert';
 
 import 'package:amina_ec/src/environment/environment.dart';
@@ -20,20 +22,22 @@ class ClassReservationProvider {
   }) async {
     final headers = {
       'Content-Type': 'application/json',
-      'Authorization': (_user['session_token'] ?? '').toString()
+      'Authorization': (_user['session_token'] ?? '').toString(),
     };
-
     final body = {
       'user_id': _user['id'],
       'coach_id': coachId,
       'bicycle': bicycle,
       'class_date': classDate,
-      'class_time': classTime
+      'class_time': classTime,
     };
 
     try {
-      final res = await http.post(Uri.parse(_url),
-          headers: headers, body: json.encode(body));
+      final res = await http.post(
+        Uri.parse(_url),
+        headers: headers,
+        body: json.encode(body),
+      );
 
       final data = json.decode(res.body);
       final success = data['success'] ?? false;
@@ -61,28 +65,25 @@ class ClassReservationProvider {
     final String url = '${Environment.API_URL}api/class-reservations/by-slot';
     final headers = {
       'Content-Type': 'application/json',
-      'Authorization': (_user['session_token'] ?? '').toString()
+      'Authorization': (_user['session_token'] ?? '').toString(),
     };
-
     final body = {'class_date': classDate, 'class_time': classTime};
 
     try {
-      final res = await http.post(Uri.parse(url),
-          headers: headers, body: json.encode(body));
-
+      final res = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: json.encode(body),
+      );
       final data = json.decode(res.body);
       if (data['success'] == true && data['data'] != null) {
         final List<dynamic> reservations = data['data'];
         return reservations.map((r) => ClassReservation.fromJson(r)).toList();
-      } else {
-        return [];
       }
-    } catch (e) {
-      return [];
-    }
+    } catch (_) {}
+    return [];
   }
 
-  // Para listar los estudiantes de los coachs
   Future<List<StudentInscription>> getStudentsByCoach(String coachId) async {
     final url = '${Environment.API_URL}api/class-reservations/coach/$coachId';
     final headers = {
@@ -93,15 +94,132 @@ class ClassReservationProvider {
     try {
       final res = await http.get(Uri.parse(url), headers: headers);
       final data = json.decode(res.body);
-
       if (data['success'] == true) {
         final List<dynamic> list = data['data'];
         return list.map((e) => StudentInscription.fromJson(e)).toList();
-      } else {
-        return [];
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<ResponseApi> rescheduleClass({
+    required String reservationId,
+    required String newDate,
+    required String newTime,
+    required String newCoachId,
+    required int newBicycle,
+  }) async {
+    final url =
+        '${Environment.API_URL}api/class-reservations/$reservationId/reschedule';
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': (_user['session_token'] ?? '').toString(),
+    };
+    final body = {
+      'new_date': newDate,
+      'new_time': newTime,
+      'new_coach_id': newCoachId,
+      'new_bicycle': newBicycle,
+    };
+
+    try {
+      final res = await http.put(
+        Uri.parse(url),
+        headers: headers,
+        body: json.encode(body),
+      );
+      final data = json.decode(res.body);
+      return ResponseApi.fromJson(data);
+    } catch (e) {
+      return ResponseApi(success: false, message: 'Error: $e');
+    }
+  }
+
+  // GET available dates for a coach
+  Future<List<String>> getAvailableDates({
+    required String coachId, // ahora named
+  }) async {
+    final url =
+        '${Environment.API_URL}api/class-reservations/availability/dates/$coachId';
+
+    print('🔗 GET dates -> $url');
+    try {
+      final res = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': (_user['session_token'] ?? '').toString(),
+        },
+      );
+      print('🗓️ dates status: ${res.statusCode}, body: ${res.body}');
+      if (res.statusCode != 200) return [];
+      final body = json.decode(res.body);
+      if (body['success'] == true) {
+        return List<String>.from(body['data'] as List);
       }
     } catch (e) {
-      return [];
+      print('❌ dates error: $e');
     }
+    return [];
+  }
+
+  // GET available start times for a coach on a date
+  Future<List<String>> getAvailableTimes({
+    required String coachId,
+    required String date,
+  }) async {
+    final url =
+        '${Environment.API_URL}api/class-reservations/availability/times/$coachId/$date';
+
+    print('🔗 GET times -> $url');
+    try {
+      final res = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': (_user['session_token'] ?? '').toString(),
+        },
+      );
+      print('⏰ times status: ${res.statusCode}, body: ${res.body}');
+      if (res.statusCode != 200) return [];
+      final body = json.decode(res.body);
+      if (body['success'] == true) {
+        return List<String>.from(body['data'] as List);
+      }
+    } catch (e) {
+      print('❌ times error: $e');
+    }
+    return [];
+  }
+
+  // GET available bikes for a coach on a date and start time
+  Future<List<int>> getAvailableBikes({
+    required String coachId,
+    required String date,
+    required String time,
+  }) async {
+    final url =
+        '${Environment.API_URL}api/class-reservations/availability/bikes'
+        '/$coachId/$date/$time';
+
+    print('🔗 GET bikes -> $url');
+    try {
+      final res = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': (_user['session_token'] ?? '').toString(),
+        },
+      );
+      print('🚲 bikes status: ${res.statusCode}, body: ${res.body}');
+      if (res.statusCode != 200) return [];
+      final body = json.decode(res.body);
+      if (body['success'] == true) {
+        return List<int>.from(body['data'] as List);
+      }
+    } catch (e) {
+      print('❌ bikes error: $e');
+    }
+    return [];
   }
 }

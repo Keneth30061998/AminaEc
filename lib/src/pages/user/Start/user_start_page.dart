@@ -318,60 +318,93 @@ class UserStartPage extends StatelessWidget {
     );
   }
 
-  Widget _scheduledClassCard(ScheduledClass c) {
-    // Formato elegante
+// Dentro de lib/src/pages/user/Start/user_start_page.dart
+
+  Widget _scheduledClassCard(ScheduledClass c, BuildContext context) {
+    // Formatear fecha y hora
     final formattedDate =
         c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: c.photo_url.isNotEmpty
-                ? Image.network(
-                    c.photo_url,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.broken_image, size: 30),
-                  )
-                : Container(
-                    width: 60,
-                    height: 60,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.person, color: Colors.white),
-                  ),
+    // Parsea tus fechas
+    final createdLocal = c.createdAt.toLocal();
+    final windowEndLocal = createdLocal.add(Duration(hours: 24));
+    final nowLocal = DateTime.now();
+
+    // Calcula permiso de reagendar
+    final canReschedule = nowLocal.isBefore(windowEndLocal);
+    return Stack(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$formattedDate · $formattedTime',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: almostBlack,
-                    )),
-                Text('Coach: ${c.coachName}',
-                    style: GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
-                Text('Bicicleta: ${c.bicycle}',
-                    style: GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
-              ],
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: c.photo_url.isNotEmpty
+                    ? Image.network(
+                        c.photo_url,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.broken_image, size: 30),
+                      )
+                    : Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.person, color: Colors.white),
+                      ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$formattedDate · $formattedTime',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: almostBlack,
+                      ),
+                    ),
+                    Text(
+                      'Coach: ${c.coachName}',
+                      style: GoogleFonts.roboto(fontSize: 15, color: darkGrey),
+                    ),
+                    Text(
+                      'Bicicleta: ${c.bicycle}',
+                      style: GoogleFonts.roboto(fontSize: 15, color: darkGrey),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Botón de reagendar
+        Positioned(
+          top: 8,
+          right: 8,
+          child: IconButton(
+            icon: Icon(
+              Icons.schedule,
+              color: canReschedule ? darkGrey : Colors.grey.shade400,
             ),
+            onPressed:
+                canReschedule ? () => con.onPressReschedule(c, context) : null,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -394,7 +427,7 @@ class UserStartPage extends StatelessWidget {
         physics: BouncingScrollPhysics(),
         itemCount: con.scheduledClasses.length,
         itemBuilder: (context, index) {
-          return _scheduledClassCard(con.scheduledClasses[index]);
+          return _scheduledClassCard(con.scheduledClasses[index], context);
         },
       );
     });
