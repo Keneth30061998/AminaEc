@@ -1,5 +1,5 @@
 class Environment {
-  //Produccion
+  //Produccion nueva
   static const String API_URL = "https://api.pruebasinventario.com/";
   static const String API_URL_OLD = "https://api.pruebasinventario.com";
   static const String API_URL_SOCKET = "https://api.pruebasinventario.com";
