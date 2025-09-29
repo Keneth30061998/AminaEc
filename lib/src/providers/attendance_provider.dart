@@ -15,6 +15,10 @@ class AttendanceProvider extends GetConnect {
   final User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
   Future<ResponseApi> registerAttendance(Attendance attendance) async {
+    print('📌 [AttendanceProvider] → Iniciando registerAttendance()');
+    print('📤 Datos a enviar: ${attendance.toJson()}');
+    print('🔑 Token usado: ${userSession.session_token}');
+
     final Response response = await post(
       '$url/record',
       attendance.toJson(),
@@ -24,12 +28,16 @@ class AttendanceProvider extends GetConnect {
       },
     );
 
+    print('📥 Respuesta cruda: status=${response.statusCode}, body=${response.body}');
+
     if (response.body == null) {
+      print('❌ Error: Respuesta nula del servidor');
       Get.snackbar('Error', 'No se pudo registrar la asistencia');
       return ResponseApi(success: false, message: 'Sin respuesta del servidor');
     }
 
     if (response.statusCode == 401) {
+      print('❌ Error: No autorizado');
       Get.snackbar('Error', 'No está autorizado para registrar asistencia');
       return ResponseApi(success: false, message: 'No autorizado');
     }
@@ -39,16 +47,21 @@ class AttendanceProvider extends GetConnect {
     if (body is String) {
       try {
         body = json.decode(body);
-      } catch (_) {
+      } catch (e) {
+        print('❌ Error al decodificar JSON: $e');
         return ResponseApi(success: false, message: 'Respuesta inválida');
       }
     }
 
     final responseApi = ResponseApi.fromJson(body);
 
+    print('📊 Respuesta parseada: success=${responseApi.success}, message=${responseApi.message}');
+
     if (responseApi.success == true) {
+      print('✅ Asistencia registrada correctamente');
       Get.snackbar('✅ Éxito', responseApi.message ?? 'Asistencia registrada');
     } else {
+      print('❌ Falló el registro: ${responseApi.message}');
       Get.snackbar('❌ Error', responseApi.message ?? 'Falló el registro');
     }
 
@@ -60,6 +73,9 @@ class AttendanceProvider extends GetConnect {
     String? year,
     String? month,
   }) async {
+    print('📌 [AttendanceProvider] → Iniciando findByFilters()');
+    print('🔎 Filtros recibidos: username=$username, year=$year, month=$month');
+
     final Map<String, String> queryParams = {};
 
     if (username != null && username.trim().isNotEmpty) {
@@ -72,7 +88,8 @@ class AttendanceProvider extends GetConnect {
       queryParams['class_month'] = month.trim();
     }
 
-    //print('➡️ GET: $url/users?${Uri(queryParameters: queryParams).query}');
+    final queryString = Uri(queryParameters: queryParams).query;
+    print('➡️ GET Request → $url/users?$queryString');
 
     final response = await get(
       '$url/users',
@@ -83,8 +100,10 @@ class AttendanceProvider extends GetConnect {
       },
     );
 
+    print('📥 Respuesta cruda: status=${response.statusCode}, body=${response.body}');
+
     if (response.statusCode != 200 && response.statusCode != 201) {
-      //print('❌ Error: ${response.body}');
+      print('❌ Error: No se pudo obtener los datos');
       Get.snackbar('Error', 'No se pudo obtener los datos');
       return [];
     }
@@ -94,12 +113,17 @@ class AttendanceProvider extends GetConnect {
       try {
         body = json.decode(body);
       } catch (e) {
-        //print('❌ JSON inválido: $e');
+        print('❌ Error al decodificar JSON en findByFilters: $e');
         return [];
       }
     }
 
     final List<dynamic> data = body['data'] ?? [];
-    return data.map((e) => AttendanceResult.fromJson(e)).toList();
+    print('📊 Cantidad de resultados obtenidos: ${data.length}');
+
+    return data.map((e) {
+      print('📌 Procesando registro: $e');
+      return AttendanceResult.fromJson(e);
+    }).toList();
   }
 }

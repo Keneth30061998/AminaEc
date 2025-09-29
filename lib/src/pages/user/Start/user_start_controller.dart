@@ -1,5 +1,6 @@
 // lib/src/pages/user/Start/user_start_controller.dart
 
+import 'package:amina_ec/src/pages/user/Start/reschedule_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -73,9 +74,16 @@ class UserStartController extends GetxController {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _rescheduleSheet(c),
+      builder: (_) => RescheduleSheet(
+        reservation: c,
+        coaches: coaches,
+        onSuccess: () {
+          getScheduledClasses(); // refresca clases después de reagendar
+        },
+      ),
     );
   }
+
 
   Widget _rescheduleSheet(ScheduledClass c) {
     String selectedCoach = c.coachId;

@@ -59,7 +59,7 @@ class RegisterController extends GetxController {
         progressDialog.close();
         if (responseApi.success == true) {
           GetStorage().write('user', responseApi.data);
-          //print('Reponse: ${responseApi}');
+          print('Reponse: ${responseApi}');
           goToUserHomePage();
         } else {
           Get.snackbar('ERROR!!!', 'Registro fallido');

@@ -64,15 +64,15 @@ class AdminStartController extends GetxController {
 
     return students
         .where((s) {
-          try {
-            final classDate = DateTime.parse(s.classDate);
-            final d1 = DateTime(classDate.year, classDate.month, classDate.day);
-            final d2 = DateTime(date.year, date.month, date.day);
-            return d1 == d2;
-          } catch (_) {
-            return false;
-          }
-        })
+      try {
+        final classDate = DateTime.parse(s.classDate);
+        final d1 = DateTime(classDate.year, classDate.month, classDate.day);
+        final d2 = DateTime(date.year, date.month, date.day);
+        return d1 == d2;
+      } catch (_) {
+        return false;
+      }
+    })
         .toList()
         .cast<StudentInscription>()
       ..sort((a, b) => a.classTime.compareTo(b.classTime));
@@ -102,7 +102,7 @@ class AdminStartController extends GetxController {
         );
 
         final response =
-            await attendanceProvider.registerAttendance(attendance);
+        await attendanceProvider.registerAttendance(attendance);
 
         if (response.success == true) {
           //print('✅ Asistencia registrada: ${s.studentName} - ${attendance.status}');

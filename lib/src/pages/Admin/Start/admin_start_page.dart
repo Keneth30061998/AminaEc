@@ -49,7 +49,7 @@ class AdminStartPage extends StatelessWidget {
                 unselectedLabelColor: Colors.black54,
                 tabs: List.generate(
                   con.coaches.length,
-                  (index) => Tab(
+                      (index) => Tab(
                     child: Text(con.coaches[index].user?.name ?? ''),
                   ),
                 ),
@@ -64,7 +64,7 @@ class AdminStartPage extends StatelessWidget {
                 final selectedDate =
                     con.selectedDatePerCoach[coachId]?.value ?? con.today;
                 final students =
-                    con.getStudentsByCoachAndDate(coachId, selectedDate);
+                con.getStudentsByCoachAndDate(coachId, selectedDate);
 
                 return Column(
                   children: [
@@ -73,48 +73,48 @@ class AdminStartPage extends StatelessWidget {
                       child: students.isEmpty
                           ? NoDataWidget(text: 'No hay estudiantes inscritos')
                           : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 20),
-                              itemCount: students.length,
-                              itemBuilder: (_, index) {
-                                final s = students[index];
-                                final timeFormatted =
-                                    s.classTime.substring(0, 5);
-                                final key = con.getStudentKey(s);
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 20),
+                        itemCount: students.length,
+                        itemBuilder: (_, index) {
+                          final s = students[index];
+                          final timeFormatted =
+                          s.classTime.substring(0, 5);
+                          final key = con.getStudentKey(s);
 
-                                return Obx(() {
-                                  final isPresent =
-                                      con.attendanceMap[key]?.value ?? false;
+                          return Obx(() {
+                            final isPresent =
+                                con.attendanceMap[key]?.value ?? false;
 
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundImage:
-                                            NetworkImage(s.photo_url ?? ''),
-                                        radius: 22,
-                                      ),
-                                      title: Text(s.studentName),
-                                      subtitle: Text(
-                                          'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
-                                      trailing: Checkbox(
-                                        value: isPresent,
-                                        onChanged: (value) {
-                                          con.attendanceMap[key]?.value =
-                                              value!;
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                });
-                              },
-                            ),
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: Colors.grey.shade300),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                  NetworkImage(s.photo_url ?? ''),
+                                  radius: 22,
+                                ),
+                                title: Text(s.studentName),
+                                subtitle: Text(
+                                    'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
+                                trailing: Checkbox(
+                                  value: isPresent,
+                                  onChanged: (value) {
+                                    con.attendanceMap[key]?.value =
+                                    value!;
+                                  },
+                                ),
+                              ),
+                            );
+                          });
+                        },
+                      ),
                     ),
                   ],
                 );
