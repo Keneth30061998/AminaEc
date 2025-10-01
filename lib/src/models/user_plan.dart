@@ -27,4 +27,7 @@ class UserPlan {
         "plan_id": planId,
         if (transactionId != null) "transaction_id": transactionId,
       };
+  static List<UserPlan> fromJsonList(List<dynamic> jsonList) {
+    return jsonList.map((json) => UserPlan.fromJson(json)).toList();
+  }
 }

@@ -10,6 +10,7 @@ import '../../../components/Socket/socket_service.dart';
 import '../../../models/coach.dart';
 import '../../../models/scheduled_class.dart';
 import '../../../models/user.dart';
+import '../../../models/user_plan.dart';
 import '../../../providers/class_reservation_provider.dart';
 import '../../../providers/coachs_provider.dart';
 import '../../../providers/scheduled_class_provider.dart';
@@ -23,7 +24,7 @@ class UserStartController extends GetxController {
   final ScheduledClassProvider scheduledClassProvider =
       ScheduledClassProvider();
   final ClassReservationProvider classResProv = ClassReservationProvider();
-
+  final RxList<UserPlan> acquiredPlans = <UserPlan>[].obs;
   var coaches = <Coach>[].obs;
   final RxInt totalRides = 0.obs;
   final RxList<ScheduledClass> scheduledClasses = <ScheduledClass>[].obs;
@@ -34,7 +35,7 @@ class UserStartController extends GetxController {
     getCoaches();
     getTotalRides();
     getScheduledClasses();
-
+    getAcquiredPlans();
     SocketService().on('coach:new', (_) => getCoaches());
     SocketService().on('coach:delete', (_) => getCoaches());
     SocketService().on('coach:update', (_) => getCoaches());
@@ -46,6 +47,13 @@ class UserStartController extends GetxController {
       }
     });
     SocketService().on('class:reserved', (_) => getScheduledClasses());
+  }
+
+  void getAcquiredPlans() async {
+    if (user.session_token != null) {
+      final result = await userPlanProvider.getAllPlansWithRides(user.session_token!);
+      acquiredPlans.value = result;
+    }
   }
 
   void getCoaches() async {
@@ -63,6 +71,7 @@ class UserStartController extends GetxController {
 
   void refreshTotalRides() {
     getTotalRides();
+    getAcquiredPlans();
   }
 
   void getScheduledClasses() async {

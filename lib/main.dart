@@ -21,7 +21,7 @@ import 'package:amina_ec/src/pages/user/Profile/Update/user_profile_update_page.
 import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:amina_ec/src/utils/color.dart';
-import 'package:device_preview/device_preview.dart'; // 👈 import agregado
+import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -32,61 +32,98 @@ import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/date_symbol_data_local.dart';
-
 import 'firebase_options.dart';
 
+// =====================================
+// 🌟 Variables Globales
+// =====================================
 User userSession = User.fromJson(GetStorage().read('user') ?? {});
-
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+FlutterLocalNotificationsPlugin();
 
+// --- Canal personalizado para recordatorios ---
+const AndroidNotificationChannel classReminderChannel = AndroidNotificationChannel(
+  'class_reminders',
+  'Recordatorios de Clases',
+  description: 'Canal para recordatorios de clases',
+  importance: Importance.max,
+  playSound: true,
+  ledColor: Color(0xFF1D1C21),
+);
+
+// =====================================
+// 🌟 Inicialización de notificaciones locales
+// =====================================
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings androidSettings =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+  AndroidInitializationSettings('@mipmap/ic_launcher');
 
   const InitializationSettings initSettings =
-      InitializationSettings(android: androidSettings);
+  InitializationSettings(android: androidSettings);
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(classReminderChannel);
 }
 
+// =====================================
+// 🌟 Enviar token al backend
+// =====================================
+Future<void> sendTokenToServer(String token) async {
+  if (userSession.id != null && token.isNotEmpty) {
+    try {
+      await http.post(
+        Uri.parse(
+            'https://api.pruebasinventario.com/api/notifications/token'),
+        headers: {'Content-Type': 'application/json'},
+        body: '{"user_id": ${userSession.id}, "token": "$token"}',
+      );
+    } catch (e) {
+      print('❌ Error enviando token al backend: $e');
+    }
+  }
+}
+
+// =====================================
+// 🌟 Configuración de FCM
+// =====================================
 Future<void> setupFCM() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
+  // Solicitar permisos
   await messaging.requestPermission();
 
-  String? newToken = await messaging.getToken();
+  // Obtener token inicial
+  String? initialToken = await messaging.getToken();
+  if (initialToken != null) await sendTokenToServer(initialToken);
 
-  if (userSession.id != null && newToken != null) {
-    await http.post(
-      Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
-      headers: {'Content-Type': 'application/json'},
-      body: '{"user_id": ${userSession.id}, "token": "$newToken"}',
-    );
-  }
-
+  // Escuchar cambios de token
   FirebaseMessaging.instance.onTokenRefresh.listen((updatedToken) async {
-    if (userSession.id != null) {
-      await http.post(
-        Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
-        headers: {'Content-Type': 'application/json'},
-        body: '{"user_id": ${userSession.id}, "token": "$updatedToken"}',
-      );
-    }
+    await sendTokenToServer(updatedToken);
   });
 
+  // Escuchar mensajes en foreground
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     if (message.notification != null) {
       flutterLocalNotificationsPlugin.show(
-        0,
+        message.hashCode,
         message.notification!.title,
         message.notification!.body,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
-            'default_channel',
-            'Notificaciones',
+            classReminderChannel.id,
+            classReminderChannel.name,
+            channelDescription: classReminderChannel.description,
             importance: Importance.max,
             priority: Priority.high,
+            playSound: true,
+            icon: '@mipmap/ic_launcher',
+            color: const Color(0xFF1D1C21),
+            styleInformation:
+            BigTextStyleInformation(message.notification!.body ?? ''),
           ),
         ),
       );
@@ -94,34 +131,37 @@ Future<void> setupFCM() async {
   });
 }
 
+// =====================================
+// 🌟 Función principal
+// =====================================
 void main() async {
   await GetStorage.init();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await initializeDateFormatting('es_ES', null);
+  await initializeLocalNotifications();
+  await setupFCM();
 
+  // Reconectar sockets si hay sesión activa
   if (userSession.session_token != null &&
       userSession.session_token!.isNotEmpty) {
     SocketService().connect();
   }
 
-  await initializeLocalNotifications();
-  await setupFCM();
-
   runApp(
     DevicePreview(
-      // 👈 envolvemos MyApp con DevicePreview
-      enabled: !bool.fromEnvironment('dart.vm.product'), // solo en debug
+      enabled: !bool.fromEnvironment('dart.vm.product'),
       builder: (context) => const MyApp(),
     ),
   );
 }
 
+// =====================================
+// 🌟 Clase MyApp
+// =====================================
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -130,11 +170,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -150,19 +185,17 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.fromSeed(seedColor: whiteLight),
         useMaterial3: true,
         scaffoldBackgroundColor: whiteLight,
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.white),
-        ),
+        textTheme: const TextTheme(bodyMedium: TextStyle(color: Colors.white)),
       ),
       debugShowCheckedModeBanner: false,
-      builder: DevicePreview.appBuilder, // 👈 integración necesaria
-      locale: DevicePreview.locale(context), // 👈 integración necesaria
+      builder: DevicePreview.appBuilder,
+      locale: DevicePreview.locale(context),
       initialRoute: userSession.id != null
           ? userSession.roles!.length > 1
-              ? '/roles'
-              : userSession.roles!.first.id != '3'
-                  ? '/user/home'
-                  : '/coach/home'
+          ? '/roles'
+          : userSession.roles!.first.id != '3'
+          ? '/user/home'
+          : '/coach/home'
           : '/splash',
       getPages: [
         GetPage(name: '/splash', page: () => SplashPage()),

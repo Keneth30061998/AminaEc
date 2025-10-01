@@ -129,9 +129,9 @@ class CoachProfileInfoPage extends StatelessWidget {
   Widget _textTitle() {
     return Text(
       'Datos del Coach',
-      style: GoogleFonts.alfaSlabOne(
+      style: TextStyle(
         fontSize: 24,
-        fontWeight: FontWeight.w100,
+        fontWeight: FontWeight.w900,
         color: darkGrey,
       ),
     );

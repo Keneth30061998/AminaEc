@@ -73,4 +73,24 @@ class UserPlanProvider {
       return 0;
     }
   }
+
+  Future<List<UserPlan>> getAllPlansWithRides(String token) async {
+    try {
+      final uri = Uri.parse('${Environment.API_URL}api/acquire/plans/active/rides');
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token,
+      });
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> plansJson = data['plans'] ?? [];
+        return UserPlan.fromJsonList(plansJson);
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
 }

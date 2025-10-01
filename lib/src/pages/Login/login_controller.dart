@@ -55,10 +55,13 @@ class LoginController extends GetxController {
           GetStorage().write('user', responseApi.data);
           User myUser = User.fromJson(GetStorage().read('user') ?? {});
 
+          // ✅ Configurar socket con nueva sesión (ya conecta automáticamente)
           SocketService().updateUserSession(myUser);
-          SocketService().connect();
 
           progressDialog.close();
+
+          // ✅ Ocultar teclado antes de navegar (evita overflow en transición)
+          FocusScope.of(context).unfocus();
 
           if (myUser.roles != null && myUser.roles!.length > 1) {
             goToRolesPage();
@@ -171,7 +174,7 @@ class LoginController extends GetxController {
       builder: (BuildContext context) {
         return Dialog(
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
@@ -223,7 +226,7 @@ class LoginController extends GetxController {
                       }
 
                       ResponseApi res =
-                          await usersProvider.resetPassword(email, code, pass);
+                      await usersProvider.resetPassword(email, code, pass);
                       if (res.success == true) {
                         Navigator.of(context).pop();
                         Get.snackbar('Éxito', 'Contraseña actualizada');
@@ -272,12 +275,12 @@ class LoginController extends GetxController {
   }
 
   Widget _textField(
-    bool visible,
-    String text,
-    TextEditingController controller,
-    TextInputType type,
-    List<TextInputFormatter> formatters,
-  ) {
+      bool visible,
+      String text,
+      TextEditingController controller,
+      TextInputType type,
+      List<TextInputFormatter> formatters,
+      ) {
     return TextField(
       controller: controller,
       keyboardType: type,
