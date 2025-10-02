@@ -34,6 +34,26 @@
 	<string>Necesitamos acceso al giroscopio para mostrar animaciones interactivas en la tarjeta.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Se requiere acceder a la galeria de fotos</string>
+	<!-- Permitir alertas, sonidos y badges -->
+    <key>NSUserNotificationAlertStyle</key>
+    <string>Alert</string>
+
+    <!-- Mensajes de solicitud de permisos -->
+    <key>NSUserTrackingUsageDescription</key>
+    <string>Este identificador se usará para personalizar tu experiencia.</string>
+
+    <!-- Firebase Messaging necesita desactivar el proxy de AppDelegate -->
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/>
+    <!-- Permite HTTP inseguro -->
+    <key>NSExceptionAllowsInsecureHTTPLoads</key>
+    <true/>
+    <!-- Incluye subdominios, si los usas -->
+    <key>NSIncludesSubdomains</key>
+    <true/>
+    <!-- Desactiva requerimiento de TLS para este dominio -->
+    <key>NSExceptionRequiresForwardSecrecy</key>
+    <false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
