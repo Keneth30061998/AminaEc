@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-import '../../../../../components/Socket/socket_service.dart';
 
 class AdminCoachUpdateScheduleController extends GetxController {
   final CoachProvider _coachProvider = CoachProvider();
@@ -103,6 +102,8 @@ class AdminCoachUpdateScheduleController extends GetxController {
   int _compare(TimeOfDay a, TimeOfDay b) =>
       (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute);
 
+  // 👉 Aquí solo muestro el cambio principal dentro de updateSchedule()
+
   Future<void> updateSchedule(BuildContext context) async {
     if (selectedSchedules.isEmpty) {
       Get.snackbar('Vacío', 'Debes agregar al menos un horario');
@@ -110,16 +111,16 @@ class AdminCoachUpdateScheduleController extends GetxController {
     }
 
     final res =
-        await _coachProvider.updateSchedule(coach.id!, selectedSchedules);
+    await _coachProvider.updateSchedule(coach.id!, selectedSchedules);
     if (res.statusCode == 201) {
-      SocketService()
-          .emit('coach:update', {'id': coach.id, 'type': 'schedule'});
+      //print("✅ Horarios actualizados en backend. El backend emitirá coach:update");
       Get.back();
       Get.snackbar('Éxito', 'Horarios actualizados correctamente');
     } else {
       Get.snackbar('Error', 'No se pudo actualizar los horarios');
     }
   }
+
 
   void _actualizarCalendario() {
     calendarDataSource.value = ScheduleDataSource(selectedSchedules);

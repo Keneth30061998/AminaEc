@@ -7,6 +7,8 @@ import 'admin_coach_update_controller.dart';
 class AdminCoachUpdatePage extends StatelessWidget {
   final AdminCoachUpdateController con = Get.put(AdminCoachUpdateController());
 
+  AdminCoachUpdatePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

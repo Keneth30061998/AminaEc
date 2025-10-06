@@ -10,7 +10,7 @@ import '../../../models/scheduled_class.dart';
 
 class UserStartPage extends StatelessWidget {
   final UserStartController con =
-      Get.put(UserStartController(), permanent: true);
+  Get.put(UserStartController(), permanent: true);
 
   UserStartPage({super.key});
 
@@ -18,33 +18,53 @@ class UserStartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: whiteLight,
+      appBar: AppBar(
+        title: _appBarTitle(),
+        actions: [
+          _actionInfo(context),
+        ],
+      ),
       body: Obx(() {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _appBarTitle(),
-                _textGreeting(),
-                const SizedBox(height: 15),
-                _containerCount(),
-                const SizedBox(height: 15),
-                _reelCoach(context),
-                const SizedBox(height: 15),
-                Text(
-                  'Tus clases agendadas',
-                  style: GoogleFonts.roboto(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: darkGrey,
+        return RefreshIndicator(
+          color: indigoAmina,
+          onRefresh: () async {
+            //print('🔄 Pull-to-refresh activado -> recargando datos...');
+            // Todas estas funciones no devuelven Future<void>, así que se llaman directo
+            con.getScheduledClasses();
+            con.getAttendedClasses();
+            con.getTotalRides();
+            con.getAcquiredPlans();
+            con.getCoaches();
+
+            // Este pequeño delay permite que el indicador se muestre correctamente
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _textGreeting(),
+                  const SizedBox(height: 15),
+                  _containerCount(),
+                  const SizedBox(height: 15),
+                  _reelCoach(context),
+                  const SizedBox(height: 15),
+                  Text(
+                    'Tus clases agendadas',
+                    style: GoogleFonts.roboto(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: darkGrey,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 15),
-                Flexible(
-                  child: _scheduledClassesScrollableSection(),
-                ),
-              ],
+                  const SizedBox(height: 15),
+                  Flexible(
+                    child: _scheduledClassesScrollableSection(),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -54,7 +74,7 @@ class UserStartPage extends StatelessWidget {
 
   Widget _appBarTitle() {
     return Text(
-      'Amina Ec',
+      'Amina',
       style: GoogleFonts.montserrat(
         fontSize: 26,
         fontWeight: FontWeight.w800,
@@ -88,21 +108,21 @@ class UserStartPage extends StatelessWidget {
   }
 
   Widget _boxBikesComplete() {
-    return _boxTemplate(
+    return Obx(() => _boxTemplate(
       title: 'Rides',
-      count: '1',
+      count: '${con.attendedClasses.value}',
       subtitle: 'Completados',
       color: Colors.blueGrey.shade50,
-    );
+    ));
   }
 
   Widget _boxBikesPending() {
     return Obx(() => _boxTemplate(
-          title: 'Rides',
-          count: '${con.totalRides.value}',
-          subtitle: 'Pendientes',
-          color: Colors.blueGrey.shade50,
-        ));
+      title: 'Rides',
+      count: '${con.totalRides.value}',
+      subtitle: 'Adquiridos',
+      color: Colors.blueGrey.shade50,
+    ));
   }
 
   Widget _boxTemplate({
@@ -208,22 +228,22 @@ class UserStartPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(60),
               child: coach.user?.photo_url != null
                   ? Image.network(
-                      coach.user!.photo_url!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.broken_image,
-                          size: 30,
-                          color: Colors.grey),
-                    )
+                coach.user!.photo_url!,
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.broken_image,
+                    size: 30,
+                    color: Colors.grey),
+              )
                   : Container(
-                      width: 70,
-                      height: 70,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.person,
-                          size: 30, color: Colors.white),
-                    ),
+                width: 70,
+                height: 70,
+                color: Colors.grey[300],
+                child: const Icon(Icons.person,
+                    size: 30, color: Colors.white),
+              ),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -273,20 +293,20 @@ class UserStartPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(60),
               child: coach.user?.photo_url != null
                   ? Image.network(
-                      coach.user!.photo_url!,
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.broken_image, size: 50),
-                    )
+                coach.user!.photo_url!,
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.broken_image, size: 50),
+              )
                   : Container(
-                      width: 120,
-                      height: 120,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.person,
-                          size: 60, color: Colors.white),
-                    ),
+                width: 120,
+                height: 120,
+                color: Colors.grey[300],
+                child: const Icon(Icons.person,
+                    size: 60, color: Colors.white),
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -318,21 +338,17 @@ class UserStartPage extends StatelessWidget {
     );
   }
 
-// Dentro de lib/src/pages/user/Start/user_start_page.dart
-
   Widget _scheduledClassCard(ScheduledClass c, BuildContext context) {
-    // Formatear fecha y hora
     final formattedDate =
-        c.classDate.split('T').first.split('-').reversed.join('/');
+    c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
 
-    // Parsea tus fechas
     final createdLocal = c.createdAt.toLocal();
-    final windowEndLocal = createdLocal.add(Duration(hours: 24));
+    final windowEndLocal = createdLocal.add(const Duration(hours: 24));
     final nowLocal = DateTime.now();
 
-    // Calcula permiso de reagendar
     final canReschedule = nowLocal.isBefore(windowEndLocal);
+
     return Stack(
       children: [
         Container(
@@ -341,7 +357,7 @@ class UserStartPage extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+            boxShadow: [const BoxShadow(color: Colors.black12, blurRadius: 4)],
           ),
           child: Row(
             children: [
@@ -349,19 +365,19 @@ class UserStartPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(50),
                 child: c.photo_url.isNotEmpty
                     ? Image.network(
-                        c.photo_url,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.broken_image, size: 30),
-                      )
+                  c.photo_url,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.broken_image, size: 30),
+                )
                     : Container(
-                        width: 60,
-                        height: 60,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.person, color: Colors.white),
-                      ),
+                  width: 60,
+                  height: 60,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.person, color: Colors.white),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -390,8 +406,6 @@ class UserStartPage extends StatelessWidget {
             ],
           ),
         ),
-
-        // Botón de reagendar
         Positioned(
           top: 8,
           right: 8,
@@ -401,7 +415,7 @@ class UserStartPage extends StatelessWidget {
               color: canReschedule ? darkGrey : Colors.grey.shade400,
             ),
             onPressed:
-                canReschedule ? () => con.onPressReschedule(c, context) : null,
+            canReschedule ? () => con.onPressReschedule(c, context) : null,
           ),
         ),
       ],
@@ -424,7 +438,7 @@ class UserStartPage extends StatelessWidget {
 
       return ListView.builder(
         shrinkWrap: true,
-        physics: BouncingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         itemCount: con.scheduledClasses.length,
         itemBuilder: (context, index) {
           return _scheduledClassCard(con.scheduledClasses[index], context);
@@ -432,4 +446,51 @@ class UserStartPage extends StatelessWidget {
       );
     });
   }
+
+  Widget _actionInfo(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: FilledButton.tonalIcon(
+        onPressed: () => _showModalInfo(context),
+        icon: Icon(Icons.info_outline, color: almostBlack),
+        label: Text(
+          'Rides',
+          style: TextStyle(color: darkGrey),
+        ),
+        style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.all(colorBackgroundBox)),
+      ),
+    );
+  }
+
+  Future<void> _showModalInfo(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Rides',
+              style:
+              GoogleFonts.poppins(fontWeight: FontWeight.w800)),
+          content: Text(_ridesTerms,
+              style: GoogleFonts.montserrat(color: darkGrey)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ButtonStyle(
+                foregroundColor: WidgetStatePropertyAll(indigoAmina),
+              ),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static const String _ridesTerms = '''
+En AMINA, valoramos tu tiempo y compromiso con nuestras clases. Reconocemos que a veces surgen imprevistos que requieren cambios en los horarios de clases. Con el fin de brindar flexibilidad y mantener la eficiencia en nuestra programación hemos establecido la siguiente política de cancelación.
+
+Cancelacion con 12 horas de anticipación: tienen derecho a cancelar una clase sin penalización si lo hacen con almenos 12 horas de anticipación antes de la hora de inicio programada.
+
+Proceso de Cancelacion: En la pantalla de inicio se mostrarán las clases que el usuario agendo, en la sección derecha encontrará un botón que da paso al proceso de reagendamiento de clases''';
 }

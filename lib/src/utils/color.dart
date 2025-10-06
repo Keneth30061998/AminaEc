@@ -7,3 +7,4 @@ const Color colorBackgroundBox = Color(0xFFEFF3F4);
 const Color whiteGrey = Color(0xBD4A4A4A);
 const Color whiteLight = Color(0xFFFFFFFF);
 const Color indigoAmina = Color(0xFF4d55f5);
+const Color pinkAmina = Color(0xFFca7ffe);

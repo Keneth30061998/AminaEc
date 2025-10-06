@@ -44,7 +44,7 @@ class AdminReportsPage extends StatelessWidget {
                       children: [
                         Obx(() => DropdownButtonFormField<String>(
                               isExpanded: true,
-                              value: con.selectedYear.value.isEmpty
+                              initialValue: con.selectedYear.value.isEmpty
                                   ? null
                                   : con.selectedYear.value,
                               items: con.years.map((year) {
@@ -67,7 +67,7 @@ class AdminReportsPage extends StatelessWidget {
                         const SizedBox(height: 10),
                         Obx(() => DropdownButtonFormField<String>(
                               isExpanded: true,
-                              value: con.selectedMonth.value.isEmpty
+                              initialValue: con.selectedMonth.value.isEmpty
                                   ? null
                                   : con.selectedMonth.value,
                               items: con.months.map((month) {
@@ -96,7 +96,7 @@ class AdminReportsPage extends StatelessWidget {
                         Expanded(
                           child: Obx(() => DropdownButtonFormField<String>(
                                 isExpanded: true,
-                                value: con.selectedYear.value.isEmpty
+                                initialValue: con.selectedYear.value.isEmpty
                                     ? null
                                     : con.selectedYear.value,
                                 items: con.years.map((year) {
@@ -121,7 +121,7 @@ class AdminReportsPage extends StatelessWidget {
                         Expanded(
                           child: Obx(() => DropdownButtonFormField<String>(
                                 isExpanded: true,
-                                value: con.selectedMonth.value.isEmpty
+                                initialValue: con.selectedMonth.value.isEmpty
                                     ? null
                                     : con.selectedMonth.value,
                                 items: con.months.map((month) {
@@ -231,7 +231,7 @@ class AdminReportsPage extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade300, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey,
               spreadRadius: 1,
               blurRadius: 6,
               offset: const Offset(0, 3),
@@ -239,7 +239,7 @@ class AdminReportsPage extends StatelessWidget {
           ],
         ),
         child: DataTable(
-          headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
+          headingRowColor: WidgetStateProperty.all(Colors.grey.shade200),
           headingTextStyle: GoogleFonts.montserrat(
             fontWeight: FontWeight.bold,
             color: almostBlack,
@@ -260,7 +260,7 @@ class AdminReportsPage extends StatelessWidget {
           ],
           rows: con.attendanceResults.map((r) {
             return DataRow(
-              color: MaterialStateProperty.resolveWith<Color?>(
+              color: WidgetStateProperty.resolveWith<Color?>(
                 (states) {
                   int index = con.attendanceResults.indexOf(r);
                   return index.isEven ? Colors.white : Colors.grey.shade50;

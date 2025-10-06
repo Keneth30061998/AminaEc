@@ -13,11 +13,11 @@ class RescheduleSheet extends StatefulWidget {
   final VoidCallback onSuccess;
 
   const RescheduleSheet({
-    Key? key,
+    super.key,
     required this.reservation,
     required this.coaches,
     required this.onSuccess,
-  }) : super(key: key);
+  });
 
   @override
   _RescheduleSheetState createState() => _RescheduleSheetState();

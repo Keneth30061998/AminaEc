@@ -126,5 +126,14 @@ class AdminStartController extends GetxController {
       loadStudents(coachId);
       getCoaches();
     });
+
+    // 🔄 Nuevo: escuchar reagendamiento
+    SocketService().on('class:coach:rescheduled', (data) {
+      final coachId = data['coach_id'].toString();
+      //print('📡 Socket -> class:coach:rescheduled (admin) $data');
+      loadStudents(coachId);
+      getCoaches();
+    });
   }
+
 }

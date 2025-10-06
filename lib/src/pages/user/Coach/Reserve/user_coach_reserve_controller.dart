@@ -10,20 +10,13 @@ import '../../../../providers/user_plan_provider.dart';
 import '../../Start/user_start_controller.dart';
 
 class UserCoachReserveController extends GetxController {
-  // Datos del usuario - token - rides
   User user = User.fromJson(GetStorage().read('user') ?? {});
   late UserPlanProvider userPlanProvider;
 
-  // Equipo seleccionado
   var selectedEquipos = <int>{}.obs;
-
-  // Máquinas ocupadas
   final occupiedEquipos = <int>{}.obs;
-
-  // Variable reactiva contadora de rides
   final RxInt totalRides = 0.obs;
 
-  // Datos de reserva
   late String coachId;
   late String classDate;
   late String classTime;
@@ -38,10 +31,8 @@ class UserCoachReserveController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Inicializar provider sin context (evita BuildContext? error)
     userPlanProvider = UserPlanProvider();
 
-    // Obtener argumentos de navegación
     final args = Get.arguments;
     coachId = args['coach_id'] ?? '';
     classDate = args['class_date'] ?? '';
@@ -50,21 +41,15 @@ class UserCoachReserveController extends GetxController {
     coachName = args['coach_name'] ?? '';
     sessionToken = (_user['session_token'] ?? '').toString();
 
-    // Obtener total de rides
     getTotalRides();
 
-    // Sockets
     SocketService().updateUserSession(user);
-    SocketService().on('rides:updated', (_) {
-      getTotalRides();
-    });
+    SocketService().on('rides:updated', (_) => getTotalRides());
 
-    // Máquinas ocupadas
     listenToMachineStatus();
     fetchOccupiedEquiposInicial();
   }
 
-  // Toggle visual de bicicleta seleccionada
   void toggleEquipo(int equipo) {
     if (occupiedEquipos.contains(equipo)) return;
     if (selectedEquipos.contains(equipo)) {
@@ -75,7 +60,6 @@ class UserCoachReserveController extends GetxController {
     }
   }
 
-  // Agendar clase
   Future<void> reserveClass() async {
     if (selectedEquipos.isEmpty) {
       Get.snackbar('Máquina no seleccionada', 'Debes elegir una bicicleta');
@@ -84,7 +68,6 @@ class UserCoachReserveController extends GetxController {
 
     int bicycle = selectedEquipos.first;
 
-    // Hacer la petición al backend
     ResponseApi response = await _provider.scheduleClass(
       coachId: coachId,
       bicycle: bicycle,
@@ -93,7 +76,6 @@ class UserCoachReserveController extends GetxController {
     );
 
     if (response.success! && response.data != null) {
-      // Éxito
       ClassReservation reservation = response.data as ClassReservation;
 
       Get.snackbar('Clase agendada', '¡Tu ride está confirmado!');
@@ -101,7 +83,6 @@ class UserCoachReserveController extends GetxController {
         Get.find<UserStartController>().getScheduledClasses();
       }
 
-      // Emitir sockets
       SocketService().emit('class:reserved', reservation.toJson());
       SocketService().emit('class:coach:reserved', reservation.toJson());
       SocketService().emit('machine:status:update', {
@@ -111,27 +92,23 @@ class UserCoachReserveController extends GetxController {
         'status': 'occupied'
       });
 
-      // Navegar
       Future.delayed(const Duration(seconds: 2), () {
-        if (Get.isOverlaysOpen) {
-          Get.back();
-        }
+        if (Get.isOverlaysOpen) Get.back();
+        Get.offAllNamed('/user/home');
       });
     } else {
       Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
     }
   }
 
-  // Obtener total de rides
   void getTotalRides() async {
     if (user.session_token != null) {
       int rides =
-          await userPlanProvider.getTotalActiveRides(user.session_token!);
+      await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
 
-  // Máquinas ocupadas
   void listenToMachineStatus() {
     SocketService().on('machine:status:update', (payload) {
       String date = payload['class_date'];
@@ -139,7 +116,6 @@ class UserCoachReserveController extends GetxController {
       int bicycle = payload['bicycle'];
       String status = payload['status'];
 
-      // Verificar si corresponde a esta vista
       if (date == classDate && time == classTime) {
         if (status == 'occupied') {
           occupiedEquipos.add(bicycle);

@@ -16,7 +16,7 @@ class CardProvider {
 
   String? get _userId => _box.read('user')?['id']?.toString();
   String? get _email => _box.read('user')?['email']?.toString();
-  String? get _token => _box.read('user')?['session_token']; //  JWT
+  //String? get _token => _box.read('user')?['session_token']; //  JWT
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',

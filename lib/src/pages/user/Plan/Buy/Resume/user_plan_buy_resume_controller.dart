@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -172,22 +173,28 @@ class UserPlanBuyResumeController extends GetxController {
     final codeCtrl = TextEditingController();
     return Get.defaultDialog<String?>(
       title: 'Código OTP',
-      content: Column(
-        children: [
-          Text('Ingresa el código enviado por tu banco'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: codeCtrl,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: '000000',
-              border: OutlineInputBorder(),
+      content: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            Text('Ingresa el código enviado por tu banco', style: TextStyle(color: almostBlack),),
+            const SizedBox(height: 12),
+            TextField(
+              controller: codeCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: '000000',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+      buttonColor: whiteGrey,
       textConfirm: 'Confirmar',
+      confirmTextColor: whiteLight,
       textCancel: 'Cancelar',
+      cancelTextColor: darkGrey,
       onConfirm: () => Get.back(result: codeCtrl.text.trim()),
       onCancel: () => Get.back(result: null),
     );

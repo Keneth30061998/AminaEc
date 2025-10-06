@@ -18,56 +18,79 @@ class UserCoachSchedulePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: whiteLight,
       appBar: AppBar(
-        title: Text('Agendar Ride',
-            style: GoogleFonts.montserrat(
-                fontSize: 22, fontWeight: FontWeight.w800)),
+        title: Text(
+          'Agendar Ride',
+          style: GoogleFonts.montserrat(
+              fontSize: 22, fontWeight: FontWeight.w800),
+        ),
         backgroundColor: whiteLight,
         foregroundColor: almostBlack,
       ),
-      body: Column(
-        children: [
-          Obx(() => SfCalendar(
-                minDate: DateTime.now(),
-                view: CalendarView.month,
-                onTap: (details) {
-                  if (details.date != null) con.selectDate(details.date!);
+      body: RefreshIndicator(
+        color: indigoAmina,
+        onRefresh: () async {
+          await con.loadCoaches(); // 🔄 recarga desde backend
+          con.selectedDate.refresh(); // 🔁 fuerza re-filtrado
+          con.filteredCoaches.refresh(); // 🔁 fuerza reconstrucción
+          con.calendarRefreshTrigger.value++; // 🔁 reconstrucción visual del calendario
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              Obx(
+                    () {
+                  final refreshKey = con.calendarRefreshTrigger.value; // 🔁 trigger visual
+                  return SfCalendar(
+                    key: ValueKey(refreshKey),
+                    minDate: DateTime.now(),
+                    view: CalendarView.month,
+                    onTap: (details) {
+                      if (details.date != null) con.selectDate(details.date!);
+                    },
+                    initialSelectedDate: con.selectedDate.value,
+                    dataSource: con.calendarDataSource.value,
+                    headerStyle: CalendarHeaderStyle(
+                      textAlign: TextAlign.center,
+                      backgroundColor: indigoAmina,
+                      textStyle: const TextStyle(color: whiteLight),
+                    ),
+                    selectionDecoration: BoxDecoration(
+                      color: darkGrey.withAlpha((0.2 * 255).toInt()),
+                      border: Border.all(color: darkGrey, width: 2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    showNavigationArrow: true,
+                    todayHighlightColor: indigoAmina,
+                    monthViewSettings: const MonthViewSettings(
+                      appointmentDisplayMode:
+                      MonthAppointmentDisplayMode.indicator,
+                      showAgenda: false,
+                    ),
+                  );
                 },
-                initialSelectedDate: con.selectedDate.value,
-                dataSource: con.calendarDataSource.value,
-                headerStyle: CalendarHeaderStyle(
-                    textAlign: TextAlign.center,
-                    backgroundColor: indigoAmina,
-                    textStyle: TextStyle(color: whiteLight)),
-                selectionDecoration: BoxDecoration(
-                  color: darkGrey.withAlpha((0.2 * 255).toInt()),
-                  border: Border.all(color: darkGrey, width: 2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                showNavigationArrow: true,
-                todayHighlightColor: indigoAmina,
-                monthViewSettings: MonthViewSettings(
-                  appointmentDisplayMode: MonthAppointmentDisplayMode.indicator,
-                  showAgenda: false,
-                ),
-              )),
-          Expanded(
-            child: Obx(() {
-              if (con.filteredCoaches.isEmpty) {
-                return Center(
+              ),
+              Obx(() {
+                if (con.filteredCoaches.isEmpty) {
+                  return const Center(
                     child: NoDataWidget(
-                        text: 'No hay entrenadores disponibles ese día'));
-              }
-              return ListView.builder(
-                itemCount: con.filteredCoaches.length,
-                padding: const EdgeInsets.all(16),
-                itemBuilder: (_, index) {
-                  final coach = con.filteredCoaches[index];
-                  return _coachCard(coach, con.selectedDate.value);
-                },
-              );
-            }),
-          )
-        ],
+                        text: 'No hay entrenadores disponibles ese día'),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: con.filteredCoaches.length,
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (_, index) {
+                    final coach = con.filteredCoaches[index];
+                    return _coachCard(coach, con.selectedDate.value);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -87,7 +110,7 @@ class UserCoachSchedulePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,7 +124,8 @@ class UserCoachSchedulePage extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Icon(Icons.person, size: 48),
+                  errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.person, size: 48),
                 ),
               ),
               const SizedBox(width: 16),
@@ -112,9 +136,10 @@ class UserCoachSchedulePage extends StatelessWidget {
                     Text(
                       '${coach.user?.name ?? ''} ${coach.user?.lastname ?? ''}',
                       style: GoogleFonts.roboto(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w900,
-                          color: almostBlack),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                        color: almostBlack,
+                      ),
                     ),
                     Text(
                       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
@@ -138,9 +163,10 @@ class UserCoachSchedulePage extends StatelessWidget {
                 return ActionChip(
                   onPressed: () {
                     con.goToUserCoachReservePage(
-                        coachId: coach.id ?? '',
-                        classTime: s.start_time ?? '00:00:00',
-                        coachName: coach.user?.name ?? '');
+                      coachId: coach.id ?? '',
+                      classTime: s.start_time ?? '00:00:00',
+                      coachName: coach.user?.name ?? '',
+                    );
                   },
                   label: Text(
                       '${_formatTime(s.start_time)} - ${_formatTime(s.end_time)}'),

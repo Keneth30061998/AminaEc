@@ -263,6 +263,11 @@ class UserPlanBuyResumePage extends StatelessWidget {
     Get.defaultDialog(
       title: 'Eliminar tarjeta',
       middleText: '¿Deseas eliminar ${card.displayName}?',
+      middleTextStyle: TextStyle(
+        color: almostBlack
+      ),
+      buttonColor: Colors.black54,
+      cancelTextColor: whiteGrey,
       onConfirm: () {
         con.deleteCard(card.token!);
         Get.back();

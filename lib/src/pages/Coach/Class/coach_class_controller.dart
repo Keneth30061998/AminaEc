@@ -56,5 +56,12 @@ class CoachClassController extends GetxController {
     SocketService().on('class:reserved', (data) {
       loadStudents();
     });
+
+    // 🔄 Nuevo: escuchar reagendamiento
+    SocketService().on('class:coach:rescheduled', (data) {
+      //print('📡 Socket -> class:coach:rescheduled (coach) $data');
+      loadStudents();
+    });
   }
+
 }

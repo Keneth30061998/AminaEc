@@ -12,8 +12,6 @@ import 'package:intl/intl.dart';
 import 'package:sn_progress_dialog/progress_dialog.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-import '../../../../components/Socket/socket_service.dart';
-
 class AdminCoachRegisterController extends GetxController {
   // Controladores de texto
   final emailController = TextEditingController();
@@ -37,18 +35,17 @@ class AdminCoachRegisterController extends GetxController {
 
   final CoachProvider coachProvider = CoachProvider();
 
-  //Ver - ocultar cobntraseña
+  //Ver - ocultar contraseña
   var obscurePassword = true.obs;
   var obscureConfirmPassword = true.obs;
 
   @override
   void onInit() {
-    // TODO: implement onInit
     super.onInit();
     ever<List<Schedule>>(selectedSchedules, (_) => _actualizarCalendario());
   }
 
-  // Navegación entre pantallas
+  // Navegación
   void goToRegisterAdminCoachImage() =>
       Get.toNamed('/admin/coach/register-image');
 
@@ -108,7 +105,7 @@ class AdminCoachRegisterController extends GetxController {
         actions: [
           TextButton(
             onPressed: () async {
-              Get.back(); // cierra el AlertDialog
+              Get.back();
 
               TimeOfDay? start = await showTimePicker(
                 context: Get.context!,
@@ -121,7 +118,7 @@ class AdminCoachRegisterController extends GetxController {
                 context: Get.context!,
                 helpText: 'Hora de fin',
                 initialTime:
-                    TimeOfDay(hour: start.hour + 1, minute: start.minute),
+                TimeOfDay(hour: start.hour + 1, minute: start.minute),
               );
               if (end == null) return;
 
@@ -141,8 +138,8 @@ class AdminCoachRegisterController extends GetxController {
   Future<void> _validarYAgregarHorario(
       DateTime date, TimeOfDay start, TimeOfDay end) async {
     if (_compararHoras(start, end) >= 0) {
-      Get.snackbar(
-          'Rango inválido', 'La hora de fin debe ser mayor que la de inicio',
+      Get.snackbar('Rango inválido',
+          'La hora de fin debe ser mayor que la de inicio',
           backgroundColor: Colors.redAccent, colorText: Colors.white);
       return;
     }
@@ -157,7 +154,7 @@ class AdminCoachRegisterController extends GetxController {
     );
 
     if (selectedSchedules.any((s) =>
-        s.date == newSchedule.date &&
+    s.date == newSchedule.date &&
         s.start_time == newSchedule.start_time &&
         s.end_time == newSchedule.end_time)) {
       Get.snackbar('Duplicado', 'Ya agregaste ese horario',
@@ -256,11 +253,9 @@ class AdminCoachRegisterController extends GetxController {
       progressDialog.close();
       final data = json.decode(res);
       if (data['success'] == true) {
+        //print("✅ Coach registrado correctamente y backend emitió coach:new");
         Get.snackbar('Éxito', 'Coach registrado correctamente');
-        if (SocketService().socket.connected) {
-          SocketService().emit('coach:new', coach.toJson());
-        }
-        Get.offAllNamed('/admin/home'); // navegación segura sin context
+        Get.offAllNamed('/admin/home');
       } else {
         Get.snackbar('Error', 'No se pudo registrar el coach');
       }
@@ -285,7 +280,7 @@ class ScheduleDataSource extends CalendarDataSource {
         startTime: startTime,
         endTime: endTime,
         subject:
-            'Disponible: ${s.start_time!.substring(0, 5)} - ${s.end_time!.substring(0, 5)}',
+        'Disponible: ${s.start_time!.substring(0, 5)} - ${s.end_time!.substring(0, 5)}',
         color: Colors.green.shade400,
         isAllDay: false,
       );

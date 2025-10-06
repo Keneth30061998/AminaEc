@@ -61,6 +61,7 @@ dependencies:
   firebase_messaging: ^16.0.1
   flutter_local_notifications: ^19.4.2
   device_preview: ^1.3.1
+  device_info_plus: ^12.1.0
 
 
 dev_dependencies:
@@ -92,10 +93,7 @@ flutter:
     - assets/img/noImage.jpg
     - assets/img/addImage.png
     - assets/img/no_files.png
-    - assets/img/amina_logo.png
     - assets/img/amina_logo_lime.png
-    - assets/img/amina_logo_indigo.png
-    - assets/img/amina_logo_lime_indigo.png
     - assets/img/splashImage.jpg
   #   - images/a_dot_ham.jpeg
 
@@ -123,5 +121,6 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/img/amina_logo_lime_indigo.png"
-  adaptive_icon_background: "#ffffff" # o una imagen si prefieres
+  image_path: "assets/img/amina_logo_lime.png"
+  adaptive_icon_background: "#daff7c"
+  remove_alpha_ios: true

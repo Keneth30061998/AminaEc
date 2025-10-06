@@ -1,17 +1,8 @@
-// lib/src/components/Socket/socket_service.dart
 import 'package:amina_ec/src/environment/environment.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
 import '../../models/user.dart';
 
-/// SocketService (singleton) — maneja conexión y listeners
-/// -----------------------------------------------------
-/// - Reconstruye la instancia de socket cuando cambia el token (evita manipular socket.io.options)
-/// - Evita listeners duplicados (socket.off(event) antes de socket.on)
-/// - Envía token por auth al crear el socket (acepta el session_token que contiene 'JWT ...')
-/// - Emite join con { room: '<id>' } (coincide con backend)
-/// - Provee helpers (connect, disconnect, on, once, off, emitSafe, join, leaveRoom)
 class SocketService {
   static final SocketService _singleton = SocketService._internal();
   factory SocketService() => _singleton;
@@ -20,209 +11,154 @@ class SocketService {
   late IO.Socket socket;
 
   SocketService._internal() {
-    // Inicializar socket con el token actual (si hay)
     final initialToken = userSession.session_token ?? '';
+    //print("📲 [SocketService] Inicializando con token: $initialToken");
     _recreateSocketWithToken(initialToken, autoConnect: false);
   }
 
-  // Construye la instancia del socket con las opciones necesarias
   IO.Socket _buildSocket(String authToken) {
-    // El OptionBuilder ya coloca el token en auth correctamente
     final s = IO.io(
       Environment.API_URL_SOCKET,
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setPath('/socket.io')
           .setAuth({'token': authToken})
           .disableAutoConnect()
           .enableForceNew()
           .build(),
     );
+    //print("🔧 [SocketService] _buildSocket con token: $authToken");
     return s;
   }
 
-  // Atacha handlers básicos al socket (connect/disconnect/errors).
-  // Esto se llama cada vez que se crea un nuevo socket para evitar handlers duplicados.
   void _attachDefaultHandlers() {
-    // Limpiar handlers previos por seguridad
-    try {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('connect_error');
-      socket.off('error');
-    } catch (e) {}
+    socket.off('connect');
+    socket.off('disconnect');
+    socket.off('connect_error');
+    socket.off('error');
 
     socket.onConnect((_) {
-      // Cuando conectamos, nos unimos a la sala privada del usuario (si existe id)
-      try {
-        if (userSession.id != null) {
-          final room = userSession.id.toString();
-          // En backend se espera: socket.on("join", ({ room }) => { ... })
-          socket.emit('join', {'room': room});
-        }
-      } catch (e) {
-        // ignore
-      }
+      //print("✅ [SocketService] Conectado al socket, id=${socket.id}");
+      _joinPrivateRoom(); // 🔑 cada vez que se conecta, entra en su sala privada
     });
 
-    socket.onDisconnect((_) {
-      // Opcional: registrar para debugging
-      // print('SocketService: disconnected');
+    socket.onDisconnect((reason) {
+      //print("⛔️ [SocketService] Desconectado del socket, reason=$reason");
     });
 
     socket.onConnectError((err) {
-      // Opcional: registrar para debugging
-      // print('SocketService: connect error -> $err');
+      //print("⚠️ [SocketService] Error al conectar: $err");
     });
 
     socket.onError((err) {
-      // Opcional: registrar para debugging
-      // print('SocketService: error -> $err');
+      //print("❌ [SocketService] Error en socket: $err");
     });
   }
 
-  // Reconstruye la instancia del socket con el token dado. Si autoConnect=true,
-  // llama a connect() al final.
   void _recreateSocketWithToken(String token, {bool autoConnect = false}) {
-    // Si existe una instancia previa, limpiarla
-    try {
-      try {
-        socket.disconnect();
-      } catch (e) {}
-      try {
-        socket.dispose();
-      } catch (e) {}
-      try {
-        socket.close();
-      } catch (e) {}
-        } catch (e) {
-      // ignore: no-op si no existía
-    }
-
-    // Crear nueva instancia
-    socket = _buildSocket(token);
-
-    // Atachar handlers básicos
-    _attachDefaultHandlers();
-
-    if (autoConnect && token.isNotEmpty) {
-      try {
-        socket.connect();
-      } catch (e) {
-        // ignore
-      }
-    }
-  }
-
-  /// Actualiza la sesión del usuario (token/id).
-  /// Reconstruye el socket con el nuevo token y conecta.
-  void updateUserSession(User newUser) {
-    userSession = newUser;
-
-    final token = userSession.session_token ?? '';
-    // Reconstruir socket con nuevo token y conectar (si el token existe)
-    _recreateSocketWithToken(token, autoConnect: token.isNotEmpty);
-  }
-
-  /// Fuerza la conexión del socket actual.
-  void connect() {
-    if (socket.connected) return;
-    try {
-      socket.connect();
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  /// Desconecta (limpia) la instancia actual del socket.
-  void disconnect() {
     try {
       socket.disconnect();
       socket.dispose();
       socket.close();
-    } catch (e) {
-      // ignore
+    } catch (_) {}
+
+    socket = _buildSocket(token);
+    _attachDefaultHandlers();
+
+    if (autoConnect && token.isNotEmpty) {
+      //print("📡 [SocketService] autoConnect=true, iniciando conexión...");
+      socket.connect();
     }
   }
 
-  /// Indica si está conectado
-  bool isConnected() {
+  void updateUserSession(User newUser) {
+    userSession = newUser;
+    final token = userSession.session_token ?? '';
+    //print("🔄 [SocketService] updateUserSession, nuevo token: $token");
+    _recreateSocketWithToken(token, autoConnect: token.isNotEmpty);
+  }
+
+  void connect() {
+    if (socket.connected) {
+      //print("ℹ️ [SocketService] Ya conectado");
+      _joinPrivateRoom(); // 🔑 reforzar unión aunque ya esté conectado
+      return;
+    }
+    //print("📡 [SocketService] Intentando conectar...");
+    socket.connect();
+  }
+
+  void disconnect() {
+    //print("🛑 [SocketService] Disconnect llamado");
     try {
-      return socket.connected;
-    } catch (e) {
-      return false;
-    }
+      socket.disconnect();
+      socket.dispose();
+      socket.close();
+    } catch (_) {}
   }
 
-  /// Registra un listener. Antes de registrar, elimina cualquier listener previo
-  /// para evitar duplicados (importante cuando pantallas se reconstruyen).
+  bool isConnected() => socket.connected;
+
   void on(String event, Function(dynamic) callback) {
-    try {
-      socket.off(event);
-    } catch (e) {}
+    //print("👂 [SocketService] Listening al evento: $event");
+    if (socket.hasListeners(event)) return; // evita duplicados
     socket.on(event, (data) {
+      //print("👂 [SocketService] Evento recibido: $event → $data");
       callback(data);
     });
   }
 
-  /// Registra un listener que se dispara solo una vez
+
   void once(String event, Function(dynamic) callback) {
-    try {
-      socket.once(event, callback);
-    } catch (e) {}
+    socket.once(event, callback);
   }
 
-  /// Elimina listener para evento específico
   void off(String event) {
-    try {
-      socket.off(event);
-    } catch (e) {}
+    socket.off(event);
+    //print("🗑️ [SocketService] Listener removido: $event");
   }
 
-  /// Emite un evento (si no está conectado, intenta conectar si hay token)
   void emit(String event, dynamic data) {
-    if (!isConnected()) {
-      // intenta conectar si hay token
-      if (userSession.session_token != null &&
-          userSession.session_token!.isNotEmpty) {
-        connect();
-      }
+    if (!socket.connected && userSession.session_token?.isNotEmpty == true) {
+      //print("🔌 [SocketService] No conectado, intentando reconectar antes de emitir...");
+      socket.connect();
     }
-    try {
-      socket.emit(event, data);
-    } catch (e) {
-      // ignore
-    }
+    //print("📤 [SocketService] Emitting $event → $data");
+    socket.emit(event, data);
   }
 
-  /// Emite solo si está conectado. (útil para evitar errores)
   void emitSafe(String event, dynamic data) {
-    if (isConnected()) {
-      try {
-        socket.emit(event, data);
-      } catch (e) {}
+    if (socket.connected) {
+      //print("📤 [SocketService] Emitting seguro $event → $data");
+      socket.emit(event, data);
     }
   }
 
-  /// Unirse a una sala (backend espera { room: '...' })
+  // 🚪 Unirse a la sala privada del usuario actual
+  void _joinPrivateRoom() {
+    if (userSession.id != null) {
+      final room = userSession.id.toString();
+      //print("🚪 [SocketService] Uniéndose a sala privada: $room");
+      socket.emit('join', {'room': room});
+    }
+  }
+
   void join(String room) {
-    if (room.isEmpty) return;
-    emit('join', {'room': room});
+    //print("🚪 [SocketService] join room → $room");
+    socket.emit('join', {'room': room});
   }
 
-  /// Salir de sala (si lo usa)
   void leaveRoom(String room) {
-    if (room.isEmpty) return;
-    emit('leave', {'room': room});
+    //print("🚪 [SocketService] leave room → $room");
+    socket.emit('leave', {'room': room});
   }
 
-  /// Liberar recursos
   void dispose() {
-    try {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('error');
-      socket.dispose();
-      socket.close();
-    } catch (e) {}
+    //print("🗑️ [SocketService] dispose socket");
+    socket.off('connect');
+    socket.off('disconnect');
+    socket.off('error');
+    socket.dispose();
+    socket.close();
   }
 }
