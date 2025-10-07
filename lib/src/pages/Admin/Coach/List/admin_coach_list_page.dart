@@ -117,8 +117,10 @@ class AdminCoachListPage extends StatelessWidget {
                   con.goToUpdateCoachPage(coach);
                 } else if (value == 'edit_schedule') {
                   con.goToUpdateCoachSchedulePage(coach);
-                } else if (value == 'delete') {
-                  con.deleteCoach(coach.id!);
+                } else if (value == 'toggle_state') {
+                  final newState = coach.state == 1 ? 0 : 1;
+                  //con.deleteCoach(coach.id!);
+                  con.toggleCoachState(coach.id!, newState);
                 }
               },
               itemBuilder: (context) => [
@@ -142,13 +144,13 @@ class AdminCoachListPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'delete',
+                PopupMenuItem(
+                  value: 'toggle_state',
                   child: Row(
                     children: [
-                      Icon(iconEraser, color: Colors.red),
+                      Icon(coach.state == 1 ? Icons.block : Icons.check, color: coach.state == 1 ? Colors.red : Colors.green),
                       SizedBox(width: 8),
-                      Text('Eliminar'),
+                      Text(coach.state == 1 ? 'Desactivar' : 'Reactivar'),
                     ],
                   ),
                 ),

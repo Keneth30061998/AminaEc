@@ -32,7 +32,7 @@ class AdminClassesTab extends StatelessWidget {
               Expanded(
                 child: Obx(() => DropdownButtonFormField<String>(
                   isExpanded: true,
-                  value: con.selectedYear.value.isEmpty ? null : con.selectedYear.value,
+                  initialValue: con.selectedYear.value.isEmpty ? null : con.selectedYear.value,
                   items: con.years.map((year) => DropdownMenuItem(
                     value: year,
                     child: Text(year),
@@ -49,7 +49,7 @@ class AdminClassesTab extends StatelessWidget {
               Expanded(
                 child: Obx(() => DropdownButtonFormField<String>(
                   isExpanded: true,
-                  value: con.selectedMonth.value.isEmpty ? null : con.selectedMonth.value,
+                  initialValue: con.selectedMonth.value.isEmpty ? null : con.selectedMonth.value,
                   items: con.months.map((month) => DropdownMenuItem(
                     value: month,
                     child: Text(month),
@@ -90,6 +90,11 @@ class AdminClassesTab extends StatelessWidget {
       onPressed: con.buscar,
       icon: const Icon(iconSearch),
       label: const Text(txtSearch),
+      style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(almostBlack),
+          foregroundColor: WidgetStatePropertyAll(whiteLight)
+
+      ),
     ),
   );
 

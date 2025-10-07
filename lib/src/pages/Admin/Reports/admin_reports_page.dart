@@ -1,7 +1,5 @@
 import 'package:amina_ec/src/pages/Admin/Reports/admin_reports_controller.dart';
 
-import 'package:amina_ec/src/utils/iconos.dart';
-import 'package:amina_ec/src/utils/textos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,6 +21,8 @@ class AdminReportsPage extends StatelessWidget {
         appBar: AppBar(
           title: _appBarTitle(),
           bottom: const TabBar(
+            indicatorColor: almostBlack,
+            labelColor: almostBlack,
             tabs: [
               Tab(text: 'Clases'),
               Tab(text: 'Transacciones'),

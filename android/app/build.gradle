@@ -1,44 +1,51 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+
+    // ✅ Flutter Gradle Plugin SIEMPRE debe ir al final
     id "dev.flutter.flutter-gradle-plugin"
+
+    // 🔥 Google Services (Firebase)
+    id "com.google.gms.google-services"
 }
 
 android {
-    namespace = "com.aminaec.amina_ec"
-    compileSdk = flutter.compileSdkVersion
+    // ✅ El namespace debe coincidir con tu Application ID (sin "=" ni comillas erradas)
+    namespace "com.aminaec.amina_ec"
+
+    compileSdk = 36  // puedes usar flutter.compileSdkVersion si quieres
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // ✅ Necesario para compatibilidad con APIs modernas
         coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17
+        jvmTarget = "17"
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.aminaec.amina_ec"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        // ✅ ID único del paquete (igual que el namespace)
+        applicationId "com.aminaec.amina_ec"
+
+        // ✅ Define versiones desde Flutter
+        minSdkVersion = flutter.minSdkVersion
+        targetSdk = 36
+
+        // ✅ Estas líneas se obtienen automáticamente del pubspec.yaml
+        versionCode flutter.versionCode
+        versionName flutter.versionName
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // ⚠️ Configuración temporal (para firmar con la debug key)
             signingConfig = signingConfigs.debug
+            // ✅ Si usas proguard, descomenta la siguiente línea:
+            // minifyEnabled true
         }
     }
 }
@@ -48,9 +55,9 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10"
+    // ✅ Librerías Kotlin actualizadas
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
 
-    // ✅ Necesario para flutter_local_notifications con Java 17
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    // ✅ Necesario para compatibilidad de fechas, timezones, etc. con Java 17
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
 }

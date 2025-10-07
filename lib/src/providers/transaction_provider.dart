@@ -32,7 +32,7 @@ class TransactionProvider extends GetConnect {
         return data.map((e) => TransactionReport.fromJson(e)).toList();
       }
     } catch (e) {
-      print('❌ Error TransactionProvider.getReport: $e');
+      //print('❌ Error TransactionProvider.getReport: $e');
     }
 
     return [];

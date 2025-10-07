@@ -60,4 +60,17 @@ class AdminCoachListController extends GetxController {
       Get.snackbar('Error', 'No se pudo eliminar el coach');
     }
   }
+
+  void toggleCoachState(String id, int newState) async {
+    final res = await coachProvider.setState(id, newState);
+    print(res.body); // o resp.data según tu provider
+
+    if (res.statusCode == 200) {
+      Get.snackbar('Éxito', 'Estado actualizado correctamente');
+      getCoaches();
+    } else {
+      Get.snackbar('Error', 'No se pudo actualizar el estado');
+    }
+  }
+
 }

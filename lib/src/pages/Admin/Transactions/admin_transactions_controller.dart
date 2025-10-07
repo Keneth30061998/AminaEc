@@ -6,7 +6,7 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../models/transaction_report.dart';
 import '../../../providers/transaction_provider.dart';
@@ -17,8 +17,8 @@ class AdminTransactionsController extends GetxController {
 
   final List<String> years = List.generate(6, (i) => (2025 + i).toString());
   final List<String> months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
   ];
 
   final transactions = <TransactionReport>[].obs;
@@ -49,7 +49,6 @@ class AdminTransactionsController extends GetxController {
   Future<File> generatePDF() async {
     final pdf = pw.Document();
 
-
     pdf.addPage(
       pw.Page(
         build: (context) {
@@ -68,38 +67,49 @@ class AdminTransactionsController extends GetxController {
       ),
     );
 
-    final dir = Platform.isAndroid
-        ? (await getExternalStorageDirectory())!
-        : await getApplicationDocumentsDirectory();
+    Directory dir;
+    if (Platform.isAndroid) {
+      final status = await Permission.manageExternalStorage.request();
+      if (status.isGranted) {
+        dir = Directory('/storage/emulated/0/Download');
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+    } else {
+      dir = await getApplicationDocumentsDirectory();
+    }
 
     final file = File('${dir.path}/reporte_transacciones.pdf');
     await file.writeAsBytes(await pdf.save(), flush: true);
-
     return file;
   }
 
-  /// Exportar PDF y compartir (iOS)
+  /// Exportar PDF
   Future<void> exportPDF(BuildContext context) async {
+    final box = context.findRenderObject() as RenderBox?;
+    final shareRect = box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+
     final file = await generatePDF();
 
-    if (Platform.isIOS) {
-      final box = context.findRenderObject() as RenderBox?;
-      if (box != null) {
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'Reporte de Transacciones',
-          sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
-        );
-      } else {
-        await Share.shareXFiles([XFile(file.path)], text: 'Reporte de Transacciones');
-      }
-    } else {
-      Get.snackbar('PDF generado', 'Archivo guardado en: ${file.path}');
+    final params = ShareParams(
+      files: [XFile(file.path)],
+      text: 'Reporte de Transacciones',
+      sharePositionOrigin: shareRect,
+    );
+
+    try {
+      await SharePlus.instance.share(params);
+    } catch (e) {
+      Get.snackbar(
+        'Exportación',
+        'Archivo guardado en: ${file.path}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
-  /// Exportar Excel
-  Future<void> exportExcel() async {
+  /// Exportar Excel (funciona en Android y iOS)
+  Future<void> exportExcel(BuildContext context) async {
     final excel = Excel.createExcel();
     final sheet = excel['Reporte'];
 
@@ -113,7 +123,7 @@ class AdminTransactionsController extends GetxController {
       TextCellValue('Total'),
     ]);
 
-    // Filas de datos
+    // Filas
     for (var tx in transactions) {
       sheet.appendRow([
         TextCellValue(DateFormat('dd/MM/yyyy').format(tx.fecha)),
@@ -128,10 +138,14 @@ class AdminTransactionsController extends GetxController {
     final bytes = excel.encode();
     if (bytes == null) return;
 
-    // Directorio según plataforma
     Directory dir;
     if (Platform.isAndroid) {
-      dir = (await getExternalStorageDirectory())!;
+      final status = await Permission.manageExternalStorage.request();
+      if (status.isGranted) {
+        dir = Directory('/storage/emulated/0/Download');
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
     } else {
       dir = await getApplicationDocumentsDirectory();
     }
@@ -139,6 +153,32 @@ class AdminTransactionsController extends GetxController {
     final file = File('${dir.path}/reporte_transacciones.xlsx');
     await file.writeAsBytes(bytes, flush: true);
 
-    Get.snackbar('Excel generado', 'Archivo guardado en: ${file.path}');
+    if (Platform.isIOS) {
+      // En iOS compartimos el archivo para que el usuario pueda guardarlo
+      final box = context.findRenderObject() as RenderBox?;
+      final shareRect = box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+
+      final params = ShareParams(
+        files: [XFile(file.path)],
+        text: 'Reporte de Transacciones',
+        sharePositionOrigin: shareRect,
+      );
+
+      try {
+        await SharePlus.instance.share(params);
+      } catch (_) {
+        Get.snackbar(
+          'Exportación',
+          'Archivo guardado en: ${file.path}',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } else {
+      Get.snackbar(
+        'Excel generado',
+        'Archivo guardado en: ${file.path}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }

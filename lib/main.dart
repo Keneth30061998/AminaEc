@@ -124,8 +124,7 @@ Future<void> setupFCM() async {
     if (!isSimulator) {
       try {
         if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-          final apnsToken = await messaging.getAPNSToken();
-          print('✅ APNS Token: $apnsToken');
+
         }
 
         final fcmToken = await messaging.getToken();
@@ -187,7 +186,7 @@ void main() async {
 
   if (userSession.session_token != null &&
       userSession.session_token!.isNotEmpty) {
-    print("📲 [main.dart] Conectando SocketService por token existente");
+    //print("📲 [main.dart] Conectando SocketService por token existente");
     SocketService().connect();
   }
 

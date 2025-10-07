@@ -1,9 +1,8 @@
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:pdf/widgets.dart' as pw;
 import '../../../utils/color.dart';
 import '../../../utils/iconos.dart';
 import '../../../utils/textos.dart';
@@ -38,7 +37,7 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
           ),
           IconButton(
             icon: const Icon(Icons.grid_on),
-            onPressed: txCon.exportExcel,
+            onPressed: () => txCon.exportExcel(context),
             tooltip: 'Exportar Excel',
           ),
         ],
@@ -71,7 +70,7 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
   Widget _yearDropdown() {
     return Obx(() => DropdownButtonFormField<String>(
       isExpanded: true,
-      value: txCon.selectedYear.value.isEmpty ? null : txCon.selectedYear.value,
+      initialValue: txCon.selectedYear.value.isEmpty ? null : txCon.selectedYear.value,
       items: txCon.years.map((year) => DropdownMenuItem(
         value: year,
         child: Text(year),
@@ -88,7 +87,7 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
   Widget _monthDropdown() {
     return Obx(() => DropdownButtonFormField<String>(
       isExpanded: true,
-      value: txCon.selectedMonth.value.isEmpty ? null : txCon.selectedMonth.value,
+      initialValue: txCon.selectedMonth.value.isEmpty ? null : txCon.selectedMonth.value,
       items: txCon.months.map((month) => DropdownMenuItem(
         value: month,
         child: Text(month),
@@ -109,6 +108,11 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
         onPressed: txCon.buscar,
         icon: const Icon(iconSearch),
         label: const Text(txtSearch),
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(almostBlack),
+          foregroundColor: WidgetStatePropertyAll(whiteLight)
+          
+        ),
       ),
     );
   }

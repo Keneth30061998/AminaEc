@@ -196,4 +196,16 @@ class CoachProvider extends GetConnect {
     //print('📥 Respuesta updateSchedule: status=${response.statusCode}, body=${response.body}');
     return response;
   }
+
+  Future<http.Response> setState(String id, int state) async {
+    final response = await http.put(
+      Uri.parse('$url/setState/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? ''
+      },
+      body: json.encode({'state': state}),
+    );
+    return response;
+  }
 }
