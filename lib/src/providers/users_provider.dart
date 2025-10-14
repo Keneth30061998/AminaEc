@@ -58,7 +58,8 @@ class UserProvider extends GetConnect {
   // Actualizar usuario con imagen
   // =======================
   Future<Stream<String>> updateWithImage(User user, File image) async {
-    Uri uri = Uri.parse('${Environment.API_URL_SOCKET}/api/users/updateWithImage');
+    Uri uri =
+        Uri.parse('${Environment.API_URL_SOCKET}/api/users/updateWithImage');
     //print('🔹 [UserProvider] updateWithImage iniciado');
     //print('🌍 URL: $uri');
     //print('📤 User body: ${json.encode(user.toJson())}');
@@ -85,7 +86,8 @@ class UserProvider extends GetConnect {
   // Registrar usuario con imagen
   // =======================
   Future<Stream<String>> createWithImage(User user, File image) async {
-    Uri uri = Uri.parse('${Environment.API_URL_SOCKET}/api/users/createWithImage');
+    Uri uri =
+        Uri.parse('${Environment.API_URL_SOCKET}/api/users/createWithImage');
     //print('🔹 [UserProvider] createWithImage iniciado');
     //print('🌍 URL: $uri');
     //print('📤 User body: ${json.encode(user.toJson())}');
@@ -225,7 +227,8 @@ class UserProvider extends GetConnect {
       //print('📥 Response body: ${response.body}');
 
       if (response.statusCode == 200 && response.body != null) {
-        final body = response.body is Map ? response.body : json.decode(response.body);
+        final body =
+            response.body is Map ? response.body : json.decode(response.body);
         if (body['success'] == true && body['attended_classes'] != null) {
           return body['attended_classes'] as int;
         }
@@ -238,5 +241,31 @@ class UserProvider extends GetConnect {
     return 0;
   }
 
+// =======================
+// Eliminar Cuenta de Usuario
+// =======================
+  Future<ResponseApi> deleteAccount(String email, String password) async {
+    try {
+      final response = await post(
+        '$url/delete-account',
+        {
+          'email': email,
+          'password': password,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': userSession.session_token ?? '',
+        },
+      );
+      print('Response body: ${response.body}');
+      final Map<String, dynamic> data =
+      response.body is String ? jsonDecode(response.body) : response.body;
+
+      return ResponseApi.fromJson(data);
+    } catch (e) {
+      print('❌ Error: $e');
+      return ResponseApi(success: false, message: 'Error: $e');
+    }
+  }
 
 }

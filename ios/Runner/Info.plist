@@ -24,43 +24,48 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Permisos Necesarios -->
 	<key>NSCameraUsageDescription</key>
-	<string>Se requiere acceder a la cámara de fotos</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Se requiere acceder al micrófono</string>
-	<key>NSMotionUsageDescription</key>
-	<string>Necesitamos acceso al giroscopio para mostrar animaciones interactivas en la tarjeta.</string>
+	<string>Usamos la cámara para que puedas tomar o subir tu foto de perfil dentro de la app Amina Ec.</string>
+
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Se requiere acceder a la galeria de fotos</string>
-	<!-- Permitir alertas, sonidos y badges -->
-    <key>NSUserNotificationAlertStyle</key>
-    <string>Alert</string>
+	<string>Necesitamos acceso a tu galería para que puedas seleccionar o cambiar tu foto de perfil en Amina Ec.</string>
 
-    <!-- Mensajes de solicitud de permisos -->
-    <key>NSUserTrackingUsageDescription</key>
-    <string>Este identificador se usará para personalizar tu experiencia.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>El micrófono se usa únicamente si decides grabar mensajes o clips de voz dentro de la app.</string>
 
-    <!-- Firebase Messaging necesita desactivar el proxy de AppDelegate -->
-    <key>FirebaseAppDelegateProxyEnabled</key>
-    <false/>
+	<key>NSMotionUsageDescription</key>
+	<string>Se utiliza el giroscopio para ofrecer animaciones y efectos visuales más fluidos en la interfaz de la app.</string>
+
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Este identificador se usará solo para personalizar tu experiencia dentro de la app y mejorar su funcionamiento, no para publicidad de terceros.</string>
+
+	<key>NSUserNotificationAlertStyle</key>
+	<string>Alert</string>
+
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 	</array>
+
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

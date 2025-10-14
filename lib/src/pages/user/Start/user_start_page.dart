@@ -1,5 +1,6 @@
 import 'package:amina_ec/src/pages/user/Start/user_start_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -411,7 +412,7 @@ class UserStartPage extends StatelessWidget {
           right: 8,
           child: IconButton(
             icon: Icon(
-              Icons.schedule,
+              iconReschedule,
               color: canReschedule ? darkGrey : Colors.grey.shade400,
             ),
             onPressed:
@@ -452,7 +453,7 @@ class UserStartPage extends StatelessWidget {
       padding: const EdgeInsets.only(right: 10),
       child: FilledButton.tonalIcon(
         onPressed: () => _showModalInfo(context),
-        icon: Icon(Icons.info_outline, color: almostBlack),
+        icon: Icon(iconInfo, color: almostBlack),
         label: Text(
           'Rides',
           style: TextStyle(color: darkGrey),

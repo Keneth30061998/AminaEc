@@ -2,7 +2,7 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
 
-    // ✅ Flutter Gradle Plugin SIEMPRE debe ir al final
+    // ✅ Flutter Gradle Plugin debe ir al final
     id "dev.flutter.flutter-gradle-plugin"
 
     // 🔥 Google Services (Firebase)
@@ -10,16 +10,15 @@ plugins {
 }
 
 android {
-    // ✅ El namespace debe coincidir con tu Application ID (sin "=" ni comillas erradas)
+    // ✅ El namespace debe coincidir con tu Application ID
     namespace "com.aminaec.amina_ec"
 
-    compileSdk = 36  // puedes usar flutter.compileSdkVersion si quieres
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // ✅ Necesario para compatibilidad con APIs modernas
         coreLibraryDesugaringEnabled true
     }
 
@@ -28,24 +27,34 @@ android {
     }
 
     defaultConfig {
-        // ✅ ID único del paquete (igual que el namespace)
         applicationId "com.aminaec.amina_ec"
-
-        // ✅ Define versiones desde Flutter
         minSdkVersion = flutter.minSdkVersion
         targetSdk = 36
 
-        // ✅ Estas líneas se obtienen automáticamente del pubspec.yaml
         versionCode flutter.versionCode
         versionName flutter.versionName
     }
 
+    // ✅ Configuración de firmas
+    signingConfigs {
+        release {
+            keyAlias 'aminaec_key'  // Tu alias
+            keyPassword 'amina.2025'  // Contraseña de la clave
+            storeFile file('/Users/kenethescobar/key_aminaec.jks')  // Ruta completa del keystore
+            storePassword 'amina.2025'  // Contraseña del keystore
+        }
+    }
+
     buildTypes {
         release {
-            // ⚠️ Configuración temporal (para firmar con la debug key)
-            signingConfig = signingConfigs.debug
-            // ✅ Si usas proguard, descomenta la siguiente línea:
-            // minifyEnabled true
+            // ✅ Firmar con release key
+            signingConfig signingConfigs.release
+            minifyEnabled true           // activa ofuscación
+            shrinkResources true         // opcional, reduce tamaño
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }
@@ -55,9 +64,6 @@ flutter {
 }
 
 dependencies {
-    // ✅ Librerías Kotlin actualizadas
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
-
-    // ✅ Necesario para compatibilidad de fechas, timezones, etc. con Java 17
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
 }

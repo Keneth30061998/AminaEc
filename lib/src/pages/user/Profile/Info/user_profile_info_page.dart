@@ -155,28 +155,56 @@ class UserProfileInfoPage extends StatelessWidget {
   }
 
   Widget _updateButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => con.goToProfileUpdate(),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: almostBlack,
-          padding: EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => con.goToProfileUpdate(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: almostBlack,
+              padding: EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+            icon: Icon(Icons.edit, color: Colors.white),
+            label: Text(
+              'Actualizar',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: whiteLight,
+              ),
+            ),
           ),
-          elevation: 2,
         ),
-        icon: Icon(Icons.edit, color: Colors.white),
-        label: Text(
-          'Actualizar',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: whiteLight,
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => con.confirmDeleteAccount(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.delete_forever, color: Colors.white),
+            label: const Text(
+              'Eliminar cuenta',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
+
 }

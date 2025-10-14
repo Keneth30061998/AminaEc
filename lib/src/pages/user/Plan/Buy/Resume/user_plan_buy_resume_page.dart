@@ -10,7 +10,7 @@ import '../AddCard/user_plan_buy_addCard_webview_page.dart';
 
 class UserPlanBuyResumePage extends StatelessWidget {
   final UserPlanBuyResumeController con =
-      Get.put(UserPlanBuyResumeController());
+  Get.put(UserPlanBuyResumeController());
 
   UserPlanBuyResumePage({super.key});
 
@@ -42,7 +42,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
           // Datos del plan
           Card(
@@ -74,7 +74,74 @@ class UserPlanBuyResumePage extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
+
+          // Mensaje ultra visual de flujo de pago
+          Card(
+            color: colorBackgroundBox,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(iconInfo, color: Colors.blue, size: 28),
+                      SizedBox(width: 8),
+                      Text(
+                        'Cómo se realiza el pago',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Paso 1 - Selección de tarjeta
+                  _buildStep(
+                    stepNumber: '1',
+                    icon: iconCard,
+                    title: 'Selecciona tarjeta',
+                    description:
+                    'Elige una tarjeta existente o agrega una nueva.',
+                    color: Colors.orange,
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // Paso 2 - OTP
+                  _buildStep(
+                    stepNumber: '2',
+                    icon: iconSMS,
+                    title: 'Recibe OTP',
+                    description:
+                    'Tu banco puede enviarte un código a tu correo o teléfono para verificar la tarjeta.',
+                    color: indigoAmina,
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // Paso 3 - Confirmación
+                  _buildStep(
+                    stepNumber: '3',
+                    icon: iconCheck,
+                    title: 'Confirma y paga',
+                    description:
+                    'Ingresa el código cuando se solicite para completar la compra y acreditar tu plan.',
+                    color: Colors.green,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 15),
 
           Text(
             'Método de pago',
@@ -108,16 +175,6 @@ class UserPlanBuyResumePage extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(vertical: 5),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      /* gradient: const LinearGradient(
-                        colors: [
-                          Colors.black38,
-                          Colors.black26,
-                          Colors.black12,
-                          Colors.white70
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ), */
                       color: darkGrey,
                       boxShadow: [
                         BoxShadow(
@@ -172,7 +229,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
                               // Titular y fecha
                               Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     "${card.expiryMonth?.toString().padLeft(2, '0')}/${card.expiryYear?.toString().substring(2) ?? '00'}",
@@ -201,7 +258,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
             onPressed: () async {
               // Lanza la WebView directamente
               final added = await Get.to<bool?>(
-                () => AddCardWebViewPage(),
+                    () => AddCardWebViewPage(),
                 arguments: {
                   'userId': con.user.id.toString(),
                   'email': con.user.email!,
@@ -259,13 +316,55 @@ class UserPlanBuyResumePage extends StatelessWidget {
     );
   }
 
+  Widget _buildStep({
+    required String stepNumber,
+    required IconData icon,
+    required String title,
+    required String description,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 35,
+          height: 35,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$stepNumber. $title',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _confirmDelete(CardModel card) {
     Get.defaultDialog(
       title: 'Eliminar tarjeta',
       middleText: '¿Deseas eliminar ${card.displayName}?',
-      middleTextStyle: TextStyle(
-        color: almostBlack
-      ),
+      middleTextStyle: TextStyle(color: almostBlack),
       buttonColor: Colors.black54,
       cancelTextColor: whiteGrey,
       onConfirm: () {
