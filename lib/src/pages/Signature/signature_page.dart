@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:signature/signature.dart';
-
 import '../../utils/iconos.dart';
 import '../user/Register/register_controller.dart';
 
@@ -17,6 +16,7 @@ class SignaturePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User user = Get.arguments as User;
+    final RegisterController registerCon = Get.find<RegisterController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -24,7 +24,6 @@ class SignaturePage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Área de la firma
           Expanded(
             child: Signature(
               controller: con.signatureController,
@@ -32,7 +31,6 @@ class SignaturePage extends StatelessWidget {
             ),
           ),
 
-          // Botones y estado de carga
           Obx(() {
             if (con.isUploading.value) {
               return const Padding(
@@ -46,7 +44,6 @@ class SignaturePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  // Limpiar firma
                   ElevatedButton.icon(
                     onPressed: con.clearSignature,
                     label: const Text("Limpiar"),
@@ -60,17 +57,53 @@ class SignaturePage extends StatelessWidget {
                       elevation: 5,
                     ),
                   ),
-
-                  // Guardar firma y registrar
                   ElevatedButton.icon(
                     onPressed: () async {
-                      await con.saveSignature(user);
+                      // Validar que todos los campos del registro estén correctos
+                      bool validForm = registerCon.isValidForm(
+                        registerCon.emailController.text.trim(),
+                        registerCon.nameController.text.trim(),
+                        registerCon.lastnameController.text.trim(),
+                        registerCon.ciController.text.trim(),
+                        registerCon.phoneController.text.trim(),
+                        registerCon.passwordController.text.trim(),
+                        registerCon.confirmPasswordController.text.trim(),
+                        registerCon.birthDate.value,
+                      );
 
-                      if (con.downloadUrl.isNotEmpty) {
-                        // Usamos Get.context seguro
-                        final registerCon = Get.find<RegisterController>();
-                        registerCon.register(Get.context!);
+                      if (!validForm) {
+                        Get.snackbar(
+                          "Atención",
+                          "Debe completar todos los campos obligatorios antes de firmar",
+                        );
+                        return; // Salir sin generar firma ni snackbar de éxito
                       }
+
+                      if (con.signatureController.isEmpty) {
+                        Get.snackbar(
+                          "Atención",
+                          "Debe firmar antes de continuar",
+                        );
+                        return;
+                      }
+
+                      // Guardar firma solo si todo está correcto
+                      final url = await con.saveSignature(user, shouldUpload: true);
+                      if (url == null) {
+                        // Error al generar la firma
+                        return;
+                      }
+
+                      // Registrar usuario
+                      bool success = await registerCon.register(Get.context!);
+
+                      if (!success) {
+                        Get.offAllNamed('/register'); // Volver a registro si falla
+                        return;
+                      }
+
+                      // Registro exitoso → Home
+                      Get.offAllNamed('user/home');
                     },
                     label: const Text("Firmar"),
                     icon: Icon(iconSignature),
@@ -88,7 +121,6 @@ class SignaturePage extends StatelessWidget {
             );
           }),
 
-          // Mostrar URL del PDF generado
           Obx(() {
             if (con.downloadUrl.isNotEmpty) {
               return Padding(

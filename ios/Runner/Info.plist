@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Amina Ec</string>
+	<string>Amina</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,9 +41,6 @@
 	<key>NSMotionUsageDescription</key>
 	<string>Se utiliza el giroscopio para ofrecer animaciones y efectos visuales más fluidos en la interfaz de la app.</string>
 
-	<key>NSUserTrackingUsageDescription</key>
-	<string>Este identificador se usará solo para personalizar tu experiencia dentro de la app y mejorar su funcionamiento, no para publicidad de terceros.</string>
-
 	<key>NSUserNotificationAlertStyle</key>
 	<string>Alert</string>
 
@@ -73,5 +70,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- 🔒 Requisito de privacidad iOS ATT -->
+    <key>NSUserTrackingUsageDescription</key>
+    <string>Usamos esta información únicamente para mejorar tu experiencia dentro de la app y personalizar tu cuenta. No compartimos datos con terceros.</string>
 </dict>
 </plist>

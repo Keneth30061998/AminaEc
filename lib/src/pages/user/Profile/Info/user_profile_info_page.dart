@@ -1,5 +1,6 @@
 import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,24 +23,31 @@ class UserProfileInfoPage extends StatelessWidget {
         ],
       ),
       body: Obx(() => SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
             child: Column(
               children: [
                 _profileHeader(context),
-                SizedBox(height: 40),
+                SizedBox(height: 30),
                 _textTitleScaffold(),
+                SizedBox(height: 10),
                 _infoCard(
                   icon: Icons.assignment_ind,
                   title: con.user.value.ci ?? '',
                   subtitle: 'Cédula',
                 ),
-                SizedBox(height: 15),
+                //SizedBox(height: 4),
                 _infoCard(
                   icon: Icons.phone_android,
                   title: con.user.value.phone ?? '',
                   subtitle: 'Teléfono',
                 ),
-                SizedBox(height: 30),
+                //SizedBox(height: 4),
+                _infoCard(
+                  icon: iconBirthDate,
+                  title: con.user.value.birthDate?.split('T').first.split('-').reversed.join('/') ?? '',
+                  subtitle: 'Fecha de Nacimiento',
+                ),
+                SizedBox(height: 40),
                 _updateButton(context),
               ],
             ),
@@ -59,17 +67,17 @@ class UserProfileInfoPage extends StatelessWidget {
 
   Widget _buttonLogout() {
     return IconButton(
-      icon: Icon(Icons.exit_to_app, color: whiteGrey),
+      icon: Icon(iconCloseSession, color: whiteGrey),
       onPressed: () => con.signOut(),
     );
   }
 
   Widget _textTitleScaffold() {
     return Text(
-      'Datos del usuario',
-      style: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w800,
+      'Datos de usuario',
+      style: GoogleFonts.roboto(
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
         color: darkGrey,
       ),
     );
@@ -79,6 +87,7 @@ class UserProfileInfoPage extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        SizedBox(width: 5),
         _userPhoto(),
         SizedBox(width: 16),
         Expanded(
@@ -140,7 +149,7 @@ class UserProfileInfoPage extends StatelessWidget {
     required String subtitle,
   }) {
     return Card(
-      elevation: 4,
+      elevation: 2,
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
@@ -186,7 +195,7 @@ class UserProfileInfoPage extends StatelessWidget {
           child: ElevatedButton.icon(
             onPressed: () => con.confirmDeleteAccount(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Colors.red[400],
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -206,5 +215,4 @@ class UserProfileInfoPage extends StatelessWidget {
       ],
     );
   }
-
 }

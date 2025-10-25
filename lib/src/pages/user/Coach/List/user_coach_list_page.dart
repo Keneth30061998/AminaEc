@@ -134,7 +134,7 @@ class UserCoachSchedulePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${coach.user?.name ?? ''} ${coach.user?.lastname ?? ''}',
+                      coach.user?.name ?? '',
                       style: GoogleFonts.roboto(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,

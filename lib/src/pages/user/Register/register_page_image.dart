@@ -15,13 +15,13 @@ class RegisterPageImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: whiteLight,
+      ),
       backgroundColor: whiteLight,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 25,
-            vertical: 130,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 130),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -40,11 +40,7 @@ class RegisterPageImage extends StatelessWidget {
         color: colorBackgroundBox,
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 5,
-            offset: Offset(3, 3),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(3, 3)),
         ],
       ),
       child: Column(
@@ -71,11 +67,7 @@ class RegisterPageImage extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 6,
-                offset: Offset(0, 3),
-              ),
+              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
             ],
           ),
           child: GetBuilder<RegisterController>(
@@ -83,8 +75,7 @@ class RegisterPageImage extends StatelessWidget {
               backgroundColor: darkGrey,
               backgroundImage: con.imageFile != null
                   ? FileImage(con.imageFile!)
-                  : const AssetImage('assets/img/user_photo1.png')
-                      as ImageProvider,
+                  : const AssetImage('assets/img/user_photo1.png') as ImageProvider,
             ),
           ),
         ),
@@ -99,12 +90,7 @@ class RegisterPageImage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 4,
-                  ),
-                ],
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
               ),
               child: const Icon(Icons.edit, size: 20, color: Colors.black),
             ),
@@ -118,11 +104,7 @@ class RegisterPageImage extends StatelessWidget {
     return Text(
       'Foto de Perfil',
       textAlign: TextAlign.center,
-      style: GoogleFonts.poppins(
-        color: almostBlack,
-        fontWeight: FontWeight.w700,
-        fontSize: 22,
-      ),
+      style: GoogleFonts.poppins(color: almostBlack, fontWeight: FontWeight.w700, fontSize: 22),
     );
   }
 
@@ -130,11 +112,7 @@ class RegisterPageImage extends StatelessWidget {
     return Text(
       'Escoja una foto para su perfil',
       textAlign: TextAlign.center,
-      style: GoogleFonts.poppins(
-        color: darkGrey,
-        fontWeight: FontWeight.w500,
-        fontSize: 14,
-      ),
+      style: GoogleFonts.poppins(color: darkGrey, fontWeight: FontWeight.w500, fontSize: 14),
     );
   }
 
@@ -156,27 +134,18 @@ class RegisterPageImage extends StatelessWidget {
                 password: con.passwordController.text.trim(),
               );
 
-              // Navegar y enviar el usuario
               con.goToSignaturePage(user);
-              //con.goToSignaturePage();
-              //con.register(context);
             },
           );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: almostBlack,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           elevation: 4,
         ),
         child: Text(
           'Registrarse',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            color: whiteLight,
-            fontWeight: FontWeight.bold,
-          ),
+          style: GoogleFonts.poppins(fontSize: 16, color: whiteLight, fontWeight: FontWeight.bold),
         ),
       ),
     );

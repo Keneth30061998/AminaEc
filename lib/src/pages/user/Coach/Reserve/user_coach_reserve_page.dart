@@ -17,7 +17,7 @@ class UserCoachReservePage extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: whiteLight,
           foregroundColor: almostBlack,
-          automaticallyImplyLeading: false,
+
           title: _textTitleAppBar(),
           actions: [
             IconButton.filled(
@@ -173,7 +173,7 @@ class UserCoachReservePage extends StatelessWidget {
 
   Widget _textTitleAppBar() {
     return Text(
-      'Máquinas',
+      'Estudio',
       style: GoogleFonts.montserrat(
         fontSize: 22,
         fontWeight: FontWeight.w800,

@@ -1,6 +1,8 @@
 import 'package:amina_ec/src/models/class_reservation.dart';
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/providers/class_reservation_provider.dart';
+import 'package:amina_ec/src/utils/color.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -78,7 +80,9 @@ class UserCoachReserveController extends GetxController {
     if (response.success! && response.data != null) {
       ClassReservation reservation = response.data as ClassReservation;
 
-      Get.snackbar('Clase agendada', '¡Tu ride está confirmado!');
+      // Nuevo: mostrar pantalla de confirmación visual
+      showReservationDialog(Get.context!);
+
       if (Get.isRegistered<UserStartController>()) {
         Get.find<UserStartController>().getScheduledClasses();
       }
@@ -92,13 +96,105 @@ class UserCoachReserveController extends GetxController {
         'status': 'occupied'
       });
 
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 7), () {
         if (Get.isOverlaysOpen) Get.back();
         Get.offAllNamed('/user/home');
       });
     } else {
       Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
     }
+  }
+
+  void showReservationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 10),
+                  const Icon(Icons.check_circle_outline,
+                      color: Colors.green, size: 60),
+                  const SizedBox(height: 15),
+                  const Text(
+                    '¡Reserva confirmada!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Sabemos que a veces surgen imprevistos — recuerda que puedes cancelar tu clase hasta 12 horas antes.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.black87,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      _BulletPoint(
+                        text:
+                        'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
+                      ),
+                      _BulletPoint(
+                        text:
+                        'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
+                      ),
+                      _BulletPoint(text: 'Usa ropa cómoda.'),
+                      _BulletPoint(
+                          text:
+                          'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.'),
+                    ],
+                  ),
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                        Get.offAllNamed('/user/home');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text(
+                        'Aceptar',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold, color: whiteLight),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void getTotalRides() async {
@@ -136,5 +232,38 @@ class UserCoachReserveController extends GetxController {
     for (var r in reservations) {
       occupiedEquipos.add(r.bicycle);
     }
+  }
+}
+
+class _BulletPoint extends StatelessWidget {
+  final String text;
+
+  const _BulletPoint({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 5.0),
+            child: Icon(Icons.circle, size: 6, color: Colors.black87),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14.5,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

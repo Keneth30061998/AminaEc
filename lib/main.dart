@@ -10,7 +10,6 @@ import 'package:amina_ec/src/pages/Admin/Home/admin_home_page.dart';
 import 'package:amina_ec/src/pages/Admin/Plan/Update/admin_plan_update_page.dart';
 import 'package:amina_ec/src/pages/Coach/Home/coach_home_page.dart';
 import 'package:amina_ec/src/pages/Login/login_page.dart';
-import 'package:amina_ec/src/pages/LoginOrRegister/login_or_register_page.dart';
 import 'package:amina_ec/src/pages/Roles/roles_page.dart';
 import 'package:amina_ec/src/pages/Signature/signature_page.dart';
 import 'package:amina_ec/src/pages/Splash/splash_page.dart';
@@ -35,6 +34,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart'; // ✅ Import agregado
 
 // =====================================
 // 🌟 Variables Globales
@@ -87,8 +87,7 @@ Future<void> sendTokenToServer(String token) async {
   if (userSession.id != null && token.isNotEmpty) {
     try {
       await http.post(
-        Uri.parse(
-            'https://api.pruebasinventario.com/api/notifications/token'),
+        Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
         headers: {'Content-Type': 'application/json'},
         body: '{"user_id": ${userSession.id}, "token": "$token"}',
       );
@@ -123,15 +122,12 @@ Future<void> setupFCM() async {
 
     if (!isSimulator) {
       try {
-        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-
-        }
+        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {}
 
         final fcmToken = await messaging.getToken();
         if (fcmToken != null) await sendTokenToServer(fcmToken);
 
-        FirebaseMessaging.instance.onTokenRefresh
-            .listen((updatedToken) async {
+        FirebaseMessaging.instance.onTokenRefresh.listen((updatedToken) async {
           await sendTokenToServer(updatedToken);
         });
       } catch (e) {
@@ -169,24 +165,45 @@ Future<void> setupFCM() async {
 }
 
 // =====================================
+// 🌟 Solicitar permiso de rastreo (ATT)
+// =====================================
+Future<void> requestTrackingAuthorization() async {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+      if (status == TrackingStatus.notDetermined) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        await AppTrackingTransparency.requestTrackingAuthorization();
+      }
+    } catch (e) {
+      //print("⚠️ Error solicitando App Tracking Transparency: $e");
+    }
+  }
+}
+
+// =====================================
 // 🌟 Función principal
 // =====================================
 void main() async {
-  await GetStorage.init();
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
   Get.put(CoachEvents());
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp]);
+
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await initializeDateFormatting('es_ES', null);
   await initializeLocalNotifications();
+
+  // ✅ Solicitar permiso de rastreo antes de FCM
   await setupFCM();
+  await Future.delayed(const Duration(seconds: 3));
+  await requestTrackingAuthorization();
 
   if (userSession.session_token != null &&
       userSession.session_token!.isNotEmpty) {
-    //print("📲 [main.dart] Conectando SocketService por token existente");
     SocketService().connect();
   }
 
@@ -207,7 +224,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Amina EC',
+      title: 'Amina',
       theme: ThemeData(
         timePickerTheme: TimePickerThemeData(
           helpTextStyle: GoogleFonts.montserrat(
@@ -224,8 +241,7 @@ class _MyAppState extends State<MyApp> {
       ),
       debugShowCheckedModeBanner: false,
       initialRoute: userSession.id != null
-          ? (userSession.roles != null &&
-          userSession.roles!.isNotEmpty
+          ? (userSession.roles != null && userSession.roles!.isNotEmpty
           ? (userSession.roles!.length > 1
           ? '/roles'
           : userSession.roles!.first.id != '3'
@@ -236,47 +252,30 @@ class _MyAppState extends State<MyApp> {
       getPages: [
         GetPage(name: '/splash', page: () => SplashPage()),
         GetPage(name: '/login', page: () => LoginPage()),
-        GetPage(
-            name: '/login-register', page: () => LoginOrRegisterPage()),
         GetPage(name: '/register', page: () => RegisterPage()),
-        GetPage(
-            name: '/register-image', page: () => RegisterPageImage()),
+        GetPage(name: '/register-image', page: () => RegisterPageImage()),
         GetPage(name: '/roles', page: () => RolesPage()),
-        GetPage(
-            name: '/signature', page: () => SignaturePage()),
+        GetPage(name: '/signature', page: () => SignaturePage()),
         GetPage(name: '/user/home', page: () => UserHomePage()),
         GetPage(
-            name: '/user/profile/update',
-            page: () => UserProfileUpdatePage()),
-        GetPage(
-            name: '/user/plan/buy/addCard',
-            page: () => AddCardWebViewPage()),
-        GetPage(
-            name: '/user/plan/buy/resume',
-            page: () => UserPlanBuyResumePage()),
-        GetPage(
-            name: '/user/coach/reserve',
-            page: () => UserCoachReservePage()),
+            name: '/user/profile/update', page: () => UserProfileUpdatePage()),
+        GetPage(name: '/user/plan/buy/addCard', page: () => AddCardWebViewPage()),
+        GetPage(name: '/user/plan/buy/resume', page: () => UserPlanBuyResumePage()),
+        GetPage(name: '/user/coach/reserve', page: () => UserCoachReservePage()),
         GetPage(name: '/coach/home', page: () => CoachHomePage()),
         GetPage(name: '/admin/home', page: () => AdminHomePage()),
-        GetPage(
-            name: '/admin/coach/register',
-            page: () => AdminCoachRegisterPage()),
+        GetPage(name: '/admin/coach/register', page: () => AdminCoachRegisterPage()),
         GetPage(
             name: '/admin/coach/register-image',
             page: () => AdminCoachRegisterImagePage()),
         GetPage(
             name: '/admin/coach/register-schedule',
             page: () => AdminCoachRegisterSchedulePage()),
-        GetPage(
-            name: '/admin/coach/update',
-            page: () => AdminCoachUpdatePage()),
+        GetPage(name: '/admin/coach/update', page: () => AdminCoachUpdatePage()),
         GetPage(
             name: '/admin/coach/update/schedule',
             page: () => AdminCoachUpdateSchedulePage()),
-        GetPage(
-            name: '/admin/plans/update',
-            page: () => AdminPlanUpdatePage())
+        GetPage(name: '/admin/plans/update', page: () => AdminPlanUpdatePage())
       ],
     );
   }

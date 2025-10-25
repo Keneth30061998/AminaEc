@@ -11,7 +11,7 @@ import '../../../models/scheduled_class.dart';
 
 class UserStartPage extends StatelessWidget {
   final UserStartController con =
-  Get.put(UserStartController(), permanent: true);
+      Get.put(UserStartController(), permanent: true);
 
   UserStartPage({super.key});
 
@@ -29,42 +29,41 @@ class UserStartPage extends StatelessWidget {
         return RefreshIndicator(
           color: indigoAmina,
           onRefresh: () async {
-            //print('🔄 Pull-to-refresh activado -> recargando datos...');
-            // Todas estas funciones no devuelven Future<void>, así que se llaman directo
             con.getScheduledClasses();
             con.getAttendedClasses();
             con.getTotalRides();
             con.getAcquiredPlans();
             con.getCoaches();
-
-            // Este pequeño delay permite que el indicador se muestre correctamente
             await Future.delayed(const Duration(seconds: 1));
           },
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _textGreeting(),
-                  const SizedBox(height: 15),
-                  _containerCount(),
-                  const SizedBox(height: 15),
-                  _reelCoach(context),
-                  const SizedBox(height: 15),
-                  Text(
-                    'Tus clases agendadas',
-                    style: GoogleFonts.roboto(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: darkGrey,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _textGreeting(),
+                    const SizedBox(height: 15),
+                    _containerCount(),
+                    const SizedBox(height: 15),
+                    _reelCoach(context),
+                    const SizedBox(height: 15),
+                    Text(
+                      'Tus clases agendadas',
+                      style: GoogleFonts.roboto(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: darkGrey,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  Flexible(
-                    child: _scheduledClassesScrollableSection(),
-                  ),
-                ],
+                    const SizedBox(height: 15),
+                    _scheduledClassesScrollableSection(context),
+                    const SizedBox(height: 25),
+                  ],
+                ),
               ),
             ),
           ),
@@ -110,20 +109,20 @@ class UserStartPage extends StatelessWidget {
 
   Widget _boxBikesComplete() {
     return Obx(() => _boxTemplate(
-      title: 'Rides',
-      count: '${con.attendedClasses.value}',
-      subtitle: 'Completados',
-      color: Colors.blueGrey.shade50,
-    ));
+          title: 'Rides',
+          count: '${con.attendedClasses.value}',
+          subtitle: 'Completados',
+          color: Colors.blueGrey.shade50,
+        ));
   }
 
   Widget _boxBikesPending() {
     return Obx(() => _boxTemplate(
-      title: 'Rides',
-      count: '${con.totalRides.value}',
-      subtitle: 'Adquiridos',
-      color: Colors.blueGrey.shade50,
-    ));
+          title: 'Rides',
+          count: '${con.totalRides.value}',
+          subtitle: 'Adquiridos',
+          color: Colors.blueGrey.shade50,
+        ));
   }
 
   Widget _boxTemplate({
@@ -217,7 +216,7 @@ class UserStartPage extends StatelessWidget {
               offset: Offset(1, 2),
             ),
           ],
-          border: BoxBorder.all(
+          border: Border.all(
             color: colorBackgroundBox,
             width: 2,
           ),
@@ -229,22 +228,22 @@ class UserStartPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(60),
               child: coach.user?.photo_url != null
                   ? Image.network(
-                coach.user!.photo_url!,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.broken_image,
-                    size: 30,
-                    color: Colors.grey),
-              )
+                      coach.user!.photo_url!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.broken_image,
+                          size: 30,
+                          color: Colors.grey),
+                    )
                   : Container(
-                width: 70,
-                height: 70,
-                color: Colors.grey[300],
-                child: const Icon(Icons.person,
-                    size: 30, color: Colors.white),
-              ),
+                      width: 70,
+                      height: 70,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.person,
+                          size: 30, color: Colors.white),
+                    ),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -294,20 +293,20 @@ class UserStartPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(60),
               child: coach.user?.photo_url != null
                   ? Image.network(
-                coach.user!.photo_url!,
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.broken_image, size: 50),
-              )
+                      coach.user!.photo_url!,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 50),
+                    )
                   : Container(
-                width: 120,
-                height: 120,
-                color: Colors.grey[300],
-                child: const Icon(Icons.person,
-                    size: 60, color: Colors.white),
-              ),
+                      width: 120,
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.person,
+                          size: 60, color: Colors.white),
+                    ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -326,10 +325,8 @@ class UserStartPage extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   coach.user?.email ?? 'Correo no disponible',
-                  style: GoogleFonts.roboto(
-                    fontSize: 15,
-                    color: Colors.grey[700],
-                  ),
+                  style:
+                      GoogleFonts.roboto(fontSize: 15, color: Colors.grey[700]),
                 ),
               ],
             ),
@@ -341,13 +338,11 @@ class UserStartPage extends StatelessWidget {
 
   Widget _scheduledClassCard(ScheduledClass c, BuildContext context) {
     final formattedDate =
-    c.classDate.split('T').first.split('-').reversed.join('/');
+        c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
-
     final createdLocal = c.createdAt.toLocal();
     final windowEndLocal = createdLocal.add(const Duration(hours: 24));
     final nowLocal = DateTime.now();
-
     final canReschedule = nowLocal.isBefore(windowEndLocal);
 
     return Stack(
@@ -366,19 +361,19 @@ class UserStartPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(50),
                 child: c.photo_url.isNotEmpty
                     ? Image.network(
-                  c.photo_url,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.broken_image, size: 30),
-                )
+                        c.photo_url,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.broken_image, size: 30),
+                      )
                     : Container(
-                  width: 60,
-                  height: 60,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.person, color: Colors.white),
-                ),
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.person, color: Colors.white),
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -393,14 +388,12 @@ class UserStartPage extends StatelessWidget {
                         color: almostBlack,
                       ),
                     ),
-                    Text(
-                      'Coach: ${c.coachName}',
-                      style: GoogleFonts.roboto(fontSize: 15, color: darkGrey),
-                    ),
-                    Text(
-                      'Bicicleta: ${c.bicycle}',
-                      style: GoogleFonts.roboto(fontSize: 15, color: darkGrey),
-                    ),
+                    Text('Coach: ${c.coachName}',
+                        style:
+                            GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
+                    Text('Bicicleta: ${c.bicycle}',
+                        style:
+                            GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
                   ],
                 ),
               ),
@@ -411,39 +404,33 @@ class UserStartPage extends StatelessWidget {
           top: 8,
           right: 8,
           child: IconButton(
-            icon: Icon(
-              iconReschedule,
-              color: canReschedule ? darkGrey : Colors.grey.shade400,
-            ),
+            icon: Icon(iconReschedule,
+                color: canReschedule ? darkGrey : Colors.grey.shade400),
             onPressed:
-            canReschedule ? () => con.onPressReschedule(c, context) : null,
+                canReschedule ? () => con.onPressReschedule(c, context) : null,
           ),
         ),
       ],
     );
   }
 
-  Widget _scheduledClassesScrollableSection() {
+  Widget _scheduledClassesScrollableSection(BuildContext context) {
     return Obx(() {
       if (con.scheduledClasses.isEmpty) {
-        return Center(
-          child: Text(
-            'No tienes clases agendadas.',
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              color: Colors.grey[700],
-            ),
+        return Container(
+          padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.15),
+          child: Center(
+            child: Text('No tienes clases agendadas.',
+                style: GoogleFonts.roboto(fontSize: 16, color: Colors.grey[700])),
           ),
         );
       }
-
       return ListView.builder(
         shrinkWrap: true,
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: con.scheduledClasses.length,
-        itemBuilder: (context, index) {
-          return _scheduledClassCard(con.scheduledClasses[index], context);
-        },
+        itemBuilder: (context, index) =>
+            _scheduledClassCard(con.scheduledClasses[index], context),
       );
     });
   }
@@ -454,12 +441,10 @@ class UserStartPage extends StatelessWidget {
       child: FilledButton.tonalIcon(
         onPressed: () => _showModalInfo(context),
         icon: Icon(iconInfo, color: almostBlack),
-        label: Text(
-          'Rides',
-          style: TextStyle(color: darkGrey),
-        ),
+        label: Text('Info', style: TextStyle(color: darkGrey)),
         style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(colorBackgroundBox)),
+          backgroundColor: WidgetStateProperty.all(colorBackgroundBox),
+        ),
       ),
     );
   }
@@ -470,16 +455,14 @@ class UserStartPage extends StatelessWidget {
       builder: (context) {
         return AlertDialog(
           title: Text('Rides',
-              style:
-              GoogleFonts.poppins(fontWeight: FontWeight.w800)),
-          content: Text(_ridesTerms,
-              style: GoogleFonts.montserrat(color: darkGrey)),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w800)),
+          content:
+              Text(_ridesTerms, style: GoogleFonts.montserrat(color: darkGrey)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               style: ButtonStyle(
-                foregroundColor: WidgetStatePropertyAll(indigoAmina),
-              ),
+                  foregroundColor: WidgetStatePropertyAll(indigoAmina)),
               child: const Text('Cerrar'),
             ),
           ],
@@ -489,9 +472,9 @@ class UserStartPage extends StatelessWidget {
   }
 
   static const String _ridesTerms = '''
-En AMINA, valoramos tu tiempo y compromiso con nuestras clases. Reconocemos que a veces surgen imprevistos que requieren cambios en los horarios de clases. Con el fin de brindar flexibilidad y mantener la eficiencia en nuestra programación hemos establecido la siguiente política de cancelación.
+En AMINA, valoramos tu tiempo y compromiso con nuestras clases. Reconocemos que a veces surgen imprevistos que requieren cambios en los horarios de clases. Con el fin de brindar flexibilidad y mantener la eficiencia en nuestra programación, hemos establecido la siguiente política de cancelación.
 
-Cancelacion con 12 horas de anticipación: tienen derecho a cancelar una clase sin penalización si lo hacen con almenos 12 horas de anticipación antes de la hora de inicio programada.
+Cancelación con 12 horas de anticipación: tienen derecho a cancelar una clase sin penalización si lo hacen con al menos 12 horas de anticipación antes de la hora de inicio programada.
 
-Proceso de Cancelacion: En la pantalla de inicio se mostrarán las clases que el usuario agendo, en la sección derecha encontrará un botón que da paso al proceso de reagendamiento de clases''';
+Proceso de Cancelación: En la pantalla de inicio se mostrarán las clases que el usuario agendó. En la sección derecha encontrará un botón que da paso al proceso de reagendamiento de clases.''';
 }

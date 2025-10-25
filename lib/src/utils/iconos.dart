@@ -27,6 +27,8 @@ const iconCard = RemixIcons.bank_card_2_fill;
 const iconSMS = RemixIcons.message_3_fill;
 const iconInfo = RemixIcons.information_2_fill;
 const iconReschedule = RemixIcons.history_line;
+const iconBirthDate = RemixIcons.cake_fill;
+const iconCloseSession = RemixIcons.logout_circle_line;
 
 const iconNext = RemixIcons.arrow_right_wide_line;
 const iconOpenEye = RemixIcons.eye_2_line;

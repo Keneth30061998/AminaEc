@@ -30,7 +30,7 @@ class UserPlanListPage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: Text(
-                    'Adquiere tu plan y pedalea con tu coach favorito',
+                    'Adquiere tu plan y rueda con tu coach favorito',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.roboto(
                       fontSize: 16,

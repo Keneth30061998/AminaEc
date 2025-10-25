@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:signature/signature.dart';
-
 import '../../components/PDF/pdf_service.dart';
 import '../../models/user.dart';
 import '../../providers/firebase_storage_helper.dart';
@@ -17,16 +16,20 @@ class SignaturePDFController extends GetxController {
   RxBool isUploading = false.obs;
   RxString downloadUrl = ''.obs;
 
-  Future<void> saveSignature(User user) async {
-    if (signatureController.isEmpty) return;
+  /// Solo genera y sube la firma si `shouldUpload` es true
+  Future<String?> saveSignature(User user, {required bool shouldUpload}) async {
+    if (!shouldUpload) return null; // Evitar subir si validación falla
+
+    if (signatureController.isEmpty) return null;
 
     try {
       isUploading.value = true;
 
       final signature = await signatureController.toPngBytes();
       if (signature == null) {
-        throw Exception("No se pudo generar imagen de la firma");
+        throw Exception("No se pudo generar la imagen de la firma");
       }
+
       final pdf = await PdfService.generatePdfWithSignature(
         signatureBytes: signature,
         user: user,
@@ -38,11 +41,11 @@ class SignaturePDFController extends GetxController {
       );
 
       downloadUrl.value = url;
-      Get.snackbar("Éxito", "Firma subida correctamente");
       clearSignature();
+      return url;
     } catch (e) {
       Get.snackbar("Error", e.toString());
-      //print('Error: ${e}');
+      return null;
     } finally {
       isUploading.value = false;
     }

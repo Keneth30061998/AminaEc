@@ -16,7 +16,9 @@ class User {
   String? password;
   String? photo_url;
   String? session_token;
+  String? birthDate;
   List<Rol>? roles = [];
+  int? totalRides;
 
   User({
     this.id,
@@ -28,7 +30,9 @@ class User {
     this.password,
     this.photo_url,
     this.session_token,
+    this.birthDate,
     this.roles,
+    this.totalRides,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -41,9 +45,11 @@ class User {
         password: json["password"],
         photo_url: json["photo_url"],
         session_token: json["session_token"],
+        birthDate: json["birth_date"],
         roles: json["roles"] == null
             ? []
             : List<Rol>.from(json["roles"].map((model) => Rol.fromJson(model))),
+        totalRides: json['total_rides'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -56,6 +62,8 @@ class User {
         "password": password,
         "photo_url": photo_url,
         "session_token": session_token,
+        "birth_date": birthDate,
         "roles": roles,
+        "total_rides": totalRides,
       };
 }

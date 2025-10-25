@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../utils/color.dart';
-import '../../../utils/iconos.dart';
-import '../../../utils/textos.dart';
+
+import '../../../../utils/color.dart';
+import '../../../../utils/iconos.dart';
+import '../../../../utils/textos.dart';
 import 'admin_transactions_controller.dart';
 
 class AdminTransactionsPage extends StatefulWidget {
@@ -28,7 +29,6 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reporte de Transacciones'),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
@@ -111,7 +111,7 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(almostBlack),
           foregroundColor: WidgetStatePropertyAll(whiteLight)
-          
+
         ),
       ),
     );

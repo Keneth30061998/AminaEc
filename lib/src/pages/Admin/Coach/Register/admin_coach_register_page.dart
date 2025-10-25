@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../utils/color.dart';
 import '../../../../utils/iconos.dart';
@@ -9,7 +11,7 @@ import 'admin_coach_register_controller.dart';
 
 class AdminCoachRegisterPage extends StatelessWidget {
   final AdminCoachRegisterController con =
-      Get.put(AdminCoachRegisterController());
+  Get.put(AdminCoachRegisterController());
 
   AdminCoachRegisterPage({super.key});
 
@@ -33,51 +35,55 @@ class AdminCoachRegisterPage extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // TextFields animados con delay progresivo
+                // Campos animados
                 _textField("Correo Electrónico", con.emailController, iconEmail,
-                        TextInputType.emailAddress)
+                    TextInputType.emailAddress)
                     .animate(delay: 200.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _textField("Nombre", con.nameController, iconProfile,
-                        TextInputType.name)
+                    TextInputType.name)
                     .animate(delay: 350.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _textField("Apellido", con.lastnameController,
-                        iconProfileInvert, TextInputType.name)
+                    iconProfileInvert, TextInputType.name)
                     .animate(delay: 500.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _textField("Cédula", con.ciController, iconCi,
-                        TextInputType.number)
+                    TextInputType.number)
                     .animate(delay: 650.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _textField("Teléfono", con.phoneController, iconPhone,
-                        TextInputType.phone)
+                    TextInputType.phone)
                     .animate(delay: 800.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _passwordField("Contraseña", con.passwordController,
-                        iconPassword, con.obscurePassword)
+                    iconPassword, con.obscurePassword)
                     .animate(delay: 950.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 _passwordField(
-                        "Confirmar Contraseña",
-                        con.confirmPasswordController,
-                        iconConfirmPassword,
-                        con.obscureConfirmPassword)
+                    "Confirmar Contraseña",
+                    con.confirmPasswordController,
+                    iconConfirmPassword,
+                    con.obscureConfirmPassword)
                     .animate(delay: 1100.ms)
                     .fade()
                     .slideY(begin: 0.3),
+
+                const SizedBox(height: 15),
+
+                _selectBirthDateField().animate(delay: 1150.ms).fade().slideY(begin: 0.3),
 
                 const SizedBox(height: 30),
 
@@ -140,7 +146,7 @@ class AdminCoachRegisterPage extends StatelessWidget {
             borderSide: const BorderSide(color: Colors.black),
           ),
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
@@ -149,60 +155,149 @@ class AdminCoachRegisterPage extends StatelessWidget {
   Widget _passwordField(String label, TextEditingController controller,
       IconData icon, RxBool toggleValue) {
     return Obx(() => Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: TextField(
-            controller: controller,
-            obscureText: toggleValue.value,
-            keyboardType: TextInputType.visiblePassword,
-            style: GoogleFonts.poppins(),
-            decoration: InputDecoration(
-              labelText: label,
-              prefixIcon: Icon(icon, color: Colors.black),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  toggleValue.value ? iconCloseEye : iconOpenEye,
-                  color: Colors.black54,
-                ),
-                onPressed: () => toggleValue.value = !toggleValue.value,
-              ),
-              labelStyle: GoogleFonts.poppins(color: Colors.black54),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: const BorderSide(color: Colors.black12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: const BorderSide(color: Colors.black),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        obscureText: toggleValue.value,
+        keyboardType: TextInputType.visiblePassword,
+        style: GoogleFonts.poppins(),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.black),
+          suffixIcon: IconButton(
+            icon: Icon(
+              toggleValue.value ? iconCloseEye : iconOpenEye,
+              color: Colors.black54,
             ),
+            onPressed: () => toggleValue.value = !toggleValue.value,
           ),
-        ));
+          labelStyle: GoogleFonts.poppins(color: Colors.black54),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Colors.black12),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Colors.black),
+          ),
+          contentPadding:
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        ),
+      ),
+    ));
+  }
+
+  Widget _selectBirthDateField() {
+    return Obx(() {
+      final selectedDate = con.birthDate.value;
+      final formattedDate = selectedDate != null
+          ? DateFormat('dd/MM/yyyy').format(selectedDate)
+          : '';
+      return GestureDetector(
+        onTap: () => _showDatePicker(),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.black54),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            children: [
+              Icon(iconBirthDate),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  formattedDate.isNotEmpty
+                      ? formattedDate
+                      : 'Selecciona tu fecha de nacimiento',
+                  style: GoogleFonts.poppins(
+                      color: formattedDate.isNotEmpty
+                          ? Colors.black87
+                          : Colors.black45,
+                      fontSize: 16),
+                ),
+              ),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: Colors.black38, size: 22),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  void _showDatePicker() {
+    final DateTime now = DateTime.now();
+    final DateTime initialDate = con.birthDate.value ?? DateTime(2000);
+
+    showModalBottomSheet(
+      context: Get.context!,
+      backgroundColor: Colors.white,
+      shape:
+      const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (BuildContext context) {
+        DateTime tempDate = initialDate;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                      color: Colors.black12, borderRadius: BorderRadius.circular(2))),
+              SizedBox(
+                height: 200,
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: initialDate,
+                  maximumDate: now,
+                  minimumDate: DateTime(1950),
+                  onDateTimeChanged: (date) => tempDate = date,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  con.setBirthDate(tempDate);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12)),
+                child: const Text("Confirmar"),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buttonRegister(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 55,
-      child: ElevatedButton.icon(
+      child: FloatingActionButton.extended(
         onPressed: () => con.goToRegisterAdminCoachImage(),
-        icon: Icon(iconNext, color: whiteLight),
         label: Text(
           'Siguiente',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: whiteLight,
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.white),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: almostBlack,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          elevation: 5,
+        icon: Icon(
+          Icons.arrow_forward_ios,
+          color: Colors.white,
         ),
+        backgroundColor: almostBlack,
       ),
     );
   }

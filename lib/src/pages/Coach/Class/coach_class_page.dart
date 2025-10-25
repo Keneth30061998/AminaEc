@@ -89,7 +89,7 @@ class CoachClassPage extends StatelessWidget {
 
   Widget _appBarTitle() {
     return Text(
-      'Mis Estudiantes',
+      'Riders',
       style: GoogleFonts.montserrat(
         fontSize: 22,
         fontWeight: FontWeight.w900,

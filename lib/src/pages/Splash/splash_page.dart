@@ -47,16 +47,17 @@ class SplashPage extends StatelessWidget {
                       // Texto animado principal
                       DefaultTextStyle(
                         style: GoogleFonts.roboto(
-                          fontSize: 43,
+                          fontSize: 34,
                           color: limeGreen,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 1.8,
+                          letterSpacing: 0.5,
+                          wordSpacing: 0.5
                         ),
                         child: AnimatedTextKit(
                           animatedTexts: [
-                            TyperAnimatedText("GET FIT"),
-                            TyperAnimatedText("STAY STRONG"),
-                            TyperAnimatedText("LIVE WELL"),
+                            TyperAnimatedText("FIND YOUR BALANCE"),
+                            TyperAnimatedText("MOVE WITH INTENTION"),
+                            TyperAnimatedText("LOVE THE MOVEMENT"),
                           ],
                           repeatForever: true,
                         ),

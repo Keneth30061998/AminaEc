@@ -1,217 +1,169 @@
-import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_controller.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../utils/color.dart';
+import 'admin_coach_register_controller.dart';
+
 
 class AdminCoachRegisterImagePage extends StatelessWidget {
-  final AdminCoachRegisterController con =
-      Get.put(AdminCoachRegisterController());
+  final AdminCoachRegisterController controller =
+  Get.find<AdminCoachRegisterController>();
 
   AdminCoachRegisterImagePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: whiteLight,
       appBar: AppBar(
-        title: _titleAppBar(),
+        title: const Text('Registrar Coach - Imagen'),
         backgroundColor: whiteLight,
+        elevation: 0,
         foregroundColor: almostBlack,
       ),
-      resizeToAvoidBottomInset: true,
-      backgroundColor: whiteLight,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _boxPhoto(context),
-              _boxForm(context),
-            ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // HEADER
+                Text(
+                  'Foto de Perfil del Coach',
+                  style: GoogleFonts.poppins(
+                      color: almostBlack,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 20),
+
+                // FOTO CIRCULAR
+                _buildImagePicker(context).animate().fade().slideY(begin: 0.2),
+
+                const SizedBox(height: 30),
+
+                // CAMPOS ADICIONALES
+                Obx(() => controller.addPersonalData.value
+                    ? Column(
+                  children: [
+                    _buildTextField(
+                        label: 'Hobby',
+                        controller: controller.hobbyController)
+                        .animate(delay: 200.ms).fade().slideY(begin: 0.3),
+                    _buildTextField(
+                        label: 'Descripción',
+                        controller: controller.descriptionController)
+                        .animate(delay: 350.ms).fade().slideY(begin: 0.3),
+                    _buildTextField(
+                        label: 'Presentación',
+                        controller: controller.presentationController)
+                        .animate(delay: 500.ms).fade().slideY(begin: 0.3),
+                  ],
+                )
+                    : const SizedBox.shrink()),
+
+                const SizedBox(height: 20),
+
+                // SWITCH PARA ACTIVAR CAMPOS ADICIONALES
+                Obx(() => SwitchListTile(
+                  title: Text(
+                    'Agregar datos personales adicionales',
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500, fontSize: 16),
+                  ),
+                  value: controller.addPersonalData.value,
+                  onChanged: (value) =>
+                  controller.addPersonalData.value = value,
+                )),
+
+                const SizedBox(height: 30),
+
+                // BOTÓN REGISTRAR
+                _buttonRegister(context).animate(delay: 600.ms).fade().slideY(begin: 0.3),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  //itutlos Appbar
-  Widget _titleAppBar() {
-    return Text(
-      'Imágen de Usuario',
-      style: GoogleFonts.montserrat(
-        fontWeight: FontWeight.w800,
-      ),
-    );
-  }
-
-  //Foto de usuario
-  Widget _boxPhoto(BuildContext context) {
-    return Container(
-      height: 110,
-      width: 110,
-      margin: const EdgeInsets.only(top: 40),
-      child: Stack(
-        alignment: AlignmentDirectional.bottomEnd,
-        children: [
-          _userPhoto(),
-          _editPhoto(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _userPhoto() {
-    return Container(
-      width: 110,
-      height: 110,
-      decoration: BoxDecoration(
-        color: darkGrey,
-        shape: BoxShape.circle,
-      ),
-      child: GetBuilder<AdminCoachRegisterController>(
-        builder: (_) => CircleAvatar(
-          backgroundColor: darkGrey,
-          backgroundImage: con.imageFile != null
-              ? FileImage(con.imageFile!)
-              : const AssetImage('assets/img/user_photo1.png') as ImageProvider,
-        ),
-      ),
-    );
-  }
-
-  Widget _editPhoto(BuildContext context) {
-    return IconButton.filled(
-      onPressed: () => con.showAlertDialog(context),
-      icon: const Icon(Icons.edit),
-    );
-  }
-
-  //Widget BoxForm
-  Widget _boxForm(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(top: 20, left: 25, right: 25),
-      padding: EdgeInsets.all(35),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Colors.black54,
-            blurRadius: 10,
-            offset: Offset(0, 0.75),
+  Widget _buildImagePicker(BuildContext context) {
+    return Stack(
+      alignment: Alignment.bottomRight,
+      children: [
+        Obx(() => CircleAvatar(
+          radius: 75,
+          backgroundColor: Colors.grey[300],
+          backgroundImage: controller.imageFile.value != null
+              ? FileImage(controller.imageFile.value!)
+              : null,
+          child: controller.imageFile.value == null
+              ? const Icon(Icons.person, size: 80)
+              : null,
+        )),
+        Positioned(
+          bottom: 4,
+          right: 4,
+          child: InkWell(
+            onTap: () => controller.showAlertDialog(context),
+            borderRadius: BorderRadius.circular(30),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+              ),
+              child: const Icon(Icons.edit, size: 20, color: Colors.black),
+            ),
           ),
-        ],
-        borderRadius: BorderRadius.all(
-          Radius.circular(30),
         ),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            //_subTitle(context),
-            _textFieldHobby(),
-            _textFieldDescription(),
-            _textFieldPresentation(),
-            _buttonRegister(context),
-          ],
-        ),
-      ),
+      ],
     );
   }
 
-  //Widgets internos del BoxForm
-  Widget _textFieldHobby() {
-    return Container(
-      margin: EdgeInsets.only(top: 10, bottom: 10),
+  Widget _buildTextField(
+      {required String label, required TextEditingController controller}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: TextField(
-        controller: con.hobbyController,
-        keyboardType: TextInputType.name,
+        controller: controller,
+        style: GoogleFonts.poppins(),
         decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Hobby",
-          hintText: "Hobby",
-          prefixIcon: Icon(Icons.gamepad),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: Colors.black54),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldDescription() {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 10),
-      child: TextField(
-        controller: con.descriptionController,
-        keyboardType: TextInputType.name,
-        maxLines: 3,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Descripción",
-          hintText: "Descripción",
-          prefixIcon: Icon(Icons.person_search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _textFieldPresentation() {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 10),
-      child: TextField(
-        controller: con.presentationController,
-        keyboardType: TextInputType.name,
-        maxLines: 5,
-        decoration: InputDecoration(
-          floatingLabelStyle: TextStyle(color: darkGrey),
-          labelText: "Presentación",
-          hintText: "Presentación",
-          prefixIcon: Icon(Icons.description),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide(color: darkGrey),
-          ),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.black)),
+          contentPadding:
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
   }
 
   Widget _buttonRegister(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 15),
+    return SizedBox(
       width: double.infinity,
-      child: FloatingActionButton.extended(
-        onPressed: () {
-          con.goToRegisterAdminCoachSchedule();
-        },
-        label: Text(
-          'Siguiente',
-          style: TextStyle(fontSize: 16, color: Colors.white),
+      height: 55,
+      child: ElevatedButton(
+        onPressed: () => controller.registerCoach(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: almostBlack,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 4,
         ),
-        icon: Icon(
-          Icons.arrow_forward_ios,
-          color: Colors.white,
+        child: Text(
+          'Registrar Coach',
+          style: GoogleFonts.poppins(
+              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        backgroundColor: almostBlack,
       ),
     );
   }

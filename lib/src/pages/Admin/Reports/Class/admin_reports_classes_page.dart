@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/admin_reports_controller.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../utils/color.dart';
-import '../../../utils/iconos.dart';
-import '../../../utils/textos.dart';
+import '../../../../utils/color.dart';
+import '../../../../utils/iconos.dart';
+import '../../../../utils/textos.dart';
+import 'admin_reports_controller.dart';
 
 final con = Get.put(AdminReportsController());
 

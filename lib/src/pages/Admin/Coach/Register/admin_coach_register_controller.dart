@@ -26,8 +26,11 @@ class AdminCoachRegisterController extends GetxController {
   final presentationController = TextEditingController();
 
   // Imagen
-  File? imageFile;
+  var imageFile = Rxn<File>();
   final ImagePicker picker = ImagePicker();
+
+  // Fecha de nacimiento
+  var birthDate = Rxn<DateTime>();
 
   // Horarios seleccionados
   final selectedSchedules = <Schedule>[].obs;
@@ -35,9 +38,12 @@ class AdminCoachRegisterController extends GetxController {
 
   final CoachProvider coachProvider = CoachProvider();
 
-  //Ver - ocultar contraseña
+  // Ver - ocultar contraseña
   var obscurePassword = true.obs;
   var obscureConfirmPassword = true.obs;
+
+  // Switch para habilitar datos adicionales
+  var addPersonalData = false.obs;
 
   @override
   void onInit() {
@@ -52,6 +58,7 @@ class AdminCoachRegisterController extends GetxController {
   void goToRegisterAdminCoachSchedule() =>
       Get.toNamed('/admin/coach/register-schedule');
 
+  // Selección de imagen
   void showAlertDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -85,9 +92,12 @@ class AdminCoachRegisterController extends GetxController {
   Future<void> selectImage(ImageSource imageSource) async {
     final image = await picker.pickImage(source: imageSource);
     if (image != null) {
-      imageFile = File(image.path);
-      update();
+      imageFile.value = File(image.path);
     }
+  }
+
+  void setBirthDate(DateTime date) {
+    birthDate.value = date;
   }
 
   Future<void> selectDateAndPromptTime(DateTime? date) async {
@@ -208,11 +218,15 @@ class AdminCoachRegisterController extends GetxController {
           'Revisa las contraseñas e intenta nuevamente');
       return false;
     }
-    if (imageFile == null) {
+    if (imageFile.value == null) {
       Get.snackbar('Imagen requerida', 'Debes elegir una imagen');
       return false;
     }
-
+    if (birthDate.value == null) {
+      Get.snackbar('Fecha de nacimiento requerida',
+          'Debes seleccionar la fecha de nacimiento');
+      return false;
+    }
     if (selectedSchedules.isEmpty) {
       Get.snackbar('Sin disponibilidad', 'Agrega al menos un horario');
       return false;
@@ -233,12 +247,13 @@ class AdminCoachRegisterController extends GetxController {
       ci: ciController.text,
       phone: phoneController.text,
       password: passwordController.text.trim(),
+      birthDate: DateFormat('yyyy-MM-dd').format(birthDate.value!),
     );
 
     final coach = Coach(
-      hobby: hobbyController.text,
-      description: descriptionController.text,
-      presentation: presentationController.text,
+      hobby: addPersonalData.value ? hobbyController.text : "...",
+      description: addPersonalData.value ? descriptionController.text : "...",
+      presentation: addPersonalData.value ? presentationController.text : "...",
       state: 1,
     );
 
@@ -246,14 +261,13 @@ class AdminCoachRegisterController extends GetxController {
       user: user,
       coach: coach,
       schedule: selectedSchedules,
-      image: imageFile!,
+      image: imageFile.value!,
     );
 
     stream.listen((res) {
       progressDialog.close();
       final data = json.decode(res);
       if (data['success'] == true) {
-        //print("✅ Coach registrado correctamente y backend emitió coach:new");
         Get.snackbar('Éxito', 'Coach registrado correctamente');
         Get.offAllNamed('/admin/home');
       } else {
