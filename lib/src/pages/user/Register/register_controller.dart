@@ -3,13 +3,17 @@ import 'dart:io';
 
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/models/user.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sn_progress_dialog/progress_dialog.dart';
 
+import '../../../../globals.dart';
+import '../../../components/Compress/image_compress_util.dart';
+import '../../../components/Socket/socket_service.dart';
 import '../../../providers/users_provider.dart';
+import '../../../services/fcm_service.dart';
 
 class RegisterController extends GetxController {
   TextEditingController emailController = TextEditingController();
@@ -22,8 +26,8 @@ class RegisterController extends GetxController {
 
   UserProvider usersProvider = UserProvider();
 
-  // Variables para subir imagen
-  File? imageFile;
+  // Variables para subir imagen (ahora observable)
+  var imageFile = Rxn<File>();
   ImagePicker picker = ImagePicker();
 
   // Fecha de nacimiento
@@ -47,7 +51,7 @@ class RegisterController extends GetxController {
   // ----------------------
   // REGISTRO COMPLETO
   // ----------------------
-  Future<bool> register(BuildContext context) async {
+  Future<bool> register() async {
     String email = emailController.text.trim();
     String name = nameController.text.trim();
     String lastname = lastnameController.text.trim();
@@ -57,12 +61,15 @@ class RegisterController extends GetxController {
     String confirmPassword = confirmPasswordController.text.trim();
     DateTime? birth = birthDate.value;
 
-    if (!isValidForm(email, name, lastname, ci, phone, password, confirmPassword, birth)) {
-      return false;
+    if (!isValidForm(
+        email, name, lastname, ci, phone, password, confirmPassword, birth)) {
+      return false; // <--- Retorna false si el form no es válido
     }
 
-    ProgressDialog progressDialog = ProgressDialog(context: context);
-    progressDialog.show(max: 100, msg: 'Registrando Usuario...');
+    if (imageFile.value == null) {
+      Get.snackbar('Imagen vacía', 'Seleccione una imagen');
+      return false; // <--- Asegura que siempre se retorne bool
+    }
 
     User user = User(
       email: email,
@@ -75,12 +82,30 @@ class RegisterController extends GetxController {
     );
 
     try {
-      Stream stream = await usersProvider.createWithImage(user, imageFile!);
+      Stream stream = await usersProvider.createWithImage(user, imageFile.value!); // <-- desenvuelto
       await for (var res in stream) {
         ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
-        progressDialog.close();
         if (responseApi.success == true) {
+          // 1️⃣ Guardar usuario en almacenamiento local
           GetStorage().write('user', responseApi.data);
+
+          // 2️⃣ Actualizar sesión global
+          User myUser = User.fromJson(responseApi.data);
+          userSession = myUser; // 🔹 Actualización crítica
+
+          // 3️⃣ Configurar socket con nueva sesión
+          SocketService().updateUserSession(myUser);
+
+          // 4️⃣ Enviar token FCM al backend
+          try {
+            final fcmToken = await FirebaseMessaging.instance.getToken();
+            if (fcmToken != null) {
+              await sendTokenToServer(fcmToken);
+              print("✅ Token FCM enviado al backend: $fcmToken");
+            }
+          } catch (e) {
+            print("⚠️ No se pudo enviar token FCM: $e");
+          }
           return true;
         } else {
           Get.snackbar('ERROR', 'Registro fallido');
@@ -88,12 +113,13 @@ class RegisterController extends GetxController {
         }
       }
     } catch (e) {
-      progressDialog.close();
       Get.snackbar('ERROR', 'Error de conexión');
       return false;
     }
-    return false;
+
+    return false; // <--- Retorno seguro al final
   }
+
 
   // ----------------------
   // VALIDACIÓN GENERAL
@@ -114,19 +140,30 @@ class RegisterController extends GetxController {
     ciError.value = ci.isEmpty || !GetUtils.isNum(ci);
     phoneError.value = phone.isEmpty || !GetUtils.isPhoneNumber(phone);
     passwordError.value = password.isEmpty;
-    confirmPasswordError.value = confirmPassword.isEmpty || password != confirmPassword;
-    imageError.value = imageFile == null;
+    confirmPasswordError.value =
+        confirmPassword.isEmpty || password != confirmPassword;
+    imageError.value = imageFile.value == null;
     birthDateError.value = birthDate == null;
 
-    if (emailError.value) Get.snackbar('Email inválido', 'Ingrese un email válido');
-    if (nameError.value) Get.snackbar('Nombre inválido', 'Ingrese un nombre válido');
-    if (lastnameError.value) Get.snackbar('Apellido inválido', 'Ingrese un apellido válido');
-    if (ciError.value) Get.snackbar('Cédula inválida', 'Ingrese un número de CI válido');
-    if (phoneError.value) Get.snackbar('Teléfono inválido', 'Ingrese un teléfono válido');
-    if (passwordError.value) Get.snackbar('Contraseña vacía', 'Ingrese una contraseña');
-    if (confirmPasswordError.value) Get.snackbar('Contraseña incorrecta', 'Confirme la contraseña correctamente');
+    if (emailError.value)
+      Get.snackbar('Email inválido', 'Ingrese un email válido');
+    if (nameError.value)
+      Get.snackbar('Nombre inválido', 'Ingrese un nombre válido');
+    if (lastnameError.value)
+      Get.snackbar('Apellido inválido', 'Ingrese un apellido válido');
+    if (ciError.value)
+      Get.snackbar('Cédula inválida', 'Ingrese un número de CI válido');
+    if (phoneError.value)
+      Get.snackbar('Teléfono inválido', 'Ingrese un teléfono válido');
+    if (passwordError.value)
+      Get.snackbar('Contraseña vacía', 'Ingrese una contraseña');
+    if (confirmPasswordError.value)
+      Get.snackbar(
+          'Contraseña incorrecta', 'Confirme la contraseña correctamente');
     if (imageError.value) Get.snackbar('Imagen vacía', 'Seleccione una imagen');
-    if (birthDateError.value) Get.snackbar('Fecha de nacimiento requerida', 'Seleccione su fecha de nacimiento');
+    if (birthDateError.value)
+      Get.snackbar(
+          'Fecha de nacimiento requerida', 'Seleccione su fecha de nacimiento');
 
     return !(emailError.value ||
         nameError.value ||
@@ -145,13 +182,19 @@ class RegisterController extends GetxController {
   bool isValidStep1() {
     bool valid = true;
 
-    nameError.value = nameController.text.trim().isEmpty || !GetUtils.isUsername(nameController.text.trim());
-    lastnameError.value = lastnameController.text.trim().isEmpty || !GetUtils.isUsername(lastnameController.text.trim());
+    nameError.value = nameController.text.trim().isEmpty ||
+        !GetUtils.isUsername(nameController.text.trim());
+    lastnameError.value = lastnameController.text.trim().isEmpty ||
+        !GetUtils.isUsername(lastnameController.text.trim());
     birthDateError.value = birthDate.value == null;
 
-    if (nameError.value) Get.snackbar('Nombre inválido', 'Ingrese un nombre válido');
-    if (lastnameError.value) Get.snackbar('Apellido inválido', 'Ingrese un apellido válido');
-    if (birthDateError.value) Get.snackbar('Fecha de nacimiento requerida', 'Seleccione su fecha de nacimiento');
+    if (nameError.value)
+      Get.snackbar('Nombre inválido', 'Ingrese un nombre válido');
+    if (lastnameError.value)
+      Get.snackbar('Apellido inválido', 'Ingrese un apellido válido');
+    if (birthDateError.value)
+      Get.snackbar(
+          'Fecha de nacimiento requerida', 'Seleccione su fecha de nacimiento');
 
     valid = !(nameError.value || lastnameError.value || birthDateError.value);
     return valid;
@@ -160,13 +203,19 @@ class RegisterController extends GetxController {
   bool isValidStep2() {
     bool valid = true;
 
-    emailError.value = emailController.text.trim().isEmpty || !GetUtils.isEmail(emailController.text.trim());
-    phoneError.value = phoneController.text.trim().isEmpty || !GetUtils.isPhoneNumber(phoneController.text.trim());
-    ciError.value = ciController.text.trim().isEmpty || !GetUtils.isNum(ciController.text.trim());
+    emailError.value = emailController.text.trim().isEmpty ||
+        !GetUtils.isEmail(emailController.text.trim());
+    phoneError.value = phoneController.text.trim().isEmpty ||
+        !GetUtils.isPhoneNumber(phoneController.text.trim());
+    ciError.value = ciController.text.trim().isEmpty ||
+        !GetUtils.isNum(ciController.text.trim());
 
-    if (emailError.value) Get.snackbar('Email inválido', 'Ingrese un email válido');
-    if (phoneError.value) Get.snackbar('Teléfono inválido', 'Ingrese un teléfono válido');
-    if (ciError.value) Get.snackbar('Cédula inválida', 'Ingrese un número de CI válido');
+    if (emailError.value)
+      Get.snackbar('Email inválido', 'Ingrese un email válido');
+    if (phoneError.value)
+      Get.snackbar('Teléfono inválido', 'Ingrese un teléfono válido');
+    if (ciError.value)
+      Get.snackbar('Cédula inválida', 'Ingrese un número de CI válido');
 
     valid = !(emailError.value || phoneError.value || ciError.value);
     return valid;
@@ -176,10 +225,16 @@ class RegisterController extends GetxController {
     bool valid = true;
 
     passwordError.value = passwordController.text.trim().isEmpty;
-    confirmPasswordError.value = confirmPasswordController.text.trim().isEmpty || passwordController.text.trim() != confirmPasswordController.text.trim();
+    confirmPasswordError.value = confirmPasswordController.text
+        .trim()
+        .isEmpty ||
+        passwordController.text.trim() != confirmPasswordController.text.trim();
 
-    if (passwordError.value) Get.snackbar('Contraseña vacía', 'Ingrese una contraseña');
-    if (confirmPasswordError.value) Get.snackbar('Contraseña incorrecta', 'Confirme la contraseña correctamente');
+    if (passwordError.value)
+      Get.snackbar('Contraseña vacía', 'Ingrese una contraseña');
+    if (confirmPasswordError.value)
+      Get.snackbar(
+          'Contraseña incorrecta', 'Confirme la contraseña correctamente');
 
     valid = !(passwordError.value || confirmPasswordError.value);
     return valid;
@@ -209,7 +264,8 @@ class RegisterController extends GetxController {
     );
 
     AlertDialog alertDialog = AlertDialog(
-      title: const Text('Seleccione una opción', style: TextStyle(fontWeight: FontWeight.w500)),
+      title: const Text('Seleccione una opción',
+          style: TextStyle(fontWeight: FontWeight.w500)),
       actions: [galleryButton, cameraButton],
     );
 
@@ -219,9 +275,37 @@ class RegisterController extends GetxController {
   Future selectImage(ImageSource imageSource) async {
     XFile? image = await picker.pickImage(source: imageSource);
     if (image != null) {
-      imageFile = File(image.path);
+      imageFile.value = File(image.path);
       imageError.value = false;
       update();
+
+      // Loader elegante sobrio
+      Get.dialog(
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 5,
+            ),
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      try {
+        final compressed = await ImageCompressUtil.compress(input: imageFile.value!);
+        imageFile.value = compressed;
+        update();
+      } catch (_) {
+        // fallback silencioso
+      } finally {
+        Get.back(); // cerrar loader
+      }
     }
   }
 

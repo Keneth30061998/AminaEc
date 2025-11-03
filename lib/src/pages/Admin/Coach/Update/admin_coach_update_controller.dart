@@ -122,28 +122,39 @@ class AdminCoachUpdateController extends GetxController {
   }
 
   bool isValidForm() {
-    if (!GetUtils.isUsername(nameController.text)) {
-      Get.snackbar('Nombre incorrecto', 'Ingrese un nombre válido');
+    // Expresión regular que permite letras con acentos y espacios intermedios simples
+    final nameRegex = RegExp(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ]+(?: [A-Za-zÁÉÍÓÚáéíóúÑñ]+)*$");
+
+    // Validar nombre
+    if (!nameRegex.hasMatch(nameController.text.trim())) {
+      Get.snackbar('Nombre incorrecto', 'Ingrese un nombre válido (solo letras y tildes)');
       return false;
     }
-    if (!GetUtils.isUsername(lastnameController.text)) {
-      Get.snackbar('Apellido incorrecto', 'Ingrese un apellido válido');
+
+    // Validar apellido
+    if (!nameRegex.hasMatch(lastnameController.text.trim())) {
+      Get.snackbar('Apellido incorrecto', 'Ingrese un apellido válido (solo letras y tildes)');
       return false;
     }
-    if (!GetUtils.isNum(ciController.text)) {
+
+    // Validación de cédula
+    if (!GetUtils.isNum(ciController.text) || ciController.text.length < 6) {
       Get.snackbar('Cédula incorrecta', 'Ingrese un número de CI válido');
       return false;
     }
+
+    // Validación de teléfono
     if (!GetUtils.isPhoneNumber(phoneController.text)) {
       Get.snackbar('Teléfono incorrecto', 'Ingrese un teléfono válido');
       return false;
     }
-    if (hobbyController.text.isEmpty ||
-        descriptionController.text.isEmpty ||
-        presentationController.text.isEmpty) {
-      Get.snackbar('Campos vacíos', 'Complete los datos del coach');
-      return false;
-    }
+
+    // Si están vacíos → insertar automáticamente "..."
+    if (hobbyController.text.trim().isEmpty) hobbyController.text = "...";
+    if (descriptionController.text.trim().isEmpty) descriptionController.text = "...";
+    if (presentationController.text.trim().isEmpty) presentationController.text = "...";
+
     return true;
   }
+
 }

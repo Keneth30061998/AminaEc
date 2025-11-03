@@ -8,7 +8,7 @@ import '../../../../../utils/color.dart';
 import 'admin_coach_update_schedule_controller.dart';
 
 class AdminCoachUpdateSchedulePage extends StatelessWidget {
-  final con = Get.put(AdminCoachUpdateScheduleController());
+  final con = Get.put(AdminCoachUpdateScheduleController(), tag: 'admin_coach');
 
   AdminCoachUpdateSchedulePage({super.key});
 
@@ -19,31 +19,43 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
       appBar: AppBar(
         title: _titleAppBar(),
         backgroundColor: whiteLight,
-        foregroundColor: darkGrey,
+        foregroundColor: almostBlack,
+        elevation: 0,
       ),
       body: Column(
         children: [
-          Obx(() => SfCalendar(
-                view: CalendarView.month,
-                allowedViews: [CalendarView.month, CalendarView.timelineDay],
-                dataSource: con.calendarDataSource.value,
-                onTap: (details) => con.selectDateAndPromptTime(details.date),
-                monthViewSettings: MonthViewSettings(
-                  showAgenda: false,
-                  appointmentDisplayMode: MonthAppointmentDisplayMode.indicator,
-                ),
-                todayHighlightColor: indigoAmina,
-                showNavigationArrow: true,
-                headerStyle: CalendarHeaderStyle(
+          Obx(() => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Material(
+              elevation: 2,
+              borderRadius: BorderRadius.circular(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SfCalendar(
+                  view: CalendarView.month,
+                  allowedViews: [CalendarView.month, CalendarView.timelineDay],
+                  dataSource: con.calendarDataSource.value,
+                  onTap: (details) => con.selectDateAndPromptTime(details.date),
+                  monthViewSettings: const MonthViewSettings(
+                    showAgenda: false,
+                    appointmentDisplayMode: MonthAppointmentDisplayMode.indicator,
+                  ),
+                  todayHighlightColor: indigoAmina,
+                  showNavigationArrow: true,
+                  headerStyle: const CalendarHeaderStyle(
                     textAlign: TextAlign.center,
                     backgroundColor: indigoAmina,
-                    textStyle: TextStyle(color: whiteLight)),
-                selectionDecoration: BoxDecoration(
-                  color: darkGrey.withAlpha((0.2 * 255).round()),
-                  border: Border.all(color: darkGrey, width: 2),
-                  borderRadius: BorderRadius.circular(8),
+                    textStyle: TextStyle(color: whiteLight),
+                  ),
+                  selectionDecoration: BoxDecoration(
+                    color: darkGrey.withAlpha((0.2 * 255).round()),
+                    border: Border.all(color: darkGrey, width: 2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-              )),
+              ),
+            ),
+          )),
           Expanded(
             child: Obx(() {
               final sorted = con.selectedSchedules.toList()
@@ -57,49 +69,30 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
               }
 
               if (grouped.isEmpty) {
-                return Center(child: Text('No hay horarios registrados aún'));
+                return const Center(child: Text('No hay horarios registrados aún'));
               }
 
               return ListView(
-                padding: const EdgeInsets.all(20),
-                children: grouped.entries.map((entry) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Text(
-                          entry.key,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: almostBlack,
-                          ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                children: grouped.entries.expand((entry) {
+                  return [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: almostBlack,
                         ),
                       ),
-                      ...entry.value.map((item) {
-                        return Card(
-                          elevation: 3,
-                          color: colorBackgroundBox,
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          child: ListTile(
-                            title: Text(
-                              DateFormat.yMMMd('es_ES')
-                                  .format(DateTime.parse(item.date!)),
-                            ),
-                            subtitle: Text(
-                              '${formatTime(item.start_time!)} - ${formatTime(item.end_time!)}',
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete, color: Colors.redAccent),
-                              onPressed: () => con.removeSchedule(
-                                  con.selectedSchedules.indexOf(item)),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  );
+                    ),
+                    ...entry.value.map((item) => _ScheduleCard(
+                      schedule: item,
+                      onDelete: () =>
+                          con.removeSchedule(con.selectedSchedules.indexOf(item)),
+                    )),
+                  ];
                 }).toList(),
               );
             }),
@@ -115,6 +108,7 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
       'Editar Disponibilidad',
       style: GoogleFonts.montserrat(
         fontWeight: FontWeight.w800,
+        color: almostBlack,
       ),
     );
   }
@@ -124,15 +118,90 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
       child: FloatingActionButton.extended(
         onPressed: () => con.updateSchedule(context),
-        label: Text(
+        label: const Text(
           'Guardar Cambios',
           style: TextStyle(
             fontSize: 14,
             color: whiteLight,
           ),
         ),
-        icon: Icon(Icons.save, color: whiteLight),
+        icon: const Icon(Icons.save, color: whiteLight),
         backgroundColor: almostBlack,
+      ),
+    );
+  }
+
+  String formatTime(String timeStr) {
+    final fullDateTime = DateTime.parse('2000-01-01 $timeStr');
+    return DateFormat.Hm().format(fullDateTime);
+  }
+}
+
+class _ScheduleCard extends StatelessWidget {
+  final dynamic schedule;
+  final VoidCallback onDelete;
+
+  const _ScheduleCard({
+    super.key,
+    required this.schedule,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 3,
+            spreadRadius: 1,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormat('dd/MM/yyyy').format(DateTime.parse(schedule.date!)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  schedule.class_theme ?? 'Clase',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: almostBlack,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${formatTime(schedule.start_time!)} — ${formatTime(schedule.end_time!)}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.redAccent),
+            onPressed: onDelete,
+          ),
+        ],
       ),
     );
   }

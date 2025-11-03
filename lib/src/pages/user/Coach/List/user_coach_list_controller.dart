@@ -1,3 +1,4 @@
+// File: user_coach_schedule_controller.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,16 +14,34 @@ class UserCoachScheduleController extends GetxController {
   final CoachProvider _provider = CoachProvider();
   final calendarRefreshTrigger = 0.obs;
 
-
   var baseDate = DateTime.now().obs;
   var selectedDate = DateTime.now().obs;
   var allCoaches = <Coach>[].obs;
   var filteredCoaches = <Coach>[].obs;
 
-  //var calendarDataSource = ScheduleDataSource([]).obs;
   final calendarDataSource = Rx<ScheduleDataSource>(ScheduleDataSource([]));
 
   Timer? _midnightTimer;
+
+  // Mapa de colores persistentes por coach
+  final Map<String, Color> _coachColors = {};
+  final List<Color> _palette = [
+    Colors.blue,
+    Colors.green,
+    Colors.purple,
+    Colors.orange,
+    Colors.cyan,
+    Colors.teal,
+    Colors.red,
+    Colors.indigo,
+  ];
+
+  Color _assignColor(String coachId) {
+    if (_coachColors.containsKey(coachId)) return _coachColors[coachId]!;
+    final color = _palette[_coachColors.length % _palette.length];
+    _coachColors[coachId] = color;
+    return color;
+  }
 
   @override
   void onInit() {
@@ -30,13 +49,10 @@ class UserCoachScheduleController extends GetxController {
     loadCoaches();
     _scheduleMidnightTimer();
 
-    // Suscribirse a eventos globales de coaches
     ever(CoachEvents.to.coachUpdated, (_) => loadCoaches());
 
-    // Suscripción a eventos socket
     SocketService().on('coach:new', (_) => CoachEvents.to.notifyCoachesUpdated());
     SocketService().on('coach:update', (_) {
-      //print('📡 Evento coach:update recibido');
       CoachEvents.to.notifyCoachesUpdated();
       _updateCalendar();
     });
@@ -44,18 +60,12 @@ class UserCoachScheduleController extends GetxController {
   }
 
   Future<void> loadCoaches() async {
-    //print('🔄 Ejecutando loadCoaches() tras evento');
     try {
       final list = await _provider.getAll();
       allCoaches.value = list;
       _filterCoachesByDate(selectedDate.value);
       _updateCalendar();
-      selectedDate.refresh();
-      calendarDataSource.refresh();
-      filteredCoaches.refresh();
-    } catch (e) {
-      //print('Error cargando coaches: $e');
-    }
+    } catch (_) {}
   }
 
   void selectDate(DateTime date) {
@@ -64,7 +74,7 @@ class UserCoachScheduleController extends GetxController {
   }
 
   void _filterCoachesByDate(DateTime date) {
-    final filtered = allCoaches.where((coach) {
+    filteredCoaches.value = allCoaches.where((coach) {
       return coach.schedules.any((s) {
         final sDate = DateTime.tryParse(s.date ?? '');
         return sDate != null &&
@@ -73,24 +83,52 @@ class UserCoachScheduleController extends GetxController {
             sDate.day == date.day;
       });
     }).toList();
-    filteredCoaches.value = filtered;
   }
 
   void _updateCalendar() {
-    final allSchedules = allCoaches.expand((c) => c.schedules).whereType<Schedule>().toList();
-    // ✅ Nueva instancia, no solo actualizar value
-    final newDataSource = ScheduleDataSource(allSchedules);
-    calendarDataSource.value = newDataSource;
-    calendarRefreshTrigger.value++; // 🔁 fuerza reconstrucción visual
-    //print('📅 Actualizando calendario con ${allSchedules.length} horarios');
-    //print('🔁 Trigger visual: ${calendarRefreshTrigger.value}');
-    //print('📊 Horarios reconstruidos: ${allSchedules.length}');
+    final appointments = <Appointment>[];
+
+    for (final coach in allCoaches) {
+      final coachColor = _assignColor(coach.id ?? '');
+
+      for (final s in coach.schedules) {
+        final date = DateTime.tryParse(s.date ?? '');
+        if (date == null) continue;
+
+        final start = _parseTime(date, s.start_time);
+        final end = _parseTime(date, s.end_time);
+        final theme = (s.class_theme?.trim().isNotEmpty == true) ? s.class_theme! : 'Clase';
+
+        appointments.add(
+          Appointment(
+            startTime: start,
+            endTime: end,
+            subject: "${coach.user?.name ?? 'Coach'} - $theme",
+            color: coachColor,
+            isAllDay: false,
+          ),
+        );
+      }
+    }
+
+    calendarDataSource.value = ScheduleDataSource.fromAppointments(appointments);
+
+    calendarRefreshTrigger.value++;
+    calendarDataSource.refresh();
+  }
+
+  DateTime _parseTime(DateTime base, String? time) {
+    final parts = (time ?? '00:00').split(':');
+    final hh = int.tryParse(parts[0]) ?? 0;
+    final mm = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+    return DateTime(base.year, base.month, base.day, hh, mm);
   }
 
   void goToUserCoachReservePage({
     required String coachId,
     required String classTime,
     required String coachName,
+    String? classTheme,
   }) {
     final classDate = selectedDate.value.toString().split(' ')[0];
     Get.toNamed('/user/coach/reserve', arguments: {
@@ -98,12 +136,13 @@ class UserCoachScheduleController extends GetxController {
       'class_date': classDate,
       'class_time': classTime,
       'coach_name': coachName,
+      'class_theme': classTheme ?? 'Clase',
     });
   }
 
   void _scheduleMidnightTimer() {
     final now = DateTime.now();
-    final nextMidnight = DateTime(now.year, now.month, now.day).add(Duration(days: 1));
+    final nextMidnight = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
     final difference = nextMidnight.difference(now);
 
     _midnightTimer = Timer(difference, () {
@@ -116,13 +155,12 @@ class UserCoachScheduleController extends GetxController {
       }
 
       loadCoaches();
-      _scheduleMidnightTimer(); // reprograma timer
+      _scheduleMidnightTimer();
     });
   }
 
-  bool _isSameDate(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   void onClose() {
@@ -133,25 +171,10 @@ class UserCoachScheduleController extends GetxController {
 
 class ScheduleDataSource extends CalendarDataSource {
   ScheduleDataSource(List<Schedule> source) {
-    appointments = source.map((s) {
-      final date = DateTime.tryParse(s.date ?? '');
-      if (date == null) return null;
-
-      final start = _parseTime(date, s.start_time);
-      final end = _parseTime(date, s.end_time);
-
-      return Appointment(
-        startTime: start,
-        endTime: end,
-        subject: 'Disponible',
-        color: const Color(0xFF4CAF50),
-        isAllDay: false,
-      );
-    }).whereType<Appointment>().toList();
+    appointments = source.map((s) => null).toList();
   }
 
-  DateTime _parseTime(DateTime base, String? time) {
-    final parts = (time ?? '00:00').split(':');
-    return DateTime(base.year, base.month, base.day, int.parse(parts[0]), int.parse(parts[1]));
+  ScheduleDataSource.fromAppointments(List<Appointment> appointmentsList) {
+    appointments = appointmentsList;
   }
 }

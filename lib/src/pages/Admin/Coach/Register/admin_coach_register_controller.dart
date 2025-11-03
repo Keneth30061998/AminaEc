@@ -1,3 +1,4 @@
+// admin_coach_register_controller.dart
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,12 +6,16 @@ import 'package:amina_ec/src/models/coach.dart';
 import 'package:amina_ec/src/models/schedule.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/providers/coachs_provider.dart';
+import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:sn_progress_dialog/progress_dialog.dart';
+import 'package:sn_progress_dialog/sn_progress_dialog.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+
+import '../../../../components/Compress/image_compress_util.dart';
 
 class AdminCoachRegisterController extends GetxController {
   // Controladores de texto
@@ -42,16 +47,15 @@ class AdminCoachRegisterController extends GetxController {
   var obscurePassword = true.obs;
   var obscureConfirmPassword = true.obs;
 
-  // Switch para habilitar datos adicionales
+  // Switch para datos personales
   var addPersonalData = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    ever<List<Schedule>>(selectedSchedules, (_) => _actualizarCalendario());
+    ever(selectedSchedules, (_) => _actualizarCalendario());
   }
 
-  // Navegación
   void goToRegisterAdminCoachImage() =>
       Get.toNamed('/admin/coach/register-image');
 
@@ -73,7 +77,6 @@ class AdminCoachRegisterController extends GetxController {
             },
             label: const Text('Galería'),
             icon: const Icon(Icons.photo_library_outlined),
-            elevation: 3,
           ),
           FloatingActionButton.extended(
             onPressed: () {
@@ -82,7 +85,6 @@ class AdminCoachRegisterController extends GetxController {
             },
             label: const Text('Cámara'),
             icon: const Icon(Icons.camera),
-            elevation: 3,
           ),
         ],
       ),
@@ -93,142 +95,125 @@ class AdminCoachRegisterController extends GetxController {
     final image = await picker.pickImage(source: imageSource);
     if (image != null) {
       imageFile.value = File(image.path);
+
+      Get.dialog(const Center(child: CircularProgressIndicator()),
+          barrierDismissible: false);
+
+      try {
+        final compressed =
+        await ImageCompressUtil.compress(input: imageFile.value!);
+        imageFile.value = compressed;
+      } catch (_) {}
+
+      Get.back();
     }
   }
 
-  void setBirthDate(DateTime date) {
-    birthDate.value = date;
-  }
+  void setBirthDate(DateTime date) => birthDate.value = date;
 
+  // ✅ DIALOGO CORREGIDO — SIN TextEditingController que cause dispose error
   Future<void> selectDateAndPromptTime(DateTime? date) async {
     if (date == null) return;
 
-    final formattedDate = DateFormat('dd MMM y', 'es_ES').format(date);
+    final TextEditingController themeCtrl = TextEditingController();
 
-    await Get.dialog(
+    String? theme = await Get.dialog<String>(
       AlertDialog(
-        title: Text('Seleccionar disponibilidad'),
-        content: Text(
-          'Escoge el rango horario para el día $formattedDate',
-          style: const TextStyle(color: Colors.black),
+        title: const Text("Tema de la clase (opcional)"),
+        content: TextField(
+          controller: themeCtrl,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Ej: Shakira',
+            labelText: 'Tema de clase',
+            labelStyle: GoogleFonts.poppins(color: Colors.black54),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.black)),
+            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () async {
-              Get.back();
-
-              TimeOfDay? start = await showTimePicker(
-                context: Get.context!,
-                helpText: 'Hora de inicio',
-                initialTime: const TimeOfDay(hour: 8, minute: 0),
-              );
-              if (start == null) return;
-
-              TimeOfDay? end = await showTimePicker(
-                context: Get.context!,
-                helpText: 'Hora de fin',
-                initialTime:
-                TimeOfDay(hour: start.hour + 1, minute: start.minute),
-              );
-              if (end == null) return;
-
-              await _validarYAgregarHorario(date, start, end);
-            },
-            child: const Text('Escoger horas'),
+            onPressed: () => Get.back(result: null),
+            child: const Text("Omitir"),
           ),
           TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
+            onPressed: () => Get.back(result: themeCtrl.text.trim()),
+            child: const Text("Continuar"),
           ),
         ],
       ),
     );
+
+    final start = await showTimePicker(
+      context: Get.context!,
+      helpText: "Hora de inicio",
+      initialTime: const TimeOfDay(hour: 8, minute: 0),
+    );
+    if (start == null) return;
+
+    final end = await showTimePicker(
+      context: Get.context!,
+      helpText: "Hora de fin",
+      initialTime: TimeOfDay(hour: start.hour + 1, minute: start.minute),
+    );
+    if (end == null) return;
+
+    await _validarYAgregarHorario(date, start, end, theme);
   }
 
+
   Future<void> _validarYAgregarHorario(
-      DateTime date, TimeOfDay start, TimeOfDay end) async {
+      DateTime date, TimeOfDay start, TimeOfDay end, String? theme) async {
     if (_compararHoras(start, end) >= 0) {
-      Get.snackbar('Rango inválido',
-          'La hora de fin debe ser mayor que la de inicio',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar("Rango inválido",
+          "La hora de fin debe ser mayor que la de inicio",
+          backgroundColor: Colors.red);
       return;
     }
 
     final formattedDate =
-        "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+        "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
 
     final newSchedule = Schedule(
       date: formattedDate,
       start_time: _formatHora(start),
       end_time: _formatHora(end),
+      class_theme: (theme?.trim().isNotEmpty == true) ? theme : "Clase",
     );
 
     if (selectedSchedules.any((s) =>
     s.date == newSchedule.date &&
         s.start_time == newSchedule.start_time &&
         s.end_time == newSchedule.end_time)) {
-      Get.snackbar('Duplicado', 'Ya agregaste ese horario',
-          backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar("Duplicado", "Ese horario ya fue agregado",
+          backgroundColor: Colors.orange);
       return;
     }
 
     selectedSchedules.add(newSchedule);
-    _actualizarCalendario();
   }
 
   void removeSchedule(int index) {
     selectedSchedules.removeAt(index);
-    _actualizarCalendario();
   }
 
-  void _actualizarCalendario() {
-    calendarDataSource.value = ScheduleDataSource(selectedSchedules);
-  }
+  void _actualizarCalendario() =>
+      calendarDataSource.value = ScheduleDataSource(selectedSchedules);
 
-  String _formatHora(TimeOfDay time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00';
-  }
+  String _formatHora(TimeOfDay t) =>
+      "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00";
 
-  int _compararHoras(TimeOfDay h1, TimeOfDay h2) =>
-      (h1.hour * 60 + h1.minute) - (h2.hour * 60 + h2.minute);
+  int _compararHoras(TimeOfDay a, TimeOfDay b) =>
+      (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute);
 
   bool isValidForm() {
-    if (!GetUtils.isEmail(emailController.text.trim())) {
-      Get.snackbar('Email incorrecto', 'Ingrese un email válido');
-      return false;
-    }
-    if (!GetUtils.isUsername(nameController.text)) {
-      Get.snackbar('Nombre incorrecto', 'Ingrese un nombre válido');
-      return false;
-    }
-    if (!GetUtils.isUsername(lastnameController.text)) {
-      Get.snackbar('Apellido incorrecto', 'Ingrese un apellido válido');
-      return false;
-    }
-    if (!GetUtils.isNum(ciController.text)) {
-      Get.snackbar('Cédula incorrecta', 'Ingrese un número válido');
-      return false;
-    }
-    if (!GetUtils.isPhoneNumber(phoneController.text)) {
-      Get.snackbar('Teléfono incorrecto', 'Número no válido');
-      return false;
-    }
-    if (passwordController.text != confirmPasswordController.text) {
-      Get.snackbar('Contraseñas no coinciden',
-          'Revisa las contraseñas e intenta nuevamente');
-      return false;
-    }
-    if (imageFile.value == null) {
-      Get.snackbar('Imagen requerida', 'Debes elegir una imagen');
-      return false;
-    }
-    if (birthDate.value == null) {
-      Get.snackbar('Fecha de nacimiento requerida',
-          'Debes seleccionar la fecha de nacimiento');
+    if (!GetUtils.isEmail(emailController.text)) {
+      Get.snackbar("Email incorrecto", "Ingrese un email válido");
       return false;
     }
     if (selectedSchedules.isEmpty) {
-      Get.snackbar('Sin disponibilidad', 'Agrega al menos un horario');
+      Get.snackbar("Sin disponibilidad", "Agrega al menos un horario");
       return false;
     }
     return true;
@@ -238,7 +223,7 @@ class AdminCoachRegisterController extends GetxController {
     if (!isValidForm()) return;
 
     final progressDialog = ProgressDialog(context: Get.context!);
-    progressDialog.show(max: 100, msg: 'Registrando Coach...');
+    progressDialog.show(max: 100, msg: "Registrando...");
 
     final user = User(
       email: emailController.text.trim(),
@@ -251,52 +236,49 @@ class AdminCoachRegisterController extends GetxController {
     );
 
     final coach = Coach(
-      hobby: addPersonalData.value ? hobbyController.text : "...",
-      description: addPersonalData.value ? descriptionController.text : "...",
-      presentation: addPersonalData.value ? presentationController.text : "...",
+      hobby: hobbyController.text,
+      description: descriptionController.text,
+      presentation: presentationController.text,
       state: 1,
+      schedules: selectedSchedules.toList(),
+      user: null,
     );
 
     final stream = await coachProvider.registerCoach(
       user: user,
       coach: coach,
-      schedule: selectedSchedules,
+      schedule: selectedSchedules.toList(),
       image: imageFile.value!,
     );
 
     stream.listen((res) {
       progressDialog.close();
       final data = json.decode(res);
-      if (data['success'] == true) {
-        Get.snackbar('Éxito', 'Coach registrado correctamente');
+      if (data["success"]) {
+        Get.snackbar("Éxito", "Coach registrado correctamente");
         Get.offAllNamed('/admin/home');
       } else {
-        Get.snackbar('Error', 'No se pudo registrar el coach');
+        Get.snackbar("Error", data["message"] ?? "Ocurrió un problema");
       }
     });
   }
 }
 
-// DataSource para Syncfusion Calendar
+// DataSource
 class ScheduleDataSource extends CalendarDataSource {
   ScheduleDataSource(List<Schedule> source) {
     appointments = source.map((s) {
-      final date = DateTime.parse(s.date!);
-      final startParts = s.start_time!.split(':');
-      final endParts = s.end_time!.split(':');
-
-      final startTime = DateTime(date.year, date.month, date.day,
-          int.parse(startParts[0]), int.parse(startParts[1]));
-      final endTime = DateTime(date.year, date.month, date.day,
-          int.parse(endParts[0]), int.parse(endParts[1]));
+      final d = DateTime.parse(s.date!);
+      final st = s.start_time!.split(":");
+      final et = s.end_time!.split(":");
 
       return Appointment(
-        startTime: startTime,
-        endTime: endTime,
-        subject:
-        'Disponible: ${s.start_time!.substring(0, 5)} - ${s.end_time!.substring(0, 5)}',
+        startTime:
+        DateTime(d.year, d.month, d.day, int.parse(st[0]), int.parse(st[1])),
+        endTime:
+        DateTime(d.year, d.month, d.day, int.parse(et[0]), int.parse(et[1])),
+        subject: s.class_theme!,
         color: Colors.green.shade400,
-        isAllDay: false,
       );
     }).toList();
   }

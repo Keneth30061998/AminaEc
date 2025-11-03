@@ -25,11 +25,17 @@ class AdminStartController extends GetxController {
   void onInit() {
     super.onInit();
     SocketService().join('admin');
-    getCoaches();
+    getCoaches(); // inicializa sin await
     setupSockets();
   }
 
-  void getCoaches() async {
+  /// 🔄 Recarga completa de coaches y estudiantes
+  Future<void> refreshAll() async {
+    await getCoaches();
+  }
+
+  /// 🔹 Cambiado a Future<void>
+  Future<void> getCoaches() async {
     final result = await coachProvider.getAll();
     coaches.value = result;
 
@@ -108,7 +114,6 @@ class AdminStartController extends GetxController {
           //print('✅ Asistencia registrada: ${s.studentName} - ${attendance.status}');
         } else {
           //print('❌ Error al registrar asistencia: ${s.studentName}');
-          //print('responmse: ${response.success}');
         }
       }
     }
@@ -127,13 +132,10 @@ class AdminStartController extends GetxController {
       getCoaches();
     });
 
-    // 🔄 Nuevo: escuchar reagendamiento
     SocketService().on('class:coach:rescheduled', (data) {
       final coachId = data['coach_id'].toString();
-      //print('📡 Socket -> class:coach:rescheduled (admin) $data');
       loadStudents(coachId);
       getCoaches();
     });
   }
-
 }

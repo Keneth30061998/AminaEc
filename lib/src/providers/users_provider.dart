@@ -11,19 +11,19 @@ import '../models/response_api.dart';
 import '../models/user.dart';
 
 class UserProvider extends GetConnect {
-  // URL base
+// URL base
   String url = '${Environment.API_URL}api/users';
 
-  // Sesión del usuario
+// Sesión del usuario
   User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
-  // =======================
-  // Actualizar usuario sin imagen
-  // =======================
+// =======================
+// Actualizar usuario sin imagen
+// =======================
   Future<ResponseApi> update(User user) async {
-    //print('🔹 [UserProvider] updateWithoutImage iniciado');
-    //print('🌍 URL: $url/updateWithoutImage');
-    //print('📤 Body: ${user.toJson()}');
+//print('🔹 [UserProvider] updateWithoutImage iniciado');
+//print('🌍 URL: $url/updateWithoutImage');
+//print('📤 Body: ${user.toJson()}');
 
     Response response = await put(
       '$url/updateWithoutImage',
@@ -34,36 +34,36 @@ class UserProvider extends GetConnect {
       },
     );
 
-    //print('📡 STATUS updateWithoutImage: ${response.statusCode}');
-    //print('📥 Response body: ${response.body}');
+//print('📡 STATUS updateWithoutImage: ${response.statusCode}');
+//print('📥 Response body: ${response.body}');
 
     if (response.body == null) {
-      //print('❌ Error: response.body es null');
+//print('❌ Error: response.body es null');
       Get.snackbar('Error', 'No se pudo actualizar la información');
       return ResponseApi();
     }
 
     if (response.statusCode == 401) {
-      //print('⚠️ Usuario no autorizado');
+//print('⚠️ Usuario no autorizado');
       Get.snackbar('Error', 'No está autorizado para realizar esta acción');
       return ResponseApi();
     }
 
     ResponseApi responseApi = ResponseApi.fromJson(response.body);
-    //print('✅ Update exitoso: ${responseApi.toJson()}');
+//print('✅ Update exitoso: ${responseApi.toJson()}');
     return responseApi;
   }
 
-  // =======================
-  // Actualizar usuario con imagen
-  // =======================
+// =======================
+// Actualizar usuario con imagen
+// =======================
   Future<Stream<String>> updateWithImage(User user, File image) async {
     Uri uri =
         Uri.parse('${Environment.API_URL_SOCKET}/api/users/updateWithImage');
-    //print('🔹 [UserProvider] updateWithImage iniciado');
-    //print('🌍 URL: $uri');
-    //print('📤 User body: ${json.encode(user.toJson())}');
-    //print('🖼️ Imagen: ${image.path}');
+//print('🔹 [UserProvider] updateWithImage iniciado');
+//print('🌍 URL: $uri');
+//print('📤 User body: ${json.encode(user.toJson())}');
+//print('🖼️ Imagen: ${image.path}');
 
     final request = http.MultipartRequest('PUT', uri);
 
@@ -78,20 +78,20 @@ class UserProvider extends GetConnect {
     request.fields['user'] = json.encode(user.toJson());
 
     final response = await request.send();
-    //print('📡 STATUS updateWithImage: ${response.statusCode}');
+//print('📡 STATUS updateWithImage: ${response.statusCode}');
     return response.stream.transform(utf8.decoder);
   }
 
-  // =======================
-  // Registrar usuario con imagen
-  // =======================
+// =======================
+// Registrar usuario con imagen
+// =======================
   Future<Stream<String>> createWithImage(User user, File image) async {
     Uri uri =
         Uri.parse('${Environment.API_URL_SOCKET}/api/users/createWithImage');
-    //print('🔹 [UserProvider] createWithImage iniciado');
-    //print('🌍 URL: $uri');
-    //print('📤 User body: ${json.encode(user.toJson())}');
-    //print('🖼️ Imagen: ${image.path}');
+//print('🔹 [UserProvider] createWithImage iniciado');
+//print('🌍 URL: $uri');
+//print('📤 User body: ${json.encode(user.toJson())}');
+//print('🖼️ Imagen: ${image.path}');
 
     final request = http.MultipartRequest('POST', uri);
 
@@ -105,17 +105,17 @@ class UserProvider extends GetConnect {
     request.fields['user'] = json.encode(user.toJson());
 
     final response = await request.send();
-    //print('📡 STATUS createWithImage: ${response.statusCode}');
+//print('📡 STATUS createWithImage: ${response.statusCode}');
     return response.stream.transform(utf8.decoder);
   }
 
-  // =======================
-  // Registrar usuario sin imagen
-  // =======================
+// =======================
+// Registrar usuario sin imagen
+// =======================
   Future<Response> create(User user) async {
-    //print('🔹 [UserProvider] create iniciado');
-    //print('🌍 URL: $url/create');
-    //print('📤 Body: ${user.toJson()}');
+//print('🔹 [UserProvider] create iniciado');
+//print('🌍 URL: $url/create');
+//print('📤 Body: ${user.toJson()}');
 
     Response response = await post(
       '$url/create',
@@ -123,18 +123,18 @@ class UserProvider extends GetConnect {
       headers: {'Content-Type': 'application/json'},
     );
 
-    //print('📡 STATUS create: ${response.statusCode}');
-    //print('📥 Response body: ${response.body}');
+//print('📡 STATUS create: ${response.statusCode}');
+//print('📥 Response body: ${response.body}');
     return response;
   }
 
-  // =======================
-  // Login de usuario
-  // =======================
+// =======================
+// Login de usuario
+// =======================
   Future<ResponseApi> login(String email, String password) async {
-    //print('🔹 [UserProvider] login iniciado');
-    //print('🌍 URL: $url/login');
-    //print('📤 Email: $email, Password: ******');
+//print('🔹 [UserProvider] login iniciado');
+//print('🌍 URL: $url/login');
+//print('📤 Email: $email, Password: ******');
 
     Response response = await post(
       '$url/login',
@@ -142,27 +142,27 @@ class UserProvider extends GetConnect {
       headers: {'Content-Type': 'application/json'},
     );
 
-    //print('📡 STATUS login: ${response.statusCode}');
-    //print('📥 Response body: ${response.body}');
+//print('📡 STATUS login: ${response.statusCode}');
+//print('📥 Response body: ${response.body}');
 
     if (response.body == null) {
-      //print('❌ Error: response.body es null');
+//print('❌ Error: response.body es null');
       Get.snackbar('Error', 'No se pudo ejecutar la petición');
       return ResponseApi();
     }
 
     ResponseApi responseApi = ResponseApi.fromJson(response.body);
-    //print('✅ Login exitoso: ${responseApi.toJson()}');
+//print('✅ Login exitoso: ${responseApi.toJson()}');
     return responseApi;
   }
 
-  // =======================
-  // Recuperar contraseña
-  // =======================
+// =======================
+// Recuperar contraseña
+// =======================
   Future<ResponseApi> sendRecoveryCode(String email) async {
-    //print('🔹 [UserProvider] sendRecoveryCode iniciado');
-    //print('🌍 URL: $url/recover-password');
-    //print('📤 Email: $email');
+//print('🔹 [UserProvider] sendRecoveryCode iniciado');
+//print('🌍 URL: $url/recover-password');
+//print('📤 Email: $email');
 
     Response response = await post(
       '$url/recover-password',
@@ -170,15 +170,15 @@ class UserProvider extends GetConnect {
       headers: {'Content-Type': 'application/json'},
     );
 
-    //print('📡 STATUS sendRecoveryCode: ${response.statusCode}');
-    //print('📥 Response body: ${response.body}');
+//print('📡 STATUS sendRecoveryCode: ${response.statusCode}');
+//print('📥 Response body: ${response.body}');
 
     if (response.body is Map<String, dynamic>) {
       return ResponseApi.fromJson(response.body);
     } else if (response.body is String) {
       return ResponseApi.fromJson(json.decode(response.body));
     } else {
-      //print('⚠️ Respuesta inesperada en sendRecoveryCode');
+//print('⚠️ Respuesta inesperada en sendRecoveryCode');
       return ResponseApi(
         success: false,
         message: 'Respuesta inesperada del servidor',
@@ -186,14 +186,14 @@ class UserProvider extends GetConnect {
     }
   }
 
-  // =======================
-  // Resetear contraseña
-  // =======================
+// =======================
+// Resetear contraseña
+// =======================
   Future<ResponseApi> resetPassword(
       String email, String code, String newPassword) async {
-    //print('🔹 [UserProvider] resetPassword iniciado');
-    //print('🌍 URL: $url/reset-password');
-    //print('📤 Email: $email, Code: $code, NewPassword: ******');
+//print('🔹 [UserProvider] resetPassword iniciado');
+//print('🌍 URL: $url/reset-password');
+//print('📤 Email: $email, Code: $code, NewPassword: ******');
 
     Response response = await post(
       '$url/reset-password',
@@ -205,17 +205,17 @@ class UserProvider extends GetConnect {
       headers: {'Content-Type': 'application/json'},
     );
 
-    //print('📡 STATUS resetPassword: ${response.statusCode}');
-    //print('📥 Response body: ${response.body}');
+//print('📡 STATUS resetPassword: ${response.statusCode}');
+//print('📥 Response body: ${response.body}');
     return ResponseApi.fromJson(response.body);
   }
 
-  // =======================
-  // Obtener clases asistidas (int)
-  // =======================
+// =======================
+// Obtener clases asistidas (int)
+// =======================
   Future<int> getAttendedClasses(String token, {String? userId}) async {
-    //print('🔹 [UserProvider] getAttendedClasses iniciado');
-    //print('🌍 URL: $url/attended-classes');
+//print('🔹 [UserProvider] getAttendedClasses iniciado');
+//print('🌍 URL: $url/attended-classes');
 
     try {
       Response response = await get(
@@ -223,8 +223,8 @@ class UserProvider extends GetConnect {
         headers: {'Authorization': token},
       );
 
-      //print('📡 STATUS getAttendedClasses: ${response.statusCode}');
-      //print('📥 Response body: ${response.body}');
+//print('📡 STATUS getAttendedClasses: ${response.statusCode}');
+//print('📥 Response body: ${response.body}');
 
       if (response.statusCode == 200 && response.body != null) {
         final body =
@@ -234,10 +234,10 @@ class UserProvider extends GetConnect {
         }
       }
     } catch (e) {
-      //print('❌ Error en getAttendedClasses: $e');
+//print('❌ Error en getAttendedClasses: $e');
     }
 
-    // Si todo falla, devolvemos 0
+// Si todo falla, devolvemos 0
     return 0;
   }
 
@@ -259,7 +259,7 @@ class UserProvider extends GetConnect {
       );
       print('Response body: ${response.body}');
       final Map<String, dynamic> data =
-      response.body is String ? jsonDecode(response.body) : response.body;
+          response.body is String ? jsonDecode(response.body) : response.body;
 
       return ResponseApi.fromJson(data);
     } catch (e) {
@@ -267,5 +267,4 @@ class UserProvider extends GetConnect {
       return ResponseApi(success: false, message: 'Error: $e');
     }
   }
-
 }

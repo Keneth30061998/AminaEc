@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/components/Socket/socket_service.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,19 +12,25 @@ import '../../../../providers/users_provider.dart';
 class UserProfileInfoController extends GetxController {
   var user = User.fromJson(GetStorage().read('user') ?? {}).obs;
   UserProvider userProvider = UserProvider();
+
+  /// 🚪 Cerrar sesión del usuario
   void signOut() {
-    GetStorage().remove('user');
+    // 🧩 1. Desconectar sockets activos
+    final socketService = SocketService();
+    socketService.disconnect();
+
+    // 🧹 2. Limpiar la sesión almacenada
+    final box = GetStorage();
+    box.remove('user');
+
+    // 🔄 3. Redirigir al Splash o Login
     Get.offNamedUntil('/splash', (route) => false);
   }
 
-  void goToProfileUpdate() {
-    Get.toNamed('/user/profile/update');
-  }
-
-  /// 🗑️ Método para eliminar la cuenta del usuario
+  /// 🗑️ Confirmar eliminación de cuenta
   Future<void> confirmDeleteAccount(BuildContext context) async {
     final TextEditingController emailController =
-        TextEditingController(text: user.value.email);
+    TextEditingController(text: user.value.email);
     final TextEditingController passwordController = TextEditingController();
 
     await Get.dialog(
@@ -31,47 +38,42 @@ class UserProfileInfoController extends GetxController {
         backgroundColor: whiteLight,
         title: Text(
           'Eliminar cuenta',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         content: SingleChildScrollView(
-      child: ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 400),
-      child: IntrinsicHeight(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Por favor, confirma tu correo y contraseña para eliminar tu cuenta permanentemente. Esta acción no se puede deshacer.',
-              style: GoogleFonts.roboto(
-                color: almostBlack,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 400),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Por favor, confirma tu correo y contraseña para eliminar tu cuenta permanentemente. Esta acción no se puede deshacer.',
+                    style: GoogleFonts.roboto(color: almostBlack),
+                  ),
+                  const SizedBox(height: 30),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo electrónico',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Contraseña',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 30),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Correo electrónico',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Contraseña',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    ),
-    ),
-
-    actions: [
+        actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: Text(
@@ -113,6 +115,10 @@ class UserProfileInfoController extends GetxController {
     Get.back(); // Cierra el loader
 
     if (response.success == true) {
+      // 🧩 Desconectar socket también al eliminar cuenta
+      final socketService = SocketService();
+      socketService.disconnect();
+
       GetStorage().erase();
       Get.offAllNamed('/splash');
       Get.snackbar('Cuenta eliminada',
@@ -122,5 +128,9 @@ class UserProfileInfoController extends GetxController {
           'Error', response.message ?? 'No se pudo eliminar la cuenta');
       print('${response.message}');
     }
+  }
+
+  void goToProfileUpdate() {
+    Get.toNamed('/user/profile/update');
   }
 }

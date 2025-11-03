@@ -1,14 +1,19 @@
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/utils/textos.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:sn_progress_dialog/sn_progress_dialog.dart';
 
+import '../../../globals.dart';
 import '../../components/Socket/socket_service.dart';
 import '../../models/user.dart';
 import '../../providers/users_provider.dart';
+import '../../services/fcm_service.dart';
 import '../../utils/color.dart';
 
 class LoginController extends GetxController {
@@ -52,17 +57,49 @@ class LoginController extends GetxController {
         ResponseApi responseApi = await usersProvider.login(email, password);
 
         if (responseApi.success == true) {
+          // Guardar usuario en almacenamiento local
           GetStorage().write('user', responseApi.data);
-          User myUser = User.fromJson(GetStorage().read('user') ?? {});
 
-          // ✅ Configurar socket con nueva sesión (ya conecta automáticamente)
+          // Obtener usuario y actualizar sesión global
+          User myUser = User.fromJson(GetStorage().read('user') ?? {});
+          userSession = myUser; // 🔹 Actualización crítica
+
+          // Configurar socket con nueva sesión
           SocketService().updateUserSession(myUser);
+
+          // Enviar token FCM al backend
+          // Enviar token FCM al backend
+          try {
+            bool isIOSSimulator = false;
+
+            if (defaultTargetPlatform == TargetPlatform.iOS) {
+              final iosInfo = await DeviceInfoPlugin().iosInfo;
+              isIOSSimulator = iosInfo.model.toLowerCase().contains('simulator');
+            }
+
+            String? fcmToken;
+
+            if (isIOSSimulator) {
+              // ✅ Token simulado para evitar apns-token-not-set
+              fcmToken = "SIMULATOR_IOS_TOKEN";
+            } else {
+              fcmToken = await FirebaseMessaging.instance.getToken();
+            }
+
+            if (fcmToken != null && fcmToken.isNotEmpty) {
+              await sendTokenToServer(fcmToken);
+            }
+          } catch (_) {
+            // ✅ No mostramos error si falla en simulador
+          }
+
 
           progressDialog.close();
 
-          // ✅ Ocultar teclado antes de navegar (evita overflow en transición)
+          // Ocultar teclado antes de navegar
           FocusScope.of(context).unfocus();
 
+          // Redirigir según roles
           if (myUser.roles != null && myUser.roles!.length > 1) {
             goToRolesPage();
           } else {
@@ -80,7 +117,8 @@ class LoginController extends GetxController {
           Get.snackbar('Login Exitoso', responseApi.message ?? '');
         } else {
           progressDialog.close();
-          Get.snackbar('Login Fallido',
+          Get.snackbar(
+              'Login Fallido',
               responseApi.message ?? 'Credenciales incorrectas');
         }
       } catch (e) {

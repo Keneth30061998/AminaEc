@@ -39,7 +39,7 @@ class UserHomePage extends StatelessWidget {
     return Obx(
       () => Scaffold(
         body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 200),
           switchInCurve: Curves.easeIn,
           switchOutCurve: Curves.easeOut,
           transitionBuilder: (Widget child, Animation<double> animation) {

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
@@ -19,7 +20,7 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: whiteLight,
       appBar: AppBar(
-        title: const Text('Registrar Coach - Imagen'),
+        title: Text('Registro coach', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),),
         backgroundColor: whiteLight,
         elevation: 0,
         foregroundColor: almostBlack,
@@ -152,18 +153,19 @@ class AdminCoachRegisterImagePage extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 55,
-      child: ElevatedButton(
-        onPressed: () => controller.registerCoach(),
+      child: ElevatedButton.icon(
+        onPressed: () => controller.goToRegisterAdminCoachSchedule(),
         style: ElevatedButton.styleFrom(
           backgroundColor: almostBlack,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           elevation: 4,
         ),
-        child: Text(
-          'Registrar Coach',
+        label: Text(
+          'Siguiente',
           style: GoogleFonts.poppins(
               fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        icon: Icon(iconNext, color: whiteLight,size: 25,),
       ),
     );
   }

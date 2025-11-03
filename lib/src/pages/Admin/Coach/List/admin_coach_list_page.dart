@@ -21,32 +21,41 @@ class AdminCoachListPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: whiteLight,
         foregroundColor: darkGrey,
-        title:
-            _appBarTitle().animate().fade(duration: 400.ms).slideY(begin: 0.3),
+        title: _appBarTitle()
+            .animate()
+            .fade(duration: 400.ms)
+            .slideY(begin: 0.3),
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () => con.refreshCoaches(), // 🔄 botón refrescar
+            icon: const Icon(Icons.refresh, color: almostBlack),
+          )
+        ],
       ),
       floatingActionButton: _buttonAddCoach(context),
       body: Obx(() {
-        if (con.coaches.isEmpty) {
-          return Center(
+        return RefreshIndicator(
+          onRefresh: () async => await con.refreshCoaches(), // 👈 Pull to refresh
+          child: con.coaches.isEmpty
+              ? Center(
             child: NoDataWidget(text: 'No hay coaches disponibles')
                 .animate()
                 .fade(duration: 500.ms)
                 .slideY(begin: 0.2),
-          );
-        } else {
-          return ListView.builder(
+          )
+              : ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
             itemCount: con.coaches.length,
             itemBuilder: (context, index) {
               final coach = con.coaches[index];
               return _cardCoach(context, coach)
-                  .animate(delay: Duration(milliseconds: 100))
+                  .animate(delay: const Duration(milliseconds: 100))
                   .fade()
                   .slideY(begin: 0.2);
             },
-          );
-        }
+          ),
+        );
       }),
     );
   }
@@ -79,36 +88,29 @@ class AdminCoachListPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(50),
               child: coach.user?.photo_url != null
                   ? Image.network(
-                      coach.user!.photo_url!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                    )
+                coach.user!.photo_url!,
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+              )
                   : Container(
-                      width: 70,
-                      height: 70,
-                      color: Colors.grey[300],
-                      child: Icon(iconProfile, size: 36),
-                    ),
+                width: 70,
+                height: 70,
+                color: Colors.grey[300],
+                child: Icon(iconProfile, size: 36),
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    coach.user?.name ?? '',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: almostBlack,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
+              child: Text(
+                coach.user?.name ?? '',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: almostBlack,
+                ),
               ),
             ),
-            const SizedBox(width: 8),
             PopupMenuButton<String>(
               color: whiteLight,
               icon: const Icon(iconMore, color: darkGrey),
@@ -119,7 +121,6 @@ class AdminCoachListPage extends StatelessWidget {
                   con.goToUpdateCoachSchedulePage(coach);
                 } else if (value == 'toggle_state') {
                   final newState = coach.state == 1 ? 0 : 1;
-                  //con.deleteCoach(coach.id!);
                   con.toggleCoachState(coach.id!, newState);
                 }
               },
@@ -148,7 +149,8 @@ class AdminCoachListPage extends StatelessWidget {
                   value: 'toggle_state',
                   child: Row(
                     children: [
-                      Icon(coach.state == 1 ? Icons.block : Icons.check, color: coach.state == 1 ? Colors.red : Colors.green),
+                      Icon(Icons.power_settings_new,
+                          color: coach.state == 1 ? Colors.red : Colors.green),
                       SizedBox(width: 8),
                       Text(coach.state == 1 ? 'Desactivar' : 'Reactivar'),
                     ],
@@ -168,9 +170,7 @@ class AdminCoachListPage extends StatelessWidget {
       foregroundColor: whiteLight,
       label: Text(
         'Añadir Coach',
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.bold,
-        ),
+        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
       ),
       icon: const Icon(iconAdd),
       onPressed: () => con.goToAdminCoachRegisterPage(),

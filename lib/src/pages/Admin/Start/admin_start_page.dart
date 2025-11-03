@@ -66,33 +66,28 @@ class AdminStartPage extends StatelessWidget {
                 final students =
                 con.getStudentsByCoachAndDate(coachId, selectedDate);
 
-                return Column(
-                  children: [
-                    _dateSelector(con, coachId),
-                    Expanded(
-                      child: students.isEmpty
-                          ? NoDataWidget(text: 'No hay estudiantes inscritos')
-                          : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 20),
-                        itemCount: students.length,
-                        itemBuilder: (_, index) {
-                          final s = students[index];
-                          final timeFormatted =
-                          s.classTime.substring(0, 5);
+                return RefreshIndicator(
+                  onRefresh: () => con.refreshAll(),
+                  child: ListView(
+                    padding: const EdgeInsets.only(top: 10),
+                    children: [
+                      _dateSelector(con, coachId),
+                      SizedBox(height: 30,),
+                      if (students.isEmpty)
+                        NoDataWidget(text: 'No hay estudiantes inscritos')
+                      else
+                        ...students.map((s) {
+                          final timeFormatted = s.classTime.substring(0, 5);
                           final key = con.getStudentKey(s);
-
                           return Obx(() {
                             final isPresent =
                                 con.attendanceMap[key]?.value ?? false;
-
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 10),
+                              margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10,),
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: Colors.grey.shade300),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
                               child: ListTile(
                                 leading: CircleAvatar(
@@ -101,22 +96,20 @@ class AdminStartPage extends StatelessWidget {
                                   radius: 22,
                                 ),
                                 title: Text(s.studentName),
-                                subtitle: Text(
-                                    'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
+                                subtitle:
+                                Text('Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
                                 trailing: Checkbox(
                                   value: isPresent,
                                   onChanged: (value) {
-                                    con.attendanceMap[key]?.value =
-                                    value!;
+                                    con.attendanceMap[key]?.value = value!;
                                   },
                                 ),
                               ),
                             );
                           });
-                        },
-                      ),
-                    ),
-                  ],
+                        }).toList()
+                    ],
+                  ),
                 );
               }).toList(),
             ),

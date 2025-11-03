@@ -22,12 +22,7 @@ class CoachProvider extends GetConnect {
     required List<Schedule> schedule,
     required File image,
   }) async {
-    //print('📌 [CoachProvider] → Iniciando registerCoach()');
-    //print('📤 User: ${user.toJson()}');
-    //print('📤 Coach: ${coach.toJson()}');
-    //print('📤 Schedule: ${schedule.map((s) => s.toJson()).toList()}');
-    //print('🖼 Imagen: ${image.path}');
-    //print('🔑 Token: ${userSession.session_token}');
+
 
     Uri uri =
     Uri.parse('${Environment.API_URL_OLD}/api/coachs/createWithImage');
@@ -44,8 +39,15 @@ class CoachProvider extends GetConnect {
 
     request.fields['user'] = json.encode(user.toJson());
     request.fields['coach'] = json.encode(coach.toJson());
+    // <-- Aquí pones el print para ver el contenido de los schedules
+    print('📤 Schedules JSON: ${json.encode(schedule.map((s) => s.toJson()).toList())}');
     request.fields['schedule'] =
         json.encode(schedule.map((s) => s.toJson()).toList());
+    // Antes de enviar la request
+    print('📤 Request fields:');
+    request.fields.forEach((key, value) {
+      print('$key: $value');
+    });
 
     final response = await request.send();
     //print('📥 Respuesta recibida en registerCoach(), statusCode=${response.statusCode}');

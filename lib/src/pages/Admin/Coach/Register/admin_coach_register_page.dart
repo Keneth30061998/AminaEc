@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +9,17 @@ import 'package:intl/intl.dart';
 import '../../../../utils/color.dart';
 import '../../../../utils/iconos.dart';
 import 'admin_coach_register_controller.dart';
+
+// --- Input Formatters Globales ---
+final noEmojisNoSpacesFormatter = FilteringTextInputFormatter.allow(
+  RegExp(r'[A-Za-z0-9@._\-]+'),
+);
+
+final onlyLettersNoSpacesFormatter = FilteringTextInputFormatter.allow(
+  RegExp(r'[A-Za-zÁÉÍÓÚáéíóúÑñ]+'),
+);
+
+final onlyNumbersFormatter = FilteringTextInputFormatter.allow(RegExp(r'[0-9]'));
 
 class AdminCoachRegisterPage extends StatelessWidget {
   final AdminCoachRegisterController con =
@@ -18,76 +30,93 @@ class AdminCoachRegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: whiteLight,
+        shadowColor: whiteLight,
+        surfaceTintColor: whiteLight,
+        forceMaterialTransparency: true,
+      ),
       backgroundColor: whiteLight,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // HEADER animado
                 _header()
                     .animate()
                     .fade(duration: 500.ms)
                     .slideY(begin: 0.3)
                     .then(delay: 150.ms),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                // Campos animados
-                _textField("Correo Electrónico", con.emailController, iconEmail,
-                    TextInputType.emailAddress)
-                    .animate(delay: 200.ms)
-                    .fade()
-                    .slideY(begin: 0.3),
+                _textField(
+                  "Correo Electrónico",
+                  con.emailController,
+                  iconEmail,
+                  TextInputType.emailAddress,
+                  inputFormatters: [noEmojisNoSpacesFormatter],
+                ).animate(delay: 200.ms).fade().slideY(begin: 0.3),
 
-                _textField("Nombre", con.nameController, iconProfile,
-                    TextInputType.name)
-                    .animate(delay: 350.ms)
-                    .fade()
-                    .slideY(begin: 0.3),
+                _textField(
+                  "Nombre",
+                  con.nameController,
+                  iconProfile,
+                  TextInputType.name,
+                  inputFormatters: [onlyLettersNoSpacesFormatter],
+                ).animate(delay: 350.ms).fade().slideY(begin: 0.3),
 
-                _textField("Apellido", con.lastnameController,
-                    iconProfileInvert, TextInputType.name)
-                    .animate(delay: 500.ms)
-                    .fade()
-                    .slideY(begin: 0.3),
+                _textField(
+                  "Apellido",
+                  con.lastnameController,
+                  iconProfileInvert,
+                  TextInputType.name,
+                  inputFormatters: [onlyLettersNoSpacesFormatter],
+                ).animate(delay: 500.ms).fade().slideY(begin: 0.3),
 
-                _textField("Cédula", con.ciController, iconCi,
-                    TextInputType.number)
-                    .animate(delay: 650.ms)
-                    .fade()
-                    .slideY(begin: 0.3),
+                _textField(
+                  "Cédula",
+                  con.ciController,
+                  iconCi,
+                  TextInputType.number,
+                  inputFormatters: [onlyNumbersFormatter],
+                ).animate(delay: 650.ms).fade().slideY(begin: 0.3),
 
-                _textField("Teléfono", con.phoneController, iconPhone,
-                    TextInputType.phone)
-                    .animate(delay: 800.ms)
-                    .fade()
-                    .slideY(begin: 0.3),
-
-                _passwordField("Contraseña", con.passwordController,
-                    iconPassword, con.obscurePassword)
-                    .animate(delay: 950.ms)
-                    .fade()
-                    .slideY(begin: 0.3),
+                _textField(
+                  "Teléfono",
+                  con.phoneController,
+                  iconPhone,
+                  TextInputType.phone,
+                  inputFormatters: [onlyNumbersFormatter],
+                ).animate(delay: 800.ms).fade().slideY(begin: 0.3),
 
                 _passwordField(
-                    "Confirmar Contraseña",
-                    con.confirmPasswordController,
-                    iconConfirmPassword,
-                    con.obscureConfirmPassword)
-                    .animate(delay: 1100.ms)
+                  "Contraseña",
+                  con.passwordController,
+                  iconPassword,
+                  con.obscurePassword,
+                  inputFormatters: [noEmojisNoSpacesFormatter],
+                ).animate(delay: 950.ms).fade().slideY(begin: 0.3),
+
+                _passwordField(
+                  "Confirmar Contraseña",
+                  con.confirmPasswordController,
+                  iconConfirmPassword,
+                  con.obscureConfirmPassword,
+                  inputFormatters: [noEmojisNoSpacesFormatter],
+                ).animate(delay: 1100.ms).fade().slideY(begin: 0.3),
+
+                const SizedBox(height: 8),
+
+                _selectBirthDateField()
+                    .animate(delay: 1150.ms)
                     .fade()
                     .slideY(begin: 0.3),
 
                 const SizedBox(height: 15),
 
-                _selectBirthDateField().animate(delay: 1150.ms).fade().slideY(begin: 0.3),
-
-                const SizedBox(height: 30),
-
-                // Botón animado
                 _buttonRegister(context)
                     .animate(delay: 1250.ms)
                     .fade()
@@ -117,7 +146,7 @@ class AdminCoachRegisterPage extends StatelessWidget {
           'Ingresa la información del coach',
           style: GoogleFonts.poppins(
             color: Colors.black54,
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -126,12 +155,14 @@ class AdminCoachRegisterPage extends StatelessWidget {
   }
 
   Widget _textField(String label, TextEditingController controller,
-      IconData icon, TextInputType inputType) {
+      IconData icon, TextInputType inputType,
+      {required List<TextInputFormatter> inputFormatters}) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
         keyboardType: inputType,
+        inputFormatters: inputFormatters,
         style: GoogleFonts.poppins(),
         decoration: InputDecoration(
           labelText: label,
@@ -145,21 +176,22 @@ class AdminCoachRegisterPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: Colors.black),
           ),
-          contentPadding:
-          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
   }
 
   Widget _passwordField(String label, TextEditingController controller,
-      IconData icon, RxBool toggleValue) {
+      IconData icon, RxBool toggleValue,
+      {required List<TextInputFormatter> inputFormatters}) {
     return Obx(() => Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
         obscureText: toggleValue.value,
         keyboardType: TextInputType.visiblePassword,
+        inputFormatters: inputFormatters,
         style: GoogleFonts.poppins(),
         decoration: InputDecoration(
           labelText: label,
@@ -190,9 +222,8 @@ class AdminCoachRegisterPage extends StatelessWidget {
   Widget _selectBirthDateField() {
     return Obx(() {
       final selectedDate = con.birthDate.value;
-      final formattedDate = selectedDate != null
-          ? DateFormat('dd/MM/yyyy').format(selectedDate)
-          : '';
+      final formattedDate =
+      selectedDate != null ? DateFormat('dd/MM/yyyy').format(selectedDate) : '';
       return GestureDetector(
         onTap: () => _showDatePicker(),
         child: Container(
@@ -235,8 +266,8 @@ class AdminCoachRegisterPage extends StatelessWidget {
     showModalBottomSheet(
       context: Get.context!,
       backgroundColor: Colors.white,
-      shape:
-      const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (BuildContext context) {
         DateTime tempDate = initialDate;
         return Padding(
@@ -249,7 +280,8 @@ class AdminCoachRegisterPage extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                      color: Colors.black12, borderRadius: BorderRadius.circular(2))),
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(2))),
               SizedBox(
                 height: 200,
                 child: CupertinoDatePicker(
@@ -289,11 +321,11 @@ class AdminCoachRegisterPage extends StatelessWidget {
       height: 55,
       child: FloatingActionButton.extended(
         onPressed: () => con.goToRegisterAdminCoachImage(),
-        label: Text(
+        label: const Text(
           'Siguiente',
           style: TextStyle(fontSize: 16, color: Colors.white),
         ),
-        icon: Icon(
+        icon: const Icon(
           Icons.arrow_forward_ios,
           color: Colors.white,
         ),

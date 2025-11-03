@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
 import '../../../widgets/no_data_widget.dart';
 
 class CoachClassPage extends StatelessWidget {
@@ -14,45 +13,37 @@ class CoachClassPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      if (con.students.isEmpty) {
-        return Scaffold(
-          appBar: AppBar(title: _appBarTitle()),
-          body: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              NoDataWidget(text: 'No hay estudiantes inscritos'),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 125),
-                child: LinearProgressIndicator(
+    return Scaffold(
+      appBar: AppBar(title: _appBarTitle()),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Column(
+          children: [
+            _dateSelector(con),
+            Expanded(
+              child: Obx(() {
+                final students = con.getStudentsByDate(con.selectedDate.value);
+
+                // 🔄 Agregamos RefreshIndicator para todos los casos
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await con.loadStudents();
+                    await Future.delayed(const Duration(milliseconds: 400));
+                  },
                   color: almostBlack,
-                  backgroundColor: colorBackgroundBox,
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-
-      return Scaffold(
-        appBar: AppBar(
-          title: _appBarTitle(),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Column(
-            children: [
-              _dateSelector(con),
-              Expanded(
-                child: Obx(() {
-                  final students =
-                      con.getStudentsByDate(con.selectedDate.value);
-                  if (students.isEmpty) {
-                    return NoDataWidget(text: 'No hay estudiantes inscritos');
-                  }
-
-                  return ListView.builder(
+                  backgroundColor: Colors.white,
+                  child: students.isEmpty
+                      ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                          height:
+                          MediaQuery.of(context).size.height * 0.3),
+                      NoDataWidget(text: 'No hay estudiantes inscritos'),
+                    ],
+                  )
+                      : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 15, vertical: 20),
                     itemCount: students.length,
@@ -68,23 +59,25 @@ class CoachClassPage extends StatelessWidget {
                         ),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundImage: NetworkImage(s.photo_url ?? ''),
+                            backgroundImage:
+                            NetworkImage(s.photo_url ?? ''),
                             radius: 22,
                           ),
                           title: Text(s.studentName),
                           subtitle: Text(
-                              'Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
+                            'Hora: $timeFormatted\nMáquina: ${s.bicycle}',
+                          ),
                         ),
                       );
                     },
-                  );
-                }),
-              ),
-            ],
-          ),
+                  ),
+                );
+              }),
+            ),
+          ],
         ),
-      );
-    });
+      ),
+    );
   }
 
   Widget _appBarTitle() {

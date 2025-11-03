@@ -13,64 +13,42 @@ class AdminCoachListController extends GetxController {
     super.onInit();
     getCoaches();
 
-    SocketService().on('coach:new', (data) {
-      //print('📡 Evento coach:new recibido');
-      getCoaches();
-    });
-
-    SocketService().on('coach:delete', (data) {
-      //print('🗑️ Evento coach:delete recibido');
-      getCoaches();
-    });
-
-    SocketService().on('coach:update', (data) {
-      //print('📡 Evento coach:update recibido');
-      getCoaches();
-    });
+    SocketService().on('coach:new', (data) => refreshCoaches());
+    SocketService().on('coach:delete', (data) => refreshCoaches());
+    SocketService().on('coach:update', (data) => refreshCoaches());
   }
 
-  void getCoaches() async {
+  Future<void> getCoaches() async {
     List<Coach> result = await coachProvider.getAll();
     coaches.value = result;
   }
 
-  @override
-  void refresh() {
-    getCoaches();
+  Future<void> refreshCoaches() async {
+    await getCoaches();
   }
 
-  void goToAdminCoachRegisterPage() {
-    Get.toNamed('/admin/coach/register');
+  void goToAdminCoachRegisterPage() async {
+    await Get.toNamed('/admin/coach/register');
+    refreshCoaches(); // 👈 Refresca al volver
   }
 
-  void goToUpdateCoachSchedulePage(Coach coach) {
-    Get.toNamed('/admin/coach/update/schedule', arguments: coach);
+  void goToUpdateCoachSchedulePage(Coach coach) async {
+    await Get.toNamed('/admin/coach/update/schedule', arguments: coach);
+    refreshCoaches(); // 👈 Refresca al volver
   }
 
-  void goToUpdateCoachPage(Coach coach) {
-    Get.toNamed('/admin/coach/update', arguments: coach);
-  }
-
-  void deleteCoach(String id) async {
-    final res = await coachProvider.deleteCoach(id);
-    if (res.statusCode == 201) {
-      Get.snackbar('Exito', 'Coach eliminado correctamente');
-      getCoaches(); //recarga la lista de coachs
-    } else {
-      Get.snackbar('Error', 'No se pudo eliminar el coach');
-    }
+  void goToUpdateCoachPage(Coach coach) async {
+    await Get.toNamed('/admin/coach/update', arguments: coach);
+    refreshCoaches(); // 👈 Refresca al volver
   }
 
   void toggleCoachState(String id, int newState) async {
     final res = await coachProvider.setState(id, newState);
-    print(res.body); // o resp.data según tu provider
-
     if (res.statusCode == 200) {
+      refreshCoaches();
       Get.snackbar('Éxito', 'Estado actualizado correctamente');
-      getCoaches();
     } else {
       Get.snackbar('Error', 'No se pudo actualizar el estado');
     }
   }
-
 }
