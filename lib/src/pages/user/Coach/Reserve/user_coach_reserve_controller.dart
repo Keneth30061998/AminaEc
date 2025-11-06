@@ -63,6 +63,25 @@ class UserCoachReserveController extends GetxController {
   }
 
   Future<void> reserveClass() async {
+    // ✅ 1. Validar si tiene rides disponibles
+    if (totalRides.value <= 0) {
+      Get.snackbar(
+        'No tienes rides disponibles',
+        'Compra un plan para reservar esta clase',
+        backgroundColor: almostBlack,
+        colorText: whiteLight,
+        duration: const Duration(seconds: 2),
+      );
+
+      // ⏳ 2. Dar tiempo para leer el mensaje
+      await Future.delayed(const Duration(seconds: 2));
+
+      // 🚀 3. Redirigir a la pantalla de planes
+      Get.offNamed('/user/plan');
+      return;
+    }
+
+    // ✅ 4. Validación de selección de bici
     if (selectedEquipos.isEmpty) {
       Get.snackbar('Máquina no seleccionada', 'Debes elegir una bicicleta');
       return;
@@ -80,7 +99,6 @@ class UserCoachReserveController extends GetxController {
     if (response.success! && response.data != null) {
       ClassReservation reservation = response.data as ClassReservation;
 
-      // Nuevo: mostrar pantalla de confirmación visual
       showReservationDialog(Get.context!);
 
       if (Get.isRegistered<UserStartController>()) {
@@ -154,16 +172,16 @@ class UserCoachReserveController extends GetxController {
                     children: const [
                       _BulletPoint(
                         text:
-                        'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
+                            'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
                       ),
                       _BulletPoint(
                         text:
-                        'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
+                            'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
                       ),
                       _BulletPoint(text: 'Usa ropa cómoda.'),
                       _BulletPoint(
                           text:
-                          'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.'),
+                              'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.'),
                     ],
                   ),
                   const SizedBox(height: 25),
@@ -184,7 +202,9 @@ class UserCoachReserveController extends GetxController {
                       child: const Text(
                         'Aceptar',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: whiteLight),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: whiteLight),
                       ),
                     ),
                   )
@@ -200,7 +220,7 @@ class UserCoachReserveController extends GetxController {
   void getTotalRides() async {
     if (user.session_token != null) {
       int rides =
-      await userPlanProvider.getTotalActiveRides(user.session_token!);
+          await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
