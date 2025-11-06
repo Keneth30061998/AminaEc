@@ -1,5 +1,6 @@
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/models/user.dart';
+import 'package:amina_ec/src/providers/user_plan_provider.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -40,8 +41,8 @@ class AdminReportsAppUsersController extends GetxController {
       filteredUsers.value = users;
     } else {
       filteredUsers.value = users
-          .where((u) =>
-          (u.name ?? '').toLowerCase().contains(query.toLowerCase()))
+          .where(
+              (u) => (u.name ?? '').toLowerCase().contains(query.toLowerCase()))
           .toList();
     }
   }
@@ -74,8 +75,8 @@ class AdminReportsAppUsersController extends GetxController {
       StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               'Extender plan',
               textAlign: TextAlign.center,
@@ -146,8 +147,8 @@ class AdminReportsAppUsersController extends GetxController {
         builder: (context, setState) {
           return AlertDialog(
             backgroundColor: Colors.grey[100],
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               'Añadir Rides',
               textAlign: TextAlign.center,
@@ -168,7 +169,7 @@ class AdminReportsAppUsersController extends GetxController {
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
                       onPressed:
-                      rides > 1 ? () => setState(() => rides--) : null,
+                          rides > 1 ? () => setState(() => rides--) : null,
                     ),
                     Text(
                       '$rides rides',
@@ -206,6 +207,99 @@ class AdminReportsAppUsersController extends GetxController {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void showUserPlansInfo(User user) async {
+    final token = userSession.session_token!;
+    final plans = await _provider.getUserPlansSummary(user.id!, token);
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          "Planes de ${user.name}",
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            color: almostBlack,
+          ),
+        ),
+        content: SizedBox(
+          width: Get.width * 0.8,
+          child: plans.isEmpty
+              ? Center(
+                  child: Text(
+                    "Este usuario no tiene planes activos.",
+                    style: GoogleFonts.poppins(color: Colors.grey),
+                  ),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: plans.map((plan) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      width: Get.width * 0.8,
+                      decoration: BoxDecoration(
+                        color: colorBackgroundBox,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            plan["plan_name"] ?? "Plan sin nombre",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: indigoAmina,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "Rides restantes: ${plan["remaining_rides"]}",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: almostBlack,
+                            ),
+                          ),
+                          Text(
+                            "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: almostBlack,
+                            ),
+                          ),
+                          Text(
+                            "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: almostBlack,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: Text("Cerrar",
+                style: TextStyle(
+                  color: indigoAmina,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                )),
+          ),
+        ],
       ),
     );
   }

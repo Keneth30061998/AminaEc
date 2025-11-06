@@ -1,3 +1,5 @@
+// File: user_coach_schedule_page.dart
+
 import 'package:amina_ec/src/pages/user/Coach/List/user_coach_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,6 +9,11 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../../models/coach.dart';
 import '../../../../utils/color.dart';
 import '../../../../widgets/no_data_widget.dart';
+class _ClassCardEntry {
+  final DateTime time;
+  final Widget card;
+  _ClassCardEntry({required this.time, required this.card});
+}
 
 class UserCoachSchedulePage extends StatelessWidget {
   final con = Get.put(UserCoachScheduleController());
@@ -110,17 +117,42 @@ class UserCoachSchedulePage extends StatelessWidget {
                   );
                 }
 
-                return ListView.builder(
+                // Vamos a guardar una lista de objetos que contengan:
+                // - el widget card
+                // - la hora de inicio como DateTime
+                final List<_ClassCardEntry> entries = [];
+
+                for (final coach in con.filteredCoaches) {
+                  final schedules = coach.schedules.where((s) {
+                    final sDate = DateTime.tryParse(s.date ?? '');
+                    final d = con.selectedDate.value;
+                    return sDate != null && sDate.year == d.year && sDate.month == d.month && sDate.day == d.day;
+                  }).toList()
+                    ..sort((a, b) {
+                      final t1 = DateTime.parse('${a.date} ${a.start_time}');
+                      final t2 = DateTime.parse('${b.date} ${b.start_time}');
+                      return t1.compareTo(t2);
+                    });
+
+                  for (final s in schedules) {
+                    final card = _coachClassCard(coach, s, isTablet);
+                    final time = DateTime.parse('${s.date} ${s.start_time}');
+                    entries.add(_ClassCardEntry(time: time, card: card));
+                  }
+                }
+
+                // ✅ Ordenamos por hora
+                entries.sort((a, b) => a.time.compareTo(b.time));
+
+                return ListView(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: con.filteredCoaches.length,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  itemBuilder: (_, index) {
-                    final coach = con.filteredCoaches[index];
-                    return _coachCardsForCoach(coach, con.selectedDate.value, isTablet);
-                  },
+                  children: entries.map((e) => e.card).toList(),
                 );
               }),
+
+
             ],
           ),
         ),
@@ -136,31 +168,101 @@ class UserCoachSchedulePage extends StatelessWidget {
           sDate.year == date.year &&
           sDate.month == date.month &&
           sDate.day == date.day;
-    }).toList();
+    }).toList()
+      ..sort((a, b) {
+        final t1 = (a.start_time ?? '00:00').split(':');
+        final t2 = (b.start_time ?? '00:00').split(':');
+        final aMinutes = int.parse(t1[0]) * 60 + int.parse(t1[1]);
+        final bMinutes = int.parse(t2[0]) * 60 + int.parse(t2[1]);
+        return aMinutes.compareTo(bMinutes);
+      });
+
+    // Antes de construir las tarjetas, solicitamos los contadores que aún no estén en el mapa
+    for (final s in schedules) {
+      final key = '${coach.id}-${s.date}-${s.start_time}';
+      // Solo solicitar si no existe la key para evitar múltiples requests por rebuilds
+      if (!con.occupiedBikeMap.containsKey(key)) {
+        // No await: disparamos la carga en background (se actualizará reactivamente)
+        con.fetchOccupiedCount(
+          coachId: coach.id ?? '',
+          date: s.date ?? '',
+          time: s.start_time ?? '',
+        );
+      }
+    }
 
     return Column(
       children: schedules.map((s) {
         final theme = (s.class_theme?.isNotEmpty == true) ? s.class_theme! : 'Clase';
-        return _AnimatedClassCard(
-          coachName: coach.user?.name ?? '',
-          coachImageUrl: coach.user?.photo_url ?? '',
-          classTheme: theme,
-          duration: '${_formatTime(s.start_time)} — ${_formatTime(s.end_time)}',
-          locationName: coach.hobby?.isNotEmpty == true ? coach.hobby! : 'Studio',
-          isTablet: isTablet,
-          onTap: () {
-            con.goToUserCoachReservePage(
-              coachId: coach.id ?? '',
-              classTime: s.start_time ?? '00:00:00',
-              coachName: coach.user?.name ?? '',
-              classTheme: theme,
-            );
-          },
-          // Hero tag: único por coach + date + start_time para evitar colisiones
-          heroTag: '${coach.id}_${s.date}_${s.start_time}',
-        );
+        final formattedTime = _formatTime(s.start_time);
+        final key = '${coach.id}-${s.date}-${s.start_time}';
+        const total = 18; // bicicletas totales
+
+        // Usamos Obx para que el badge se actualice reactivamente cuando cambia el mapa
+        return Obx(() {
+          final occupied = con.occupiedBikeMap[key] ?? 0;
+
+          return _AnimatedClassCard(
+            coachName: coach.user?.name ?? '',
+            coachImageUrl: coach.user?.photo_url ?? '',
+            classTheme: theme,
+            duration: '$formattedTime — ${_formatTime(s.end_time)}',
+            locationName: coach.hobby?.isNotEmpty == true ? coach.hobby! : 'Studio',
+            occupiedCount: occupied,
+            totalCount: total,
+            isTablet: isTablet,
+            onTap: () {
+              con.goToUserCoachReservePage(
+                coachId: coach.id ?? '',
+                classTime: s.start_time ?? '00:00:00',
+                coachName: coach.user?.name ?? '',
+                classTheme: theme,
+              );
+            },
+            heroTag: '${coach.id}_${s.date}_${s.start_time}',
+          );
+        });
       }).toList(),
     );
+  }
+  Widget _coachClassCard(Coach coach, schedule, bool isTablet) {
+    final theme = (schedule.class_theme?.isNotEmpty == true) ? schedule.class_theme! : 'Clase';
+    final formattedTime = _formatTime(schedule.start_time);
+    final key = '${coach.id}-${schedule.date}-${schedule.start_time}';
+    const total = 18;
+
+    // Dispara carga si falta
+    if (!con.occupiedBikeMap.containsKey(key)) {
+      con.fetchOccupiedCount(
+        coachId: coach.id ?? '',
+        date: schedule.date ?? '',
+        time: schedule.start_time ?? '',
+      );
+    }
+
+    return Obx(() {
+      final occupied = con.occupiedBikeMap[key] ?? 0;
+
+      return _AnimatedClassCard(
+        coachName: coach.user?.name ?? '',
+        coachImageUrl: coach.user?.photo_url ?? '',
+        classTheme: theme,
+        duration: '$formattedTime — ${_formatTime(schedule.end_time)}',
+        locationName: coach.hobby?.isNotEmpty == true ? coach.hobby! : 'Studio',
+        occupiedCount: occupied,
+        totalCount: total,
+        isTablet: isTablet,
+        onTap: () {
+          con.goToUserCoachReservePage(
+            coachId: coach.id ?? '',
+            classTime: schedule.start_time ?? '00:00:00',
+            coachName: coach.user?.name ?? '',
+            classTheme: theme,
+          );
+        },
+        heroTag: '${coach.id}_${schedule.date}_${schedule.start_time}',
+      );
+    });
   }
 
   String _formatTime(String? time) {
@@ -179,6 +281,8 @@ class _AnimatedClassCard extends StatefulWidget {
   final VoidCallback onTap;
   final bool isTablet;
   final String heroTag;
+  final int occupiedCount;
+  final int totalCount;
 
   const _AnimatedClassCard({
     super.key,
@@ -190,6 +294,8 @@ class _AnimatedClassCard extends StatefulWidget {
     required this.onTap,
     required this.isTablet,
     required this.heroTag,
+    required this.occupiedCount,
+    required this.totalCount,
   });
 
   @override
@@ -341,11 +447,35 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                                 color: Colors.grey.shade700,
                               ),
                             ),
-                            // Chevron right para indicar navegación
+
+                            // 🔥 CONTADOR DE BICICLETAS (ocupadas/total)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.directions_bike_outlined, size: 15,),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${widget.occupiedCount}/${widget.totalCount}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: widget.isTablet ? 16 : 14,
+                                      color: almostBlack,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
                             const SizedBox(width: 8),
                             Icon(Icons.chevron_right, color: Colors.grey.shade600),
                           ],
                         ),
+
                       ],
                     ),
                   ),

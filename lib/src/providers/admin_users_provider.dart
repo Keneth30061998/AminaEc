@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:http/http.dart' as http;
@@ -78,4 +80,40 @@ class AdminUsersProvider {
       return ResponseApi(success: false, message: 'Error devolviendo rides');
     }
   }
+
+  Future<List<Map<String, dynamic>>> getUserPlansSummary(String userId, String token) async {
+    final url = Uri.parse('${Environment.API_URL}api/users/$userId/plans/summary');
+
+    //print('===============');
+    //print('📡 Consultando planes del usuario: $userId');
+    //print('➡️ URL: $url');
+    //print('🔑 TOKEN: $token');
+    //print('===============');
+
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token,
+    });
+
+    //print('📥 STATUS: ${response.statusCode}');
+    //print('📥 BODY: ${response.body}');
+
+    try {
+      final data = json.decode(response.body);
+      //print('📦 Data decodificada: $data');
+
+      final List<dynamic> rawList = data['plans'] ?? [];
+      //print('📋 Lista encontrada: $rawList');
+
+      final list = List<Map<String, dynamic>>.from(rawList);
+      //print('✅ Retornando lista de planes: $list');
+      //print('===============');
+
+      return list;
+    } catch (e) {
+      //print('❌ Error parseando JSON: $e');
+      return [];
+    }
+  }
+
 }

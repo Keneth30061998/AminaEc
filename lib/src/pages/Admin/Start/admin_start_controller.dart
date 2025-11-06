@@ -1,4 +1,9 @@
+// lib/src/pages/admin/start/admin_start_controller.dart
+
+import 'package:amina_ec/src/utils/color.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../components/Socket/socket_service.dart';
 import '../../../models/attendance.dart';
@@ -14,33 +19,40 @@ class AdminStartController extends GetxController {
   final attendanceProvider = AttendanceProvider();
 
   RxList<Coach> coaches = <Coach>[].obs;
+
+  /// Guardamos qué coach está seleccionado en la TabView
+  RxString selectedCoachId = ''.obs;
+
   Map<String, RxList<StudentInscription>> studentMap = {};
   Map<String, Rx<DateTime>> selectedDatePerCoach = {};
   Map<String, RxBool> attendanceMap = {};
 
   DateTime get today => DateTime.now();
-  final int daysToShow = 10;
+  final int daysToShow = 30;
 
   @override
   void onInit() {
     super.onInit();
     SocketService().join('admin');
-    getCoaches(); // inicializa sin await
+    getCoaches();
     setupSockets();
   }
 
-  /// 🔄 Recarga completa de coaches y estudiantes
   Future<void> refreshAll() async {
     await getCoaches();
   }
 
-  /// 🔹 Cambiado a Future<void>
   Future<void> getCoaches() async {
     final result = await coachProvider.getAll();
     coaches.value = result;
 
+    // Si hay coaches, seleccionamos por defecto el primero
+    if (result.isNotEmpty && selectedCoachId.value.isEmpty) {
+      selectedCoachId.value = result.first.id!;
+    }
+
     for (var coach in result) {
-      selectedDatePerCoach[coach.id!] = Rx<DateTime>(today);
+      selectedDatePerCoach.putIfAbsent(coach.id!, () => Rx<DateTime>(today));
       await loadStudents(coach.id!);
     }
   }
@@ -55,6 +67,10 @@ class AdminStartController extends GetxController {
     }
   }
 
+  void selectCoach(String coachId) {
+    selectedCoachId.value = coachId;
+  }
+
   void selectDateForCoach(String coachId, DateTime date) {
     selectedDatePerCoach[coachId]?.value = date;
   }
@@ -66,76 +82,86 @@ class AdminStartController extends GetxController {
 
   List<StudentInscription> getStudentsByCoachAndDate(
       String coachId, DateTime date) {
-    final students = studentMap[coachId] ?? [];
+    final List<StudentInscription> students =
+        studentMap[coachId]?.toList().cast<StudentInscription>() ??
+            <StudentInscription>[];
 
-    return students
-        .where((s) {
+    final filtered = students.where((s) {
       try {
         final classDate = DateTime.parse(s.classDate);
-        final d1 = DateTime(classDate.year, classDate.month, classDate.day);
-        final d2 = DateTime(date.year, date.month, date.day);
-        return d1 == d2;
+        return DateUtils.isSameDay(classDate, date);
       } catch (_) {
         return false;
       }
-    })
-        .toList()
-        .cast<StudentInscription>()
-      ..sort((a, b) => a.classTime.compareTo(b.classTime));
+    }).toList();
+
+    filtered.sort((a, b) => a.classTime.compareTo(b.classTime));
+    return filtered;
   }
 
   String getStudentKey(StudentInscription s) {
     return '${s.studentId}_${s.classDate}_${s.classTime}';
   }
 
-  void registerAllAttendances() async {
-    for (var coach in coaches) {
-      final coachId = coach.id!;
-      final selectedDate = selectedDatePerCoach[coachId]?.value ?? today;
-      final students = getStudentsByCoachAndDate(coachId, selectedDate);
+  /// ✅ Nuevo método: solo registra asistencias del coach visible
+  Future<void> registerAttendanceForSelectedCoach() async {
+    final coachId = selectedCoachId.value;
+    if (coachId.isEmpty) return;
 
-      for (var s in students) {
-        final key = getStudentKey(s);
-        final isPresent = attendanceMap[key]?.value ?? false;
+    final selectedDate = selectedDatePerCoach[coachId]?.value ?? today;
+    final students = getStudentsByCoachAndDate(coachId, selectedDate);
 
-        final attendance = Attendance(
-          userId: s.studentId,
-          coachId: coachId,
-          classDate: DateTime.parse(s.classDate),
-          classTime: s.classTime,
-          bicycle: s.bicycle,
-          status: isPresent ? 'present' : 'absent',
-        );
+    for (var s in students) {
+      final key = getStudentKey(s);
+      final isPresent = attendanceMap[key]?.value ?? false;
 
-        final response =
-        await attendanceProvider.registerAttendance(attendance);
+      final attendance = Attendance(
+        userId: s.studentId,
+        coachId: coachId,
+        classDate: DateTime.parse(s.classDate),
+        classTime: s.classTime,
+        bicycle: s.bicycle,
+        status: isPresent ? 'present' : 'absent',
+      );
 
-        if (response.success == true) {
-          //print('✅ Asistencia registrada: ${s.studentName} - ${attendance.status}');
-        } else {
-          //print('❌ Error al registrar asistencia: ${s.studentName}');
-        }
-      }
+      await attendanceProvider.registerAttendance(attendance);
     }
+
+    Get.snackbar("Éxito", "Asistencia registrada correctamente");
+  }
+
+  /// ✅ Diálogo de confirmación antes de registrar
+  void confirmAttendanceRegister() {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: colorBackgroundBox,
+        title: const Text("Confirmar asistencia"),
+        content: Text("¿Deseas enviar la asistencia de este coach y día?", style: GoogleFonts.poppins(color: whiteGrey),),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text("Cancelar", style: TextStyle(color: indigoAmina),),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Get.back();
+              await registerAttendanceForSelectedCoach();
+            },
+            child: const Text("Confirmar"),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(almostBlack)
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
   }
 
   void setupSockets() {
-    SocketService().on('class:coach:reserved', (data) {
-      final coachId = data['coach_id'].toString();
-      loadStudents(coachId);
-      getCoaches();
-    });
-
     SocketService().on('class:reserved', (data) {
       final coachId = data['coach_id'].toString();
       loadStudents(coachId);
-      getCoaches();
-    });
-
-    SocketService().on('class:coach:rescheduled', (data) {
-      final coachId = data['coach_id'].toString();
-      loadStudents(coachId);
-      getCoaches();
     });
   }
 }

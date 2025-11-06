@@ -289,13 +289,13 @@ class UserPlanBuyResumePage extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // LABEL — Se queda igual ✅
           Text(
             label,
             style: GoogleFonts.roboto(
@@ -303,12 +303,22 @@ class UserPlanBuyResumePage extends StatelessWidget {
               color: Colors.black54,
             ),
           ),
-          Text(
-            value,
-            style: GoogleFonts.roboto(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: highlight ? indigoAmina : almostBlack,
+
+          const SizedBox(width: 10),
+
+          // Este Expanded evita el overflow ✅
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.roboto(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: highlight ? indigoAmina : almostBlack,
+              ),
             ),
           ),
         ],

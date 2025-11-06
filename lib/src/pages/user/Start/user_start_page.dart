@@ -146,12 +146,16 @@ class UserStartPage extends StatelessWidget {
     color: Colors.blueGrey.shade50,
   );
 
-  Widget _boxBikesPending() => _boxTemplate(
-    title: 'Rides',
-    count: '${con.totalRides.value}',
-    subtitle: 'Adquiridos',
-    color: Colors.blueGrey.shade50,
+  Widget _boxBikesPending() => GestureDetector(
+    onTap: () => con.showUserPlansInfo(),
+    child: _boxTemplate(
+      title: 'Rides',
+      count: '${con.totalRides.value}',
+      subtitle: 'Adquiridos',
+      color: Colors.blueGrey.shade50,
+    ),
   );
+
 
   Widget _boxTemplate({
     required String title,
@@ -303,10 +307,22 @@ class UserStartPage extends StatelessWidget {
     final formattedDate =
     c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
-    final createdLocal = c.createdAt.toLocal();
-    final windowEndLocal = createdLocal.add(const Duration(hours: 24));
-    final nowLocal = DateTime.now();
-    final canReschedule = nowLocal.isBefore(windowEndLocal);
+
+    // Calcular diferencia en horas (mismo criterio para reagendar y cancelar)
+    final dateString = c.classDate.split('T').first;
+    final timeString = c.classTime.substring(0, 5);
+    final partsDate = dateString.split('-').map(int.parse).toList();
+    final partsTime = timeString.split(':').map(int.parse).toList();
+    final classDateTime = DateTime(
+      partsDate[0],
+      partsDate[1],
+      partsDate[2],
+      partsTime[0],
+      partsTime[1],
+    ).toLocal();
+
+    final now = DateTime.now();
+    final canModify = classDateTime.difference(now).inHours >= 12;
 
     return Stack(
       children: [
@@ -328,8 +344,6 @@ class UserStartPage extends StatelessWidget {
                   width: 60,
                   height: 60,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.broken_image, size: 30),
                 )
                     : Container(
                   width: 60,
@@ -343,14 +357,11 @@ class UserStartPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '$formattedDate · $formattedTime',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: almostBlack,
-                      ),
-                    ),
+                    Text('$formattedDate · $formattedTime',
+                        style: GoogleFonts.montserrat(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: almostBlack)),
                     Text('Coach: ${c.coachName}',
                         style:
                         GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
@@ -363,19 +374,21 @@ class UserStartPage extends StatelessWidget {
             ],
           ),
         ),
+
+        // BOTÓN CANCELAR
         Positioned(
-          top: 8,
-          right: 8,
+          top: 20,
+          right: 20,
           child: IconButton(
-            icon: Icon(iconReschedule,
-                color: canReschedule ? darkGrey : Colors.grey.shade400),
-            onPressed:
-            canReschedule ? () => con.onPressReschedule(c, context) : null,
+            icon: Icon(Icons.delete,
+                color: canModify ? Colors.red : Colors.grey.shade400),
+            onPressed: canModify ? () => con.onPressCancel(c, context) : null,
           ),
         ),
       ],
     );
   }
+
 
   Widget _scheduledClassesScrollableSection(BuildContext context) {
     if (con.scheduledClasses.isEmpty) {

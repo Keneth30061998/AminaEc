@@ -60,6 +60,7 @@ class AdminStartPage extends StatelessWidget {
             padding: const EdgeInsets.only(top: 10),
             child: TabBarView(
               children: con.coaches.map((coach) {
+                con.selectCoach(coach.id!); // ✅ Se actualiza coach visible
                 final coachId = coach.id!;
                 final selectedDate =
                     con.selectedDatePerCoach[coachId]?.value ?? con.today;
@@ -72,7 +73,7 @@ class AdminStartPage extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 10),
                     children: [
                       _dateSelector(con, coachId),
-                      SizedBox(height: 30,),
+                      SizedBox(height: 30),
                       if (students.isEmpty)
                         NoDataWidget(text: 'No hay estudiantes inscritos')
                       else
@@ -82,22 +83,30 @@ class AdminStartPage extends StatelessWidget {
                           return Obx(() {
                             final isPresent =
                                 con.attendanceMap[key]?.value ?? false;
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10,),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300),
+                            return Card(
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                                 leading: CircleAvatar(
+                                  radius: 24,
                                   backgroundImage:
                                   NetworkImage(s.photo_url ?? ''),
-                                  radius: 22,
                                 ),
-                                title: Text(s.studentName),
-                                subtitle:
-                                Text('Hora: $timeFormatted\nMáquina: ${s.bicycle}'),
+                                title: Text(
+                                  s.studentName,
+                                  style: GoogleFonts.montserrat(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: Text(
+                                  'Hora: $timeFormatted  |  Máquina: ${s.bicycle}',
+                                  style: TextStyle(fontSize: 13),
+                                ),
                                 trailing: Checkbox(
                                   value: isPresent,
                                   onChanged: (value) {
@@ -114,7 +123,9 @@ class AdminStartPage extends StatelessWidget {
               }).toList(),
             ),
           ),
-          floatingActionButton: _buttonRegister(),
+
+          // ✅ BOTÓN REGISTRAR FIJO – NO ESTORBA
+          bottomNavigationBar: _bottomRegisterBar(),
         ),
       );
     });
@@ -185,20 +196,41 @@ class AdminStartPage extends StatelessWidget {
     });
   }
 
-  Widget _buttonRegister() {
-    return FloatingActionButton.extended(
-      label: Text(
-        'Registrar',
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.bold,
+  // ✅ NUEVO BOTÓN REGISTRO FIJO ABAJO
+  Widget _bottomRegisterBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          )
+        ],
+      ),
+      child: SafeArea(
+        child: ElevatedButton.icon(
+          onPressed: () => con.confirmAttendanceRegister(),
+          icon: Icon(iconCheck),
+          label: Text(
+            'Registrar Asistencia',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: almostBlack,
+            foregroundColor: whiteLight,
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         ),
       ),
-      icon: Icon(iconCheck),
-      backgroundColor: almostBlack,
-      foregroundColor: whiteLight,
-      onPressed: () {
-        con.registerAllAttendances();
-      },
     );
   }
 }

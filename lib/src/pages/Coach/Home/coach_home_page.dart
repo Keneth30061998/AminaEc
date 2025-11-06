@@ -1,5 +1,6 @@
 import 'package:amina_ec/src/pages/Coach/Home/coach_home_controller.dart';
 import 'package:amina_ec/src/pages/Coach/Profile/Info/coach_profile_info_page.dart';
+import 'package:amina_ec/src/pages/Coach/Schedule/coach_schedule_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -12,13 +13,14 @@ class CoachHomePage extends StatelessWidget {
   // Considera hacer estas páginas más significativas o incluso widgets separados si crecen en complejidad.
   final List<Widget> _pageViews = [
     CoachClassPage(),
+    CoachSchedulePage(),
     CoachProfileInfoPage(),
   ];
 
   // Constantes para el BottomNavigationBar
   //static const double _bottomNavBorderRadius = 20.0;
   static const EdgeInsets _bottomNavPadding =
-      EdgeInsets.symmetric(horizontal: 100, vertical: 14);
+      EdgeInsets.symmetric(horizontal: 60, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
       EdgeInsets.symmetric(horizontal: 15, vertical: 10);
   static const double _gNavIconSize = 26.5;
@@ -77,13 +79,17 @@ class CoachHomePage extends StatelessWidget {
         onTabChange: con.changeTab,
         tabs: [
           const GButton(
-            icon: Icons.calendar_month,
-            text: 'Agenda',
+            icon: Icons.directions_bike_outlined,
+            text: 'Clases',
             backgroundGradient: LinearGradient(
               colors: [almostBlack, darkGrey],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),
+          ),
+          const GButton(
+            icon: Icons.calendar_month,
+            text: 'Agenda',
           ),
           const GButton(
             icon: Icons.person,

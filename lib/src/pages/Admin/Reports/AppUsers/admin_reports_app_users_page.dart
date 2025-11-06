@@ -166,6 +166,11 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                             Column(
                               children: [
                                 IconButton(
+                                  icon: const Icon(Icons.info_outline),
+                                  tooltip: 'Información de planes',
+                                  onPressed: () => con.showUserPlansInfo(user),
+                                ),
+                                IconButton(
                                   icon: const Icon(Icons.calendar_month_outlined),
                                   tooltip: 'Extender días',
                                   onPressed: () => con.showExtendDialog(user),
@@ -177,6 +182,7 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                                 ),
                               ],
                             ),
+
                           ],
                         ),
                       ),

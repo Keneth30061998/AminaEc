@@ -28,15 +28,18 @@ class AdminCoachListPage extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () => con.refreshCoaches(), // 🔄 botón refrescar
+            onPressed: () => con.refreshCoaches(),
             icon: const Icon(Icons.refresh, color: almostBlack),
           )
         ],
       ),
-      floatingActionButton: _buttonAddCoach(context),
+
+      // ✅ BOTÓN FIJO COMO BARRA
+      bottomNavigationBar: _bottomAddCoachBar(),
+
       body: Obx(() {
         return RefreshIndicator(
-          onRefresh: () async => await con.refreshCoaches(), // 👈 Pull to refresh
+          onRefresh: () async => await con.refreshCoaches(),
           child: con.coaches.isEmpty
               ? Center(
             child: NoDataWidget(text: 'No hay coaches disponibles')
@@ -45,7 +48,8 @@ class AdminCoachListPage extends StatelessWidget {
                 .slideY(begin: 0.2),
           )
               : ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+            padding:
+            const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
             itemCount: con.coaches.length,
             itemBuilder: (context, index) {
               final coach = con.coaches[index];
@@ -164,16 +168,41 @@ class AdminCoachListPage extends StatelessWidget {
     );
   }
 
-  Widget _buttonAddCoach(BuildContext context) {
-    return FloatingActionButton.extended(
-      backgroundColor: almostBlack,
-      foregroundColor: whiteLight,
-      label: Text(
-        'Añadir Coach',
-        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+  // ✅ NUEVA BARRA DE BOTÓN FIJO
+  Widget _bottomAddCoachBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: whiteLight,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          )
+        ],
       ),
-      icon: const Icon(iconAdd),
-      onPressed: () => con.goToAdminCoachRegisterPage(),
+      child: SafeArea(
+        child: ElevatedButton.icon(
+          onPressed: () => con.goToAdminCoachRegisterPage(),
+          icon: const Icon(iconAdd),
+          label: Text(
+            'Añadir Coach',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: almostBlack,
+            foregroundColor: whiteLight,
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

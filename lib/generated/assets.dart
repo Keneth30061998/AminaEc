@@ -96,6 +96,8 @@ class Assets {
   static const String routesAppRoutes = 'lib/src/routes/app_routes.dart';
   static const String scheduleAdminCoachUpdateScheduleController = 'lib/src/pages/Admin/Coach/Update/Schedule/admin_coach_update_schedule_controller.dart';
   static const String scheduleAdminCoachUpdateSchedulePage = 'lib/src/pages/Admin/Coach/Update/Schedule/admin_coach_update_schedule_page.dart';
+  static const String scheduleCoachScheduleController = 'lib/src/pages/Coach/Schedule/coach_schedule_controller.dart';
+  static const String scheduleCoachSchedulePage = 'lib/src/pages/Coach/Schedule/coach_schedule_page.dart';
   static const String servicesAppConfigService = 'lib/src/services/app_config_service.dart';
   static const String servicesAttService = 'lib/src/services/att_service.dart';
   static const String servicesFcmService = 'lib/src/services/fcm_service.dart';

@@ -8,6 +8,7 @@ import '../../../../components/Socket/socket_service.dart';
 import '../../../../components/events/coach_events.dart';
 import '../../../../models/coach.dart';
 import '../../../../models/schedule.dart';
+import '../../../../providers/class_reservation_provider.dart';
 import '../../../../providers/coachs_provider.dart';
 
 class UserCoachScheduleController extends GetxController {
@@ -23,7 +24,10 @@ class UserCoachScheduleController extends GetxController {
 
   Timer? _midnightTimer;
 
-  // Mapa de colores persistentes por coach
+  // ✅ Contador de bicicletas ocupadas reactivo
+  final occupiedBikeMap = <String, int>{}.obs;
+
+  // Mapa de colores persistentes
   final Map<String, Color> _coachColors = {};
   final List<Color> _palette = [
     Colors.blue,
@@ -57,6 +61,17 @@ class UserCoachScheduleController extends GetxController {
       _updateCalendar();
     });
     SocketService().on('coach:delete', (_) => CoachEvents.to.notifyCoachesUpdated());
+
+    // ✅ Socket en tiempo real para actualizar contador de bicicletas
+    SocketService().on('reservation:update', (data) {
+      if (data is Map) {
+        fetchOccupiedCount(
+          coachId: data['coach_id'],
+          date: data['class_date'],
+          time: data['class_time'],
+        );
+      }
+    });
   }
 
   Future<void> loadCoaches() async {
@@ -166,6 +181,20 @@ class UserCoachScheduleController extends GetxController {
   void onClose() {
     _midnightTimer?.cancel();
     super.onClose();
+  }
+
+  // ✅ NUEVO: obtiene y guarda bicicletas ocupadas en el mapa reactivo
+  Future<void> fetchOccupiedCount({
+    required String coachId,
+    required String date,
+    required String time,
+  }) async {
+    final key = '$coachId-$date-$time';
+    final reservations = await ClassReservationProvider().getReservationsForSlot(
+      classDate: date,
+      classTime: time,
+    );
+    occupiedBikeMap[key] = reservations.length;
   }
 }
 
