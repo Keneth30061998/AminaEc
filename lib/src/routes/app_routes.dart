@@ -30,6 +30,8 @@ import 'package:amina_ec/src/pages/user/Register/register_page.dart';
 import 'package:amina_ec/src/pages/user/Register/register_page_image.dart';
 import 'package:get/get.dart';
 
+import '../pages/Admin/Reports/UserPlans/admin_user_plans_page.dart';
+
 // ===========================
 //  Definición de rutas GetX
 // ===========================
@@ -77,4 +79,7 @@ final List<GetPage> appRoutes = [
 
   // --- Admin > Planes ---
   GetPage(name: '/admin/plans/update', page: () => AdminPlanUpdatePage()),
+
+  // --- Admin > user - plan
+  GetPage(name: '/admin/users/plans', page: () => AdminUserPlansPage()),
 ];

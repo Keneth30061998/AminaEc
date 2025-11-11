@@ -21,10 +21,10 @@ class AdminStartPage extends StatelessWidget {
           body: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              NoDataWidget(text: 'No hay Horarios disponibles'),
-              SizedBox(height: 10),
+              const NoDataWidget(text: 'No hay Horarios disponibles'),
+              const SizedBox(height: 10),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 125),
+                padding: const EdgeInsets.symmetric(horizontal: 125),
                 child: LinearProgressIndicator(
                   color: almostBlack,
                   backgroundColor: colorBackgroundBox,
@@ -47,6 +47,11 @@ class AdminStartPage extends StatelessWidget {
                 indicatorColor: almostBlack,
                 labelColor: Colors.black,
                 unselectedLabelColor: Colors.black54,
+                // ✅ Actualiza el coach activo al cambiar de pestaña
+                onTap: (index) {
+                  final id = con.coaches[index].id;
+                  if (id != null) con.selectCoach(id);
+                },
                 tabs: List.generate(
                   con.coaches.length,
                       (index) => Tab(
@@ -60,7 +65,6 @@ class AdminStartPage extends StatelessWidget {
             padding: const EdgeInsets.only(top: 10),
             child: TabBarView(
               children: con.coaches.map((coach) {
-                con.selectCoach(coach.id!); // ✅ Se actualiza coach visible
                 final coachId = coach.id!;
                 final selectedDate =
                     con.selectedDatePerCoach[coachId]?.value ?? con.today;
@@ -73,9 +77,9 @@ class AdminStartPage extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 10),
                     children: [
                       _dateSelector(con, coachId),
-                      SizedBox(height: 30),
+                      const SizedBox(height: 30),
                       if (students.isEmpty)
-                        NoDataWidget(text: 'No hay estudiantes inscritos')
+                        const NoDataWidget(text: 'No hay estudiantes inscritos')
                       else
                         ...students.map((s) {
                           final timeFormatted = s.classTime.substring(0, 5);
@@ -105,7 +109,7 @@ class AdminStartPage extends StatelessWidget {
                                 ),
                                 subtitle: Text(
                                   'Hora: $timeFormatted  |  Máquina: ${s.bicycle}',
-                                  style: TextStyle(fontSize: 13),
+                                  style: const TextStyle(fontSize: 13),
                                 ),
                                 trailing: Checkbox(
                                   value: isPresent,
@@ -123,8 +127,6 @@ class AdminStartPage extends StatelessWidget {
               }).toList(),
             ),
           ),
-
-          // ✅ BOTÓN REGISTRAR FIJO – NO ESTORBA
           bottomNavigationBar: _bottomRegisterBar(),
         ),
       );
@@ -196,7 +198,6 @@ class AdminStartPage extends StatelessWidget {
     });
   }
 
-  // ✅ NUEVO BOTÓN REGISTRO FIJO ABAJO
   Widget _bottomRegisterBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -206,7 +207,7 @@ class AdminStartPage extends StatelessWidget {
           BoxShadow(
             color: Colors.black12,
             blurRadius: 8,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           )
         ],
       ),

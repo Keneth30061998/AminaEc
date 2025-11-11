@@ -2,6 +2,7 @@ class TransactionReport {
   final int id;
   final String name;
   final String lastname;
+  final String ci;
   final String email;
   final double subtotal;
   final double iva;
@@ -12,6 +13,7 @@ class TransactionReport {
     required this.id,
     required this.name,
     required this.lastname,
+    required this.ci,
     required this.email,
     required this.subtotal,
     required this.iva,
@@ -24,6 +26,7 @@ class TransactionReport {
         id: json['id'],
         name: json['name'],
         lastname: json['lastname'],
+        ci: json['ci'] ?? '',
         email: json['email'],
         subtotal: double.parse(json['subtotal'].toString()),
         iva: double.parse(json['iva'].toString()),

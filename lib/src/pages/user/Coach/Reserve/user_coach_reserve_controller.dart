@@ -17,6 +17,7 @@ class UserCoachReserveController extends GetxController {
 
   var selectedEquipos = <int>{}.obs;
   final occupiedEquipos = <int>{}.obs;
+  final blockedEquipos = <int>{}.obs;
   final RxInt totalRides = 0.obs;
 
   late String coachId;
@@ -53,7 +54,7 @@ class UserCoachReserveController extends GetxController {
   }
 
   void toggleEquipo(int equipo) {
-    if (occupiedEquipos.contains(equipo)) return;
+    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo)) return;
     if (selectedEquipos.contains(equipo)) {
       selectedEquipos.remove(equipo);
     } else {
@@ -63,7 +64,6 @@ class UserCoachReserveController extends GetxController {
   }
 
   Future<void> reserveClass() async {
-    // ✅ 1. Validar si tiene rides disponibles
     if (totalRides.value <= 0) {
       Get.snackbar(
         'No tienes rides disponibles',
@@ -73,15 +73,11 @@ class UserCoachReserveController extends GetxController {
         duration: const Duration(seconds: 2),
       );
 
-      // ⏳ 2. Dar tiempo para leer el mensaje
       await Future.delayed(const Duration(seconds: 2));
-
-      // 🚀 3. Redirigir a la pantalla de planes
       Get.offNamed('/user/plan');
       return;
     }
 
-    // ✅ 4. Validación de selección de bici
     if (selectedEquipos.isEmpty) {
       Get.snackbar('Máquina no seleccionada', 'Debes elegir una bicicleta');
       return;
@@ -98,7 +94,6 @@ class UserCoachReserveController extends GetxController {
 
     if (response.success! && response.data != null) {
       ClassReservation reservation = response.data as ClassReservation;
-
       showReservationDialog(Get.context!);
 
       if (Get.isRegistered<UserStartController>()) {
@@ -138,76 +133,19 @@ class UserCoachReserveController extends GetxController {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: SingleChildScrollView(
+            child: const SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 10),
-                  const Icon(Icons.check_circle_outline,
-                      color: Colors.green, size: 60),
-                  const SizedBox(height: 15),
-                  const Text(
+                  SizedBox(height: 10),
+                  Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
+                  SizedBox(height: 15),
+                  Text(
                     '¡Reserva confirmada!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Sabemos que a veces surgen imprevistos — recuerda que puedes cancelar tu clase hasta 12 horas antes.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.black87,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      _BulletPoint(
-                        text:
-                            'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
-                      ),
-                      _BulletPoint(
-                        text:
-                            'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
-                      ),
-                      _BulletPoint(text: 'Usa ropa cómoda.'),
-                      _BulletPoint(
-                          text:
-                              'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.'),
-                    ],
-                  ),
-                  const SizedBox(height: 25),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.back();
-                        Get.offAllNamed('/user/home');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black87,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'Aceptar',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: whiteLight),
-                      ),
-                    ),
-                  )
                 ],
               ),
             ),
@@ -219,26 +157,34 @@ class UserCoachReserveController extends GetxController {
 
   void getTotalRides() async {
     if (user.session_token != null) {
-      int rides =
-          await userPlanProvider.getTotalActiveRides(user.session_token!);
+      int rides = await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
 
+  /// ✅ CORREGIDO → maneja correctamente bicicletas bloqueadas & conversion String → int
   void listenToMachineStatus() {
     SocketService().on('machine:status:update', (payload) {
-      String date = payload['class_date'];
-      String time = payload['class_time'];
-      int bicycle = payload['bicycle'];
-      String status = payload['status'];
+      final String date = payload['class_date'] ?? '';
+      final String time = payload['class_time'] ?? '';
+      final int bicycle = int.tryParse(payload['bicycle'].toString()) ?? -1;
+      final String status = payload['status'] ?? '';
 
-      if (date == classDate && time == classTime) {
-        if (status == 'occupied') {
-          occupiedEquipos.add(bicycle);
-        } else {
-          occupiedEquipos.remove(bicycle);
-        }
+      if (bicycle == -1) return;
+      if (date != classDate || time != classTime) return;
+
+      if (status == 'occupied') {
+        occupiedEquipos.add(bicycle);
+        blockedEquipos.remove(bicycle);
+      } else if (status == 'blocked') {
+        blockedEquipos.add(bicycle);
+        occupiedEquipos.remove(bicycle);
+      } else {
+        occupiedEquipos.remove(bicycle);
+        blockedEquipos.remove(bicycle);
       }
+
+      update();
     });
   }
 
@@ -249,41 +195,14 @@ class UserCoachReserveController extends GetxController {
     );
 
     occupiedEquipos.clear();
+    blockedEquipos.clear();
+
     for (var r in reservations) {
-      occupiedEquipos.add(r.bicycle);
+      if (r.status == 'blocked') {
+        blockedEquipos.add(r.bicycle);
+      } else {
+        occupiedEquipos.add(r.bicycle);
+      }
     }
-  }
-}
-
-class _BulletPoint extends StatelessWidget {
-  final String text;
-
-  const _BulletPoint({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 5.0),
-            child: Icon(Icons.circle, size: 6, color: Colors.black87),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14.5,
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

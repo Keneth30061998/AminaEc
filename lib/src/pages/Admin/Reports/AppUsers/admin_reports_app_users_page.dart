@@ -78,115 +78,113 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                   itemCount: con.filteredUsers.length,
                   itemBuilder: (_, i) {
                     final user = con.filteredUsers[i];
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      elevation: 1,
-                      shadowColor: Colors.black12,
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 30,
-                              backgroundImage: user.photo_url != null && user.photo_url!.isNotEmpty
-                                  ? NetworkImage(user.photo_url!)
-                                  : const AssetImage('assets/img/user_placeholder.png')
-                              as ImageProvider,
-                              backgroundColor: whiteLight,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user.name ?? '',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: almostBlack,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    user.email ?? '',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 10,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.badge_outlined,
-                                          size: 16, color: Colors.grey),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'CI: ${user.ci ?? ''}',
-                                        style: GoogleFonts.poppins(
-                                            fontSize: 13, color: Colors.grey[700]),
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Get.toNamed('/admin/users/plans', arguments: user);
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 1,
+                        shadowColor: Colors.black12,
+                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundImage: user.photo_url != null && user.photo_url!.isNotEmpty
+                                    ? NetworkImage(user.photo_url!)
+                                    : const AssetImage('assets/img/user_placeholder.png')
+                                as ImageProvider,
+                                backgroundColor: whiteLight,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user.name ?? '',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: almostBlack,
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today_outlined,
-                                          size: 16, color: Colors.grey),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Nacimiento: ${user.birthDate?.split('T').first.split('-').reversed.join('/') ?? ''}',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 13,
-                                          color: Colors.grey[700],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      user.email ?? '',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.badge_outlined, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'CI: ${user.ci ?? ''}',
+                                          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Nacimiento: ${user.birthDate?.split('T').first.split('-').reversed.join('/') ?? ''}',
+                                          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.directions_bike_outlined, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Rides: ${user.totalRides ?? 0}',
+                                          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.info_outline),
+                                    tooltip: 'Información de planes',
+                                    onPressed: () => con.showUserPlansInfo(user),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.directions_bike_outlined,
-                                          size: 16, color: Colors.grey),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Rides: ${user.totalRides ?? 0}',
-                                        style: GoogleFonts.poppins(
-                                            fontSize: 13, color: Colors.grey[700]),
-                                      ),
-                                    ],
+                                  IconButton(
+                                    icon: const Icon(Icons.calendar_month_outlined),
+                                    tooltip: 'Extender días',
+                                    onPressed: () => con.showExtendDialog(user),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    tooltip: 'Agregar rides',
+                                    onPressed: () => con.showRidesDialog(user),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 5),
-                            Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.info_outline),
-                                  tooltip: 'Información de planes',
-                                  onPressed: () => con.showUserPlansInfo(user),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.calendar_month_outlined),
-                                  tooltip: 'Extender días',
-                                  onPressed: () => con.showExtendDialog(user),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline),
-                                  tooltip: 'Agregar rides',
-                                  onPressed: () => con.showRidesDialog(user),
-                                ),
-                              ],
-                            ),
-
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
+
                   },
                 ),
               );

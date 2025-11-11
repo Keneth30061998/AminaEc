@@ -88,6 +88,26 @@ class UserPlanListPage extends StatelessWidget {
     );
   }
 
+  // ✅ Badge agregado
+  Widget _newUserBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange, width: 1.2),
+      ),
+      child: Text(
+        'Exclusivo nuevos usuarios',
+        style: GoogleFonts.montserrat(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: Colors.orange,
+        ),
+      ),
+    );
+  }
+
   Widget _planTile(Plan plan) {
     return Container(
       decoration: BoxDecoration(
@@ -104,37 +124,59 @@ class UserPlanListPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Imagen con pequeño margen interior y mayor altura (≈15% más)
+          // ✅ Imagen + Badge superpuesto
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: 16 / 10, // imagen más alta que 16/9
-                child: plan.image != null
-                    ? Image.network(plan.image!, fit: BoxFit.cover, width: double.infinity)
-                    : Container(
-                  color: Colors.grey[300],
-                  child: const Center(child: Icon(Icons.image_not_supported, size: 36)),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: plan.image != null
+                        ? Image.network(plan.image!, fit: BoxFit.cover, width: double.infinity)
+                        : Container(
+                      color: Colors.grey[300],
+                      child: const Center(child: Icon(Icons.image_not_supported, size: 36)),
+                    ),
+                  ),
                 ),
-              ),
+
+                // ✅ Badge flotante (similar al Debug banner)
+                if (plan.is_new_user_only == 1)
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        "Nuevos Riders",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
-          // Contenido controlado (sin alturas fijas que provoquen overflow)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// Nombre: usa Marquee del paquete solo si es necesario
                   Builder(builder: (context) {
                     final name = plan.name?.toUpperCase() ?? 'SIN NOMBRE';
-                    // Umbral de longitud para activar marquee (ajusta si quieres)
                     const marqueeThreshold = 18;
                     if (name.length > marqueeThreshold) {
-                      // SizedBox con altura fija para evitar afectar el layout vertical
                       return SizedBox(
                         height: 20,
                         child: Marquee(
@@ -163,7 +205,7 @@ class UserPlanListPage extends StatelessWidget {
                     }
                   }),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
 
                   Row(
                     children: [
@@ -220,4 +262,5 @@ class UserPlanListPage extends StatelessWidget {
       ),
     );
   }
+
 }

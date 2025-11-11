@@ -24,6 +24,10 @@ class AdminPlanRegisterController extends GetxController {
   Rx<File?> imageFile = Rx<File?>(null);
   ImagePicker picker = ImagePicker();
 
+  //Variable para activar plan - de usuario nuevo
+  RxBool isNewUserOnly = false.obs;
+
+
   // Método para registrar un plan
   void registerPlan(BuildContext context) async {
     String name = nameController.text.trim();
@@ -47,6 +51,7 @@ class AdminPlanRegisterController extends GetxController {
         rides: ridesInt,
         price: priceDouble,
         duration_days: durationInt,
+        is_new_user_only: isNewUserOnly.value ? 1 : 0
       );
 
       Stream stream =

@@ -77,6 +77,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
                 _textFieldRides(),
                 _textFieldPrice(),
                 _textFieldDurationDays(),
+                _switchNewUserOnly(),
                 const SizedBox(
                   height: 10,
                 ),
@@ -269,6 +270,19 @@ class AdminPlanRegisterPage extends StatelessWidget {
       ),
     );
   }
+
+  Widget _switchNewUserOnly() {
+    return Obx(() => SwitchListTile(
+      title: Text(
+        "Solo para nuevos usuarios",
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
+      activeThumbColor: almostBlack,
+      value: con.isNewUserOnly.value,
+      onChanged: (value) => con.isNewUserOnly.value = value,
+    ));
+  }
+
 
   Widget _buttonSave(BuildContext context) {
     return Container(

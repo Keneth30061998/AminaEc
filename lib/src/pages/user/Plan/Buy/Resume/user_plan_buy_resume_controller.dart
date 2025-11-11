@@ -39,6 +39,30 @@ class UserPlanBuyResumeController extends GetxController {
   double calculateTotal() => plan.price!;
 
   Future<void> payWithToken(CardModel card) async {
+
+    // 1) Verificar si el plan es solo para nuevos usuarios
+    if (plan.is_new_user_only == 1) {
+      final user = User.fromJson(GetStorage().read('user') ?? {});
+      final userPlanProvider = UserPlanProvider();
+
+      final summary = await userPlanProvider.getUserPlansSummary(
+        user.id.toString(),
+        user.session_token ?? '',
+      );
+
+      // 2) Si el usuario ya tiene o tuvo un plan → bloquear
+      if (summary.isNotEmpty) {
+        Get.snackbar(
+          'Este plan es exclusivo',
+          'Este plan es solo para usuarios nuevos y tú ya cuentas con historial de planes.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
+        return; // 🚫 Detener aquí, NO ejecutar pago
+      }
+    }
+
     final context = Get.context!;
     final pd = ProgressDialog(context: context);
 

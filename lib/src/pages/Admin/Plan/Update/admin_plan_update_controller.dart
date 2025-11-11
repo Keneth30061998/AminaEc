@@ -9,6 +9,9 @@ import 'package:image_picker/image_picker.dart';
 class AdminPlanUpdateController extends GetxController {
   final PlanProvider planProvider = PlanProvider();
 
+  //variable para activar/desactivar plan de usuario nuevo
+  RxBool isNewUserOnly = false.obs;
+
   Plan plan = Get.arguments['plan'];
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -27,6 +30,7 @@ class AdminPlanUpdateController extends GetxController {
         plan.price?.toStringAsFixed(2).replaceAll('.', ',') ?? '';
     ridesController.text = plan.rides?.toString() ?? '';
     durationController.text = plan.duration_days?.toString() ?? '';
+    isNewUserOnly.value = plan.is_new_user_only == 1;
   }
 
   Future<void> pickImage() async {
@@ -77,6 +81,8 @@ class AdminPlanUpdateController extends GetxController {
     plan.price = price;
     plan.rides = rides;
     plan.duration_days = duration;
+    plan.is_new_user_only = isNewUserOnly.value ? 1 : 0;
+
 
     if (imageFile != null) {
       final stream = await planProvider.updateWithImage(plan, imageFile!);

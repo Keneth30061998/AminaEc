@@ -7,8 +7,10 @@ class Assets {
   static const String addCardUserPlanBuyAddCardWebviewPage = 'lib/src/pages/user/Plan/Buy/AddCard/user_plan_buy_addCard_webview_page.dart';
   static const String appUsersAdminReportsAppUsersController = 'lib/src/pages/Admin/Reports/AppUsers/admin_reports_app_users_controller.dart';
   static const String appUsersAdminReportsAppUsersPage = 'lib/src/pages/Admin/Reports/AppUsers/admin_reports_app_users_page.dart';
-  static const String classAdminReportsClassesPage = 'lib/src/pages/Admin/Reports/Class/admin_reports_classes_page.dart';
-  static const String classAdminReportsController = 'lib/src/pages/Admin/Reports/Class/admin_reports_controller.dart';
+  static const String attendanceAdminReportsClassesPage = 'lib/src/pages/Admin/Reports/Attendance/admin_reports_classes_page.dart';
+  static const String attendanceAdminReportsController = 'lib/src/pages/Admin/Reports/Attendance/admin_reports_controller.dart';
+  static const String blockAdminEditClassController = 'lib/src/pages/Admin/Reports/Class/Block/admin_edit_class_controller.dart';
+  static const String blockAdminEditClassPage = 'lib/src/pages/Admin/Reports/Class/Block/admin_edit_class_page.dart';
   static const String classCoachClassController = 'lib/src/pages/Coach/Class/coach_class_controller.dart';
   static const String classCoachClassPage = 'lib/src/pages/Coach/Class/coach_class_page.dart';
   static const String compressImageCompressUtil = 'lib/src/components/Compress/image_compress_util.dart';
@@ -65,6 +67,7 @@ class Assets {
   static const String modelsUser = 'lib/src/models/user.dart';
   static const String modelsUserPlan = 'lib/src/models/user_plan.dart';
   static const String pDFPdfService = 'lib/src/components/PDF/pdf_service.dart';
+  static const String providersAdminUserPlansProvider = 'lib/src/providers/admin_user_plans_provider.dart';
   static const String providersAdminUsersProvider = 'lib/src/providers/admin_users_provider.dart';
   static const String providersAttendanceProvider = 'lib/src/providers/attendance_provider.dart';
   static const String providersCardProvider = 'lib/src/providers/card_provider.dart';
@@ -77,6 +80,8 @@ class Assets {
   static const String providersTransactionProvider = 'lib/src/providers/transaction_provider.dart';
   static const String providersUserPlanProvider = 'lib/src/providers/user_plan_provider.dart';
   static const String providersUsersProvider = 'lib/src/providers/users_provider.dart';
+  static const String reassignAdminChangeCoachController = 'lib/src/pages/Admin/Reports/Class/Reassign/admin_change_coach_controller.dart';
+  static const String reassignAdminChangeCoachPage = 'lib/src/pages/Admin/Reports/Class/Reassign/admin_change_coach_page.dart';
   static const String registerAdminCoachRegisterController = 'lib/src/pages/Admin/Coach/Register/admin_coach_register_controller.dart';
   static const String registerAdminCoachRegisterImagePage = 'lib/src/pages/Admin/Coach/Register/admin_coach_register_image_page.dart';
   static const String registerAdminCoachRegisterPage = 'lib/src/pages/Admin/Coach/Register/admin_coach_register_page.dart';
@@ -96,6 +101,8 @@ class Assets {
   static const String routesAppRoutes = 'lib/src/routes/app_routes.dart';
   static const String scheduleAdminCoachUpdateScheduleController = 'lib/src/pages/Admin/Coach/Update/Schedule/admin_coach_update_schedule_controller.dart';
   static const String scheduleAdminCoachUpdateSchedulePage = 'lib/src/pages/Admin/Coach/Update/Schedule/admin_coach_update_schedule_page.dart';
+  static const String scheduleAdminEditScheduleClassController = 'lib/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_controller.dart';
+  static const String scheduleAdminEditScheduleClassPage = 'lib/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_page.dart';
   static const String scheduleCoachScheduleController = 'lib/src/pages/Coach/Schedule/coach_schedule_controller.dart';
   static const String scheduleCoachSchedulePage = 'lib/src/pages/Coach/Schedule/coach_schedule_page.dart';
   static const String servicesAppConfigService = 'lib/src/services/app_config_service.dart';
@@ -122,6 +129,8 @@ class Assets {
   static const String updateAdminPlanUpdatePage = 'lib/src/pages/Admin/Plan/Update/admin_plan_update_page.dart';
   static const String updateUserProfileUpdateController = 'lib/src/pages/user/Profile/Update/user_profile_update_controller.dart';
   static const String updateUserProfileUpdatePage = 'lib/src/pages/user/Profile/Update/user_profile_update_page.dart';
+  static const String userPlansAdminUserPlansController = 'lib/src/pages/Admin/Reports/UserPlans/admin_user_plans_controller.dart';
+  static const String userPlansAdminUserPlansPage = 'lib/src/pages/Admin/Reports/UserPlans/admin_user_plans_page.dart';
   static const String utilsColor = 'lib/src/utils/color.dart';
   static const String utilsIconos = 'lib/src/utils/iconos.dart';
   static const String utilsTextos = 'lib/src/utils/textos.dart';
