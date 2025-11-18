@@ -87,11 +87,11 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        elevation: 1,
-                        shadowColor: Colors.black12,
+                        elevation: 2,
+                        shadowColor: Colors.black26,
                         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
                               CircleAvatar(
@@ -141,7 +141,7 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                                         const SizedBox(width: 6),
                                         Text(
                                           'Nacimiento: ${user.birthDate?.split('T').first.split('-').reversed.join('/') ?? ''}',
-                                          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700]),
                                         ),
                                       ],
                                     ),

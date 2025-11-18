@@ -12,56 +12,22 @@ class AttendanceProvider extends GetConnect {
   final User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
   Future<ResponseApi> registerAttendance(Attendance attendance) async {
-    print('📌 [AttendanceProvider] → Iniciando registerAttendance()');
-    print('📤 Datos a enviar: ${attendance.toJson()}');
-    print('🔑 Token usado: ${userSession.session_token}');
+    final response = await post('$url/record', attendance.toJson(), headers: {
+      'Content-Type': 'application/json',
+      'Authorization': userSession.session_token ?? ''
+    });
 
-    final Response response = await post(
-      '$url/record',
-      attendance.toJson(),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': userSession.session_token ?? ''
-      },
-    );
+    if (response.body == null) return ResponseApi(success: false, message: 'Sin respuesta del servidor');
 
-    print('📥 Respuesta cruda: status=${response.statusCode}, body=${response.body}');
-
-    if (response.body == null) {
-      print('❌ Error: Respuesta nula del servidor');
-      Get.snackbar('Error', 'No se pudo registrar la asistencia');
-      return ResponseApi(success: false, message: 'Sin respuesta del servidor');
-    }
-
-    if (response.statusCode == 401) {
-      print('❌ Error: No autorizado');
-      Get.snackbar('Error', 'No está autorizado para registrar asistencia');
-      return ResponseApi(success: false, message: 'No autorizado');
-    }
-
-    // 🔍 Manejo defensivo del tipo de respuesta
     dynamic body = response.body;
-    if (body is String) {
-      try {
-        body = json.decode(body);
-        print('✅ JSON decodificado correctamente');
-      } catch (e) {
-        print('❌ Error al decodificar JSON: $e');
-        return ResponseApi(success: false, message: 'Respuesta inválida');
-      }
-    }
+    if (body is String) body = json.decode(body);
 
     final responseApi = ResponseApi.fromJson(body);
-    print('📊 Respuesta parseada: success=${responseApi.success}, message=${responseApi.message}');
-
     if (responseApi.success == true) {
-      print('✅ Asistencia registrada correctamente');
       Get.snackbar('✅ Éxito', responseApi.message ?? 'Asistencia registrada');
     } else {
-      print('❌ Falló el registro: ${responseApi.message}');
       Get.snackbar('❌ Error', responseApi.message ?? 'Falló el registro');
     }
-
     return responseApi;
   }
 
@@ -69,58 +35,30 @@ class AttendanceProvider extends GetConnect {
     String? username,
     String? year,
     String? month,
+    String? day,
+    String? startHour,
+    String? endHour,
   }) async {
-    print('📌 [AttendanceProvider] → Iniciando findByFilters()');
-    print('🔎 Filtros recibidos: username=$username, year=$year, month=$month');
-
     final Map<String, String> queryParams = {};
 
-    if (username != null && username.trim().isNotEmpty) {
-      queryParams['username'] = username.trim();
-    }
-    if (year != null && year.trim().isNotEmpty) {
-      queryParams['class_year'] = year.trim();
-    }
-    if (month != null && month.trim().isNotEmpty) {
-      queryParams['class_month'] = month.trim();
-    }
+    if (username != null && username.trim().isNotEmpty) queryParams['username'] = username.trim();
+    if (year != null && year.trim().isNotEmpty) queryParams['class_year'] = year.trim();
+    if (month != null && month.trim().isNotEmpty) queryParams['class_month'] = month.trim();
+    if (day != null && day.trim().isNotEmpty) queryParams['class_day'] = day.trim();
+    if (startHour != null && startHour.trim().isNotEmpty) queryParams['start_hour'] = startHour.trim();
+    if (endHour != null && endHour.trim().isNotEmpty) queryParams['end_hour'] = endHour.trim();
 
-    print('➡️ GET Request → $url/users con queryParams=$queryParams');
+    final response = await get('$url/users', query: queryParams, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': userSession.session_token ?? ''
+    });
 
-    final response = await get(
-      '$url/users',
-      query: queryParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': userSession.session_token ?? ''
-      },
-    );
-
-    print('📥 Respuesta cruda: status=${response.statusCode}, body=${response.body}');
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      print('❌ Error: No se pudo obtener los datos');
-      Get.snackbar('Error', 'No se pudo obtener los datos');
-      return [];
-    }
+    if (response.statusCode != 200 && response.statusCode != 201) return [];
 
     dynamic body = response.body;
-    if (body is String) {
-      try {
-        body = json.decode(body);
-        print('✅ JSON decodificado correctamente en findByFilters');
-      } catch (e) {
-        print('❌ Error al decodificar JSON en findByFilters: $e');
-        return [];
-      }
-    }
+    if (body is String) body = json.decode(body);
 
     final List<dynamic> data = body['data'] ?? [];
-    print('📊 Cantidad de resultados obtenidos: ${data.length}');
-
-    return data.map((e) {
-      print('📌 Procesando registro: $e');
-      return AttendanceResult.fromJson(e);
-    }).toList();
+    return data.map((e) => AttendanceResult.fromJson(e)).toList();
   }
 }

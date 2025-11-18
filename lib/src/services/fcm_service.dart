@@ -80,6 +80,7 @@ Future<void> setupFCM() async {
   }
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print("📩 Mensaje FCM recibido: ${message.notification?.title} - ${message.notification?.body}");
     if (message.notification != null) {
       flutterLocalNotificationsPlugin.show(
         message.hashCode,
@@ -95,12 +96,13 @@ Future<void> setupFCM() async {
             playSound: true,
             icon: '@mipmap/ic_launcher',
             color: const Color(0xFF1D1C21),
-            styleInformation:
-            BigTextStyleInformation(message.notification!.body ?? ''),
+            styleInformation: BigTextStyleInformation(message.notification!.body ?? ''),
           ),
           iOS: const DarwinNotificationDetails(),
         ),
       );
+      print("🔔 Notificación local mostrada");
     }
   });
+
 }

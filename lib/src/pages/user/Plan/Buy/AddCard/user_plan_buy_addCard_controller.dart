@@ -8,6 +8,8 @@ import '../../../../../models/plan.dart';
 import '../../../../../models/user.dart';
 
 class UserPlanBuyAddCardController extends GetxController {
+
+  // Variables observables del formulario de tarjeta
   var cardNumber = ''.obs;
   var expiryDate = ''.obs;
   var cvvCode = ''.obs;
@@ -16,19 +18,29 @@ class UserPlanBuyAddCardController extends GetxController {
 
   final GlobalKey<FormState> keyForm = GlobalKey<FormState>();
 
-  late Plan plan;
-  late User user;
+  late Plan plan;  // Plan recibido desde la pantalla anterior
+  late User user;  // Usuario obtenido desde local storage
 
   @override
   void onInit() {
     super.onInit();
-    // 1) Recibe el plan como argumento
+
+    print("🟦 [AddCardController] onInit()");
+    print("📦 Plan recibido: ${Get.arguments}");
+    print("📦 Usuario cargado: ${GetStorage().read('user')}");
+
     plan = Get.arguments as Plan;
-    // 2) Carga usuario desde storage
     user = User.fromJson(GetStorage().read('user') ?? {});
   }
 
   void onCreditCardModelChange(CreditCardModel model) {
+    print("✏️ onCreditCardModelChange()");
+    print("• Número: ${model.cardNumber}");
+    print("• Expira: ${model.expiryDate}");
+    print("• CVV: ${model.cvvCode}");
+    print("• Holder: ${model.cardHolderName}");
+    print("• CVV Focado: ${model.isCvvFocused}");
+
     cardNumber.value = model.cardNumber;
     expiryDate.value = model.expiryDate;
     cvvCode.value = model.cvvCode;
@@ -36,19 +48,23 @@ class UserPlanBuyAddCardController extends GetxController {
     isCvvFocused.value = model.isCvvFocused;
   }
 
-  /// Con Opción A: abre el WebView de Nuvei para tokenizar
   Future<void> acquirePlan(BuildContext context) async {
+    print("\n🟪 ===== INICIANDO TOKENIZACIÓN VIA WEBVIEW =====");
+    print("➡️ userId=${user.id}, email=${user.email}");
+
     final result = await Get.to<bool>(
-      () => AddCardWebViewPage(),
+          () => AddCardWebViewPage(),
       arguments: {
         'userId': user.id.toString(),
         'email': user.email!,
       },
     );
 
-    // Si el WebView cierra con éxito (window.close → about:blank)
+    print("⬅️ Resultado retorno del WebView: $result");
+
     if (result == true) {
-      Get.back(result: true); // retornamos al caller (ResumePage)
+      print("🟩 Tokenización exitosa, regresando a pantalla anterior");
+      Get.back(result: true);
     }
   }
 }

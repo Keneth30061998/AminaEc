@@ -12,7 +12,6 @@ class SocketService {
 
   SocketService._internal() {
     final initialToken = userSession.session_token ?? '';
-    //print("📲 [SocketService] Inicializando con token: $initialToken");
     _recreateSocketWithToken(initialToken, autoConnect: false);
   }
 
@@ -23,50 +22,59 @@ class SocketService {
           .setTransports(['websocket'])
           .setPath('/socket.io')
           .setAuth({'token': authToken})
-          .disableAutoConnect()
           .enableForceNew()
+          .disableAutoConnect()
           .build(),
     );
-    //print("🔧 [SocketService] _buildSocket con token: $authToken");
     return s;
   }
 
   void _attachDefaultHandlers() {
-    socket.off('connect');
-    socket.off('disconnect');
-    socket.off('connect_error');
-    socket.off('error');
+    // Limpiar handlers previos de forma explícita
+    try {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('error');
+    } catch (_) {}
 
     socket.onConnect((_) {
-      //print("✅ [SocketService] Conectado al socket, id=${socket.id}");
-      _joinPrivateRoom(); // 🔑 cada vez que se conecta, entra en su sala privada
+      print("✅ [SocketService] conectado: id=${socket.id}");
+      _joinPrivateRoom(); // aseguramos unión a sala privada al conectar
     });
 
     socket.onDisconnect((reason) {
-      //print("⛔️ [SocketService] Desconectado del socket, reason=$reason");
+      print("⛔ [SocketService] desconectado: $reason");
     });
 
     socket.onConnectError((err) {
-      //print("⚠️ [SocketService] Error al conectar: $err");
+      print("⚠️ [SocketService] connect_error: $err");
     });
 
     socket.onError((err) {
-      //print("❌ [SocketService] Error en socket: $err");
+      print("❌ [SocketService] error: $err");
+    });
+
+    // Opcional: escuchar reintentos automáticos
+    socket.io!.on('reconnect_attempt', (data) {
+      print("🔁 [SocketService] intento de reconexión: $data");
     });
   }
 
   void _recreateSocketWithToken(String token, {bool autoConnect = false}) {
+    // Evitar crash si socket no fue inicializado aún
     try {
-      socket.disconnect();
-      socket.dispose();
-      socket.close();
+      if (socket != null) {
+        socket.disconnect();
+        try { socket.dispose(); } catch (_) {}
+        try { socket.close(); } catch (_) {}
+      }
     } catch (_) {}
 
     socket = _buildSocket(token);
     _attachDefaultHandlers();
 
     if (autoConnect && token.isNotEmpty) {
-      //print("📡 [SocketService] autoConnect=true, iniciando conexión...");
       socket.connect();
     }
   }
@@ -74,40 +82,36 @@ class SocketService {
   void updateUserSession(User newUser) {
     userSession = newUser;
     final token = userSession.session_token ?? '';
-    //print("🔄 [SocketService] updateUserSession, nuevo token: $token");
+    // Reconstruir socket y conectar si hay token
     _recreateSocketWithToken(token, autoConnect: token.isNotEmpty);
   }
 
   void connect() {
     if (socket.connected) {
-      //print("ℹ️ [SocketService] Ya conectado");
-      _joinPrivateRoom(); // 🔑 reforzar unión aunque ya esté conectado
+      print("ℹ️ [SocketService] ya conectado");
+      _joinPrivateRoom();
       return;
     }
-    //print("📡 [SocketService] Intentando conectar...");
     socket.connect();
   }
 
   void disconnect() {
-    //print("🛑 [SocketService] Disconnect llamado");
     try {
       socket.disconnect();
-      socket.dispose();
-      socket.close();
+      try { socket.dispose(); } catch (_) {}
+      try { socket.close(); } catch (_) {}
     } catch (_) {}
   }
 
   bool isConnected() => socket.connected;
 
+  // 🚨 Cambiado: ya no bloqueamos por hasListeners. Permitimos múltiples
+  // listeners en distintos controladores.
   void on(String event, Function(dynamic) callback) {
-    //print("👂 [SocketService] Listening al evento: $event");
-    if (socket.hasListeners(event)) return; // evita duplicados
     socket.on(event, (data) {
-      //print("👂 [SocketService] Evento recibido: $event → $data");
       callback(data);
     });
   }
-
 
   void once(String event, Function(dynamic) callback) {
     socket.once(event, callback);
@@ -115,50 +119,46 @@ class SocketService {
 
   void off(String event) {
     socket.off(event);
-    //print("🗑️ [SocketService] Listener removido: $event");
   }
 
   void emit(String event, dynamic data) {
     if (!socket.connected && userSession.session_token?.isNotEmpty == true) {
-      //print("🔌 [SocketService] No conectado, intentando reconectar antes de emitir...");
+      print("🔌 [SocketService] no conectado — intentando conectar antes de emitir...");
       socket.connect();
     }
-    //print("📤 [SocketService] Emitting $event → $data");
     socket.emit(event, data);
   }
 
   void emitSafe(String event, dynamic data) {
     if (socket.connected) {
-      //print("📤 [SocketService] Emitting seguro $event → $data");
       socket.emit(event, data);
+    } else {
+      print("⚠️ [SocketService] emitSafe ignorado (no conectado): $event");
     }
   }
 
-  // 🚪 Unirse a la sala privada del usuario actual
   void _joinPrivateRoom() {
     if (userSession.id != null) {
       final room = userSession.id.toString();
-      //print("🚪 [SocketService] Uniéndose a sala privada: $room");
       socket.emit('join', {'room': room});
     }
   }
 
   void join(String room) {
-    //print("🚪 [SocketService] join room → $room");
     socket.emit('join', {'room': room});
   }
 
   void leaveRoom(String room) {
-    //print("🚪 [SocketService] leave room → $room");
     socket.emit('leave', {'room': room});
   }
 
   void dispose() {
-    //print("🗑️ [SocketService] dispose socket");
-    socket.off('connect');
-    socket.off('disconnect');
-    socket.off('error');
-    socket.dispose();
-    socket.close();
+    try {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('error');
+      socket.dispose();
+      socket.close();
+    } catch (_) {}
   }
 }

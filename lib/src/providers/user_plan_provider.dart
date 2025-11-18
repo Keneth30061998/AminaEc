@@ -127,4 +127,38 @@ class UserPlanProvider {
       return [];
     }
   }
+
+  // ------------------------------------------------------
+// 🟩 RECUPERAR PLAN PAGADO PERO NO ACREDITADO
+// ------------------------------------------------------
+  Future<ResponseApi> recoverPlan({
+    required String transactionId,
+    required String token,
+  }) async {
+    final uri = Uri.parse('${Environment.API_URL}api/acquire/recover');
+
+    final body = {
+      "transaction_id": transactionId,
+    };
+
+    print("\n🟦 ===== API RECOVER PLAN =====");
+    print("➡️ POST: $uri");
+    print("🆔 transactionId: $transactionId");
+    print("🔑 Token: $token");
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token,
+      },
+      body: json.encode(body),
+    );
+
+    print("📥 STATUS recover: ${response.statusCode}");
+    print("📦 BODY recover: ${response.body}");
+
+    return ResponseApi.fromJson(json.decode(response.body));
+  }
+
 }

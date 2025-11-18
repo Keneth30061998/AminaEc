@@ -86,7 +86,7 @@ class AdminCoachSchedulePage extends StatelessWidget {
         final theme = s.class_theme?.isNotEmpty == true ? s.class_theme! : 'Clase';
 
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(vertical: 6),
+          contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 15),
           title: Text('Rueda con ${coach.user?.name ?? ''}',
               style: const TextStyle(fontWeight: FontWeight.w700)),
           subtitle: Text('$time  |  $theme'),

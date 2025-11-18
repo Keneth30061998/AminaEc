@@ -19,17 +19,13 @@ class CardProvider {
   //String? get _token => _box.read('user')?['session_token']; //  JWT
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Authorization': userSession.session_token ?? ''
-      };
+    'Content-Type': 'application/json',
+    'Authorization': userSession.session_token ?? ''
+  };
 
   Future<List<CardModel>> listByUser() async {
     final uri = Uri.parse("$_baseUrl/cards/$_userId");
-    //print('🟢 listByUser: GET $uri');
-
     final resp = await http.get(uri, headers: _headers);
-    //print('🟢 listByUser: statusCode = ${resp.statusCode}');
-    //print('🟢 listByUser: body = ${resp.body}');
 
     if (resp.statusCode == 200) {
       final body = json.decode(resp.body);
@@ -40,12 +36,7 @@ class CardProvider {
 
   Future<ResponseApi> deleteCard(String token) async {
     final uri = Uri.parse("$_baseUrl/cards/$_userId/$token");
-    //print('🟢 deleteCard: DELETE $uri');
-
     final resp = await http.delete(uri, headers: _headers);
-    //print('🟢 deleteCard: statusCode = ${resp.statusCode}');
-    //print('🟢 deleteCard: body = ${resp.body}');
-
     return responseApiFromJson(resp.body);
   }
 
@@ -54,6 +45,7 @@ class CardProvider {
     required double amount,
     required double taxPct,
     required String description,
+    int installmentsCount = 1,
   }) async {
     final uri = Uri.parse("$_baseUrl/pay");
     final body = {
@@ -63,16 +55,11 @@ class CardProvider {
       "amount": amount,
       "tax_percentage": taxPct,
       "description": description,
+      "installments_count": installmentsCount,
     };
 
-    //print('🟢 payWithNewCard: POST $uri');
-    //print('🟢 payWithNewCard: body → ${json.encode(body)}');
-
     final resp =
-        await http.post(uri, headers: _headers, body: json.encode(body));
-    //print('🟢 payWithNewCard: statusCode = ${resp.statusCode}');
-    //print('🟢 payWithNewCard: body = ${resp.body}');
-
+    await http.post(uri, headers: _headers, body: json.encode(body));
     return responseApiFromJson(resp.body);
   }
 
@@ -82,6 +69,7 @@ class CardProvider {
     required double taxPct,
     required String description,
     String? confirmCode,
+    int installmentsCount = 1,
   }) async {
     final uri = Uri.parse("$_baseUrl/pay/token");
     final body = {
@@ -91,19 +79,14 @@ class CardProvider {
       "amount": amount,
       "tax_percentage": taxPct,
       "description": description,
+      "installments_count": installmentsCount,
     };
     if (confirmCode != null && confirmCode.isNotEmpty) {
       body["confirm_code"] = confirmCode;
     }
 
-    //print('🟢 payWithToken: POST $uri');
-    //print('🟢 payWithToken: body → ${json.encode(body)}');
-
     final resp =
-        await http.post(uri, headers: _headers, body: json.encode(body));
-    //print('🟢 payWithToken: statusCode = ${resp.statusCode}');
-    //print('🟢 payWithToken: body = ${resp.body}');
-
+    await http.post(uri, headers: _headers, body: json.encode(body));
     return responseApiFromJson(resp.body);
   }
 
@@ -121,25 +104,29 @@ class CardProvider {
       "confirm_code": confirmCode,
     };
 
-    //print('🟢 confirmPayment: POST $uri');
-    //print('🟢 confirmPayment: body → ${json.encode(body)}');
-
     final resp =
-        await http.post(uri, headers: _headers, body: json.encode(body));
-    //print('🟢 confirmPayment: statusCode = ${resp.statusCode}');
-    //print('🟢 confirmPayment: body = ${resp.body}');
-
+    await http.post(uri, headers: _headers, body: json.encode(body));
     return responseApiFromJson(resp.body);
   }
 
   Future<ResponseApi> getTransactionStatus(String txId) async {
     final uri = Uri.parse("$_baseUrl/transaction/status/$txId");
-    //print('🟢 getTransactionStatus: GET $uri');
-
     final resp = await http.get(uri, headers: _headers);
-    //print('🟢 getTransactionStatus: statusCode = ${resp.statusCode}');
-    //print('🟢 getTransactionStatus: body = ${resp.body}');
-
     return responseApiFromJson(resp.body);
+  }
+
+  /// ----- NUEVO -----
+  /// Consulta al backend si la tarjeta soporta diferido y qué opciones
+  Future<Map<String, dynamic>> getPaymentOptions(String token) async {
+    final uri = Uri.parse("$_baseUrl/cards/$token/payment-options");
+    final resp = await http.get(uri, headers: _headers);
+
+    if (resp.statusCode == 200) {
+      // backend responde { success: true, supports_installments: bool, installment_options: [...] }
+      final body = json.decode(resp.body);
+      return body is Map<String, dynamic> ? body : {};
+    } else {
+      return {};
+    }
   }
 }

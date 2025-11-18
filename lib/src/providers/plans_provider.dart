@@ -17,28 +17,35 @@ class PlanProvider extends GetConnect {
 
   // Registrar un plan - con imagen
   Future<Stream> createWithImage(Plan plan, File image) async {
-    //print('📌 [PlanProvider] → Iniciando createWithImage()');
-    //print('📤 Plan: ${plan.toJson()}');
-    //print('🖼 Imagen: ${image.path}');
-    //print('🔑 Token: ${userSession.session_token}');
+    Uri uri = Uri.parse('${Environment.API_URL}api/plans/registerWithImage');
 
-    Uri uri =
-    Uri.parse('${Environment.API_URL_OLD}/api/plans/registerWithImage');
     final request = http.MultipartRequest('POST', uri);
 
     request.headers['Authorization'] = userSession.session_token ?? '';
+    request.fields['plan'] = json.encode(plan.toJson());
+
     request.files.add(http.MultipartFile(
       'image',
       http.ByteStream(image.openRead().cast()),
       await image.length(),
       filename: basename(image.path),
     ));
-    request.fields['plan'] = json.encode(plan.toJson());
 
     final response = await request.send();
-    //print('📥 Respuesta createWithImage: statusCode=${response.statusCode}');
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      String body = await response.stream.bytesToString();
+      print("❌ ERROR DEL BACKEND: ${response.statusCode}");
+      print(body); // ← Aquí verás el HTML, confirmando fallo
+      throw Exception("El backend devolvió una respuesta no-JSON");
+    }
+
+    // Volvemos a crear el stream porque ya consumimos el anterior
+    final newStream = http.ByteStream.fromBytes([]);
+
     return response.stream.transform(utf8.decoder);
   }
+
 
   // Listar todos los planes
   Future<List<Plan>> getAll() async {

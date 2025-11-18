@@ -39,7 +39,6 @@ class UserPlanBuyResumeController extends GetxController {
   double calculateTotal() => plan.price!;
 
   Future<void> payWithToken(CardModel card) async {
-
     // 1) Verificar si el plan es solo para nuevos usuarios
     if (plan.is_new_user_only == 1) {
       final user = User.fromJson(GetStorage().read('user') ?? {});
@@ -76,15 +75,37 @@ class UserPlanBuyResumeController extends GetxController {
     );
 
     try {
-      //print('🟢 payWithToken: iniciando pago token=${card.token}');
+      // 1) CONSULTAR si la tarjeta soporta diferido
+      int installmentsCount = 1;
+      try {
+        final opts = await _cardProvider.getPaymentOptions(card.token!);
+        if (opts['success'] == true && opts['supports_installments'] == true) {
+          // Mostrar diálogo para elegir cuotas
+          final chosen = await _showInstallmentDialog();
+          if (chosen == null) {
+            pd.close();
+            Get.snackbar('Pago cancelado', 'No seleccionaste cuotas', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+            return;
+          }
+          installmentsCount = chosen;
+        } else {
+          // No soporta diferido -> cuotas = 1
+          installmentsCount = 1;
+        }
+      } catch (e) {
+        // Si falla la consulta, asumimos contado por seguridad
+        installmentsCount = 1;
+      }
+
       ResponseApi payResp = await _cardProvider.payWithToken(
         token: card.token!,
         amount: plan.price!,
         taxPct: 15.0,
         description: plan.name!,
+        installmentsCount: installmentsCount,
       );
-      //print('🟢 payWithToken: respuesta inicial → ${payResp.toJson()}');
 
+      // Manejo OTP y flujos actuales (igual que antes)
       if (payResp.requiresConfirmation == true) {
         pd.close();
         final otp = await _showOtpDialog();
@@ -118,7 +139,6 @@ class UserPlanBuyResumeController extends GetxController {
           transactionId: transactionId,
           confirmCode: otp,
         );
-        //print('🟡 confirmPayment: respuesta → ${confirmResp.toJson()}');
         pd.close();
 
         if (confirmResp.success == true) {
@@ -152,7 +172,6 @@ class UserPlanBuyResumeController extends GetxController {
       }
     } catch (e) {
       pd.close();
-      //print('❌ payWithToken: error inesperado → $e');
       Get.snackbar(
         'Error inesperado',
         e.toString(),
@@ -170,7 +189,7 @@ class UserPlanBuyResumeController extends GetxController {
       userId: user.id!,
       planId: plan.id!,
       transactionId:
-          transactionId.isNotEmpty ? transactionId : null, // ✅ solo si existe
+      transactionId.isNotEmpty ? transactionId : null, // ✅ solo si existe
     );
 
     final planProvider = UserPlanProvider();
@@ -221,6 +240,43 @@ class UserPlanBuyResumeController extends GetxController {
       cancelTextColor: darkGrey,
       onConfirm: () => Get.back(result: codeCtrl.text.trim()),
       onCancel: () => Get.back(result: null),
+    );
+  }
+
+  Future<int?> _showInstallmentDialog() {
+    return Get.defaultDialog<int?>(
+        title: 'Selecciona cuotas',
+        content: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Text('Elige la cantidad de cuotas', style: TextStyle(color: almostBlack)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                children: [3,6,9,12].map((c) {
+                  return ElevatedButton(
+                    onPressed: () => Get.back(result: c),
+                    child: Text('$c cuotas'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: almostBlack,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Get.back(result: 1),
+                child: Text('Pagar de contado', style: TextStyle(color: darkGrey)),
+              )
+            ],
+          ),
+        ),
+        barrierDismissible: true
     );
   }
 
