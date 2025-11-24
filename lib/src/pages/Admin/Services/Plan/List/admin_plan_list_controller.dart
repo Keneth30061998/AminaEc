@@ -1,8 +1,10 @@
 import 'package:amina_ec/src/providers/plans_provider.dart';
 import 'package:get/get.dart';
 
-import '../../../../components/Socket/socket_service.dart';
-import '../../../../models/plan.dart';
+import '../../../../../components/Socket/socket_service.dart';
+import '../../../../../models/plan.dart';
+
+
 
 class AdminPlanListController extends GetxController {
   final PlanProvider planProvider = PlanProvider();

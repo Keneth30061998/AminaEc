@@ -8,7 +8,7 @@ import '../environment/environment.dart';
 
 class AdminUsersProvider {
   // URL base
-  final String _baseUrl = Environment.API_URL_OLD; // producción
+  final String _baseUrl = Environment.API_URL_SOCKET; // producción
   final String _api = '/api/admin/users';
 
   // =======================

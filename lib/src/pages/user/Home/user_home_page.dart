@@ -2,6 +2,7 @@ import 'package:amina_ec/src/pages/user/Coach/List/user_coach_list_page.dart';
 import 'package:amina_ec/src/pages/user/Home/user_home_controller.dart';
 import 'package:amina_ec/src/pages/user/Plan/List/user_plan_list_page.dart';
 import 'package:amina_ec/src/pages/user/Profile/Info/user_profile_info_page.dart';
+import 'package:amina_ec/src/pages/user/Sponsor/List/user_sponsor_list_page.dart';
 import 'package:amina_ec/src/utils/color.dart'; // Asumo que darkGrey, limeGreen, almostBlack están aquí
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,16 +18,16 @@ class UserHomePage extends StatelessWidget {
     UserStartPage(),
     UserPlanListPage(),
     UserCoachSchedulePage(),
-    //UserProfileUpdatePage(),
+    UserSponsorListPage(),
     UserProfileInfoPage(),
   ];
 
   // Constantes para el BottomNavigationBar
   //static const double _bottomNavBorderRadius = 20.0;
   static const EdgeInsets _bottomNavPadding =
-      EdgeInsets.symmetric(horizontal: 20, vertical: 14);
+      EdgeInsets.symmetric(horizontal: 18, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
-      EdgeInsets.symmetric(horizontal: 15, vertical: 10);
+      EdgeInsets.symmetric(horizontal: 12, vertical: 10);
   static const double _gNavIconSize = 26.5;
   static const double _gNavGap = 10.0;
   static const int _gNavAnimationMillis = 460;
@@ -101,6 +102,10 @@ class UserHomePage extends StatelessWidget {
           const GButton(
             icon: iconSchedule,
             text: 'Agenda',
+          ),
+          const GButton(
+            icon: iconGift,
+            text: 'Exclusivo',
           ),
           const GButton(
             icon: iconProfile,

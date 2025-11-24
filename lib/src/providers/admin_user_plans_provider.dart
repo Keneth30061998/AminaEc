@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class AdminUserPlansProvider {
-  final String _base = Environment.API_URL_OLD; // Ej: https://.../api
+  final String _base = Environment.API_URL_SOCKET; // Ej: https://.../api
 
   // Obtener planes del usuario
   Future<List<Map<String, dynamic>>> getUserPlans(String userId, String token) async {

@@ -28,41 +28,35 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<!-- Permisos Necesarios -->
 	<key>NSCameraUsageDescription</key>
 	<string>Usamos la cámara para que puedas tomar o subir tu foto de perfil dentro de la app Amina Ec.</string>
-
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Necesitamos acceso a tu galería para que puedas seleccionar o cambiar tu foto de perfil en Amina Ec.</string>
-
 	<key>NSMicrophoneUsageDescription</key>
 	<string>El micrófono se usa únicamente si decides grabar mensajes o clips de voz dentro de la app.</string>
-
 	<key>NSMotionUsageDescription</key>
 	<string>Se utiliza el giroscopio para ofrecer animaciones y efectos visuales más fluidos en la interfaz de la app.</string>
-
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Necesitamos acceso a tu galería para que puedas seleccionar o cambiar tu foto de perfil en Amina Ec.</string>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>Alert</string>
-
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Usamos esta información únicamente para mejorar tu experiencia dentro de la app y personalizar tu cuenta. No compartimos datos con terceros.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>fetch</string>
 	</array>
-
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
-
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -70,8 +64,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<!-- 🔒 Requisito de privacidad iOS ATT -->
-    <key>NSUserTrackingUsageDescription</key>
-    <string>Usamos esta información únicamente para mejorar tu experiencia dentro de la app y personalizar tu cuenta. No compartimos datos con terceros.</string>
 </dict>
 </plist>

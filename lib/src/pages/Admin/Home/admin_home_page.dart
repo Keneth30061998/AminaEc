@@ -1,6 +1,7 @@
 import 'package:amina_ec/src/pages/Admin/Coach/List/admin_coach_list_page.dart';
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_controller.dart';
-import 'package:amina_ec/src/pages/Admin/Plan/Register/admin_plan_register_page.dart';
+import 'package:amina_ec/src/pages/Admin/Services/admin_services_page.dart';
+
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class AdminHomePage extends StatelessWidget {
   // Considera hacer estas páginas más significativas o incluso widgets separados si crecen en complejidad.
   final List<Widget> _pageViews = [
     AdminStartPage(),
-    AdminPlanRegisterPage(),
+    AdminServicesPage(),
     AdminCoachListPage(),
     AdminReportsPage(),
     AdminProfileInfoPage(),
@@ -99,7 +100,7 @@ class AdminHomePage extends StatelessWidget {
           ),
           const GButton(
             icon: iconPlan,
-            text: 'Planes',
+            text: 'Servicios',
           ),
           const GButton(
             icon: Icons.directions_bike_outlined,

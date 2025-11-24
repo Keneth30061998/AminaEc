@@ -38,8 +38,12 @@ class UserPlanBuyResumeController extends GetxController {
   double calculateIVA() => plan.price! - calculateSubtotal();
   double calculateTotal() => plan.price!;
 
-  Future<void> payWithToken(CardModel card) async {
-    // 1) Verificar si el plan es solo para nuevos usuarios
+  /// payWithToken
+  /// - card: tarjeta seleccionada
+  /// - isRetrySingle: bandera interna para indicar que esta invocación es un reintento forzado en 1 cuota
+  ///    (evita volver a ofrecer cuotas y previene bucles)
+  Future<void> payWithToken(CardModel card, {bool isRetrySingle = false}) async {
+    // VALIDACIÓN PLAN NUEVO USUARIO (Tu lógica original)
     if (plan.is_new_user_only == 1) {
       final user = User.fromJson(GetStorage().read('user') ?? {});
       final userPlanProvider = UserPlanProvider();
@@ -49,7 +53,6 @@ class UserPlanBuyResumeController extends GetxController {
         user.session_token ?? '',
       );
 
-      // 2) Si el usuario ya tiene o tuvo un plan → bloquear
       if (summary.isNotEmpty) {
         Get.snackbar(
           'Este plan es exclusivo',
@@ -58,13 +61,12 @@ class UserPlanBuyResumeController extends GetxController {
           backgroundColor: Colors.redAccent,
           colorText: Colors.white,
         );
-        return; // 🚫 Detener aquí, NO ejecutar pago
+        return;
       }
     }
 
     final context = Get.context!;
     final pd = ProgressDialog(context: context);
-
     pd.show(
       max: 100,
       msg: 'Procesando pago...',
@@ -75,37 +77,71 @@ class UserPlanBuyResumeController extends GetxController {
     );
 
     try {
-      // 1) CONSULTAR si la tarjeta soporta diferido
+      // =============================================================
+      // 1) Si es reintento forzado (isRetrySingle=true) -> no consultamos opciones
+      // =============================================================
       int installmentsCount = 1;
-      try {
-        final opts = await _cardProvider.getPaymentOptions(card.token!);
-        if (opts['success'] == true && opts['supports_installments'] == true) {
-          // Mostrar diálogo para elegir cuotas
-          final chosen = await _showInstallmentDialog();
-          if (chosen == null) {
-            pd.close();
-            Get.snackbar('Pago cancelado', 'No seleccionaste cuotas', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
-            return;
+
+      if (!isRetrySingle) {
+        // =============================================================
+        // 2) CONSULTAR SI LA TARJETA SOPORTA DIFERIDO Y OPCIONES
+        // (backend ya provee supports_installments e installment_options)
+        // =============================================================
+        try {
+          final opts = await _cardProvider.getPaymentOptions(card.token!);
+
+          final supports = opts["supports_installments"] == true;
+
+          List<int> options = [];
+          if (opts["installment_options"] is List) {
+            options = opts["installment_options"]
+                .map<int>((e) => int.tryParse(e.toString()) ?? 1)
+                .toList();
           }
-          installmentsCount = chosen;
-        } else {
-          // No soporta diferido -> cuotas = 1
+
+          if (supports && options.isNotEmpty) {
+            final chosen = await _showInstallmentDialog(options);
+            if (chosen == null) {
+              pd.close();
+              Get.snackbar(
+                'Pago cancelado',
+                'No seleccionaste cuotas',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.orange,
+                colorText: Colors.white,
+              );
+              return;
+            }
+            installmentsCount = chosen;
+          } else {
+            // Si backend indica que NO soporta cuotas -> 1 cuota
+            installmentsCount = 1;
+          }
+        } catch (err) {
+          // En caso de error en la consulta -> fallback seguro 1 cuota
           installmentsCount = 1;
         }
-      } catch (e) {
-        // Si falla la consulta, asumimos contado por seguridad
+      } else {
+        // isRetrySingle == true => forzamos 1 cuota
         installmentsCount = 1;
       }
 
+      // =============================================================
+      // 3) ENVIAR PAGO AL BACKEND
+      // =============================================================
       ResponseApi payResp = await _cardProvider.payWithToken(
         token: card.token!,
         amount: plan.price!,
         taxPct: 15.0,
         description: plan.name!,
         installmentsCount: installmentsCount,
+        planId: int.tryParse(plan.id!.toString()), // <-- pasa plan.id
       );
 
-      // Manejo OTP y flujos actuales (igual que antes)
+
+      // =============================
+      // 4) MANEJO OTP (igual que antes)
+      // =============================
       if (payResp.requiresConfirmation == true) {
         pd.close();
         final otp = await _showOtpDialog();
@@ -138,13 +174,28 @@ class UserPlanBuyResumeController extends GetxController {
           token: card.token!,
           transactionId: transactionId,
           confirmCode: otp,
+          planId: int.tryParse(plan.id!.toString()), // <-- pasa plan.id
         );
+
+
         pd.close();
 
         if (confirmResp.success == true) {
-          await _onPaymentApprovedDirect(
-              transactionId); // ✅ enviar transactionId
+          await _onPaymentApprovedDirect(transactionId);
         } else {
+          // Si el confirmResp indica que fue rechazado por diferido (en caso de reintentos)
+          final msg = (confirmResp.message ?? '').toString().toLowerCase();
+          final likelyDiffReject = msg.contains('difer') || msg.contains('diff') || msg.contains('install');
+          if (likelyDiffReject && installmentsCount > 1) {
+            // Ofrecer reintento en 1 cuota
+            final retry = await _askRetrySingle();
+            if (retry == true) {
+              // Reintentar forzando 1 cuota (isRetrySingle = true evita volver a mostrar dialog de cuotas)
+              await payWithToken(card, isRetrySingle: true);
+              return;
+            }
+          }
+
           Get.snackbar(
             'Error en OTP',
             confirmResp.message ?? 'Código OTP inválido o pago rechazado',
@@ -158,10 +209,45 @@ class UserPlanBuyResumeController extends GetxController {
         pd.close();
       }
 
+      // =============================
+      // 5) RESPUESTA DIRECTA
+      // =============================
       if (payResp.success == true) {
         final transactionId = payResp.transactionId ?? "";
-        await _onPaymentApprovedDirect(transactionId); // ✅ enviar transactionId
+        await _onPaymentApprovedDirect(transactionId);
       } else {
+        // =============================
+        // 6) MANEJO ESPECIAL: RECHAZO POR DIFERIDO (TARJETA DÉBITO)
+        // =============================
+        final message = (payResp.message ?? '').toString().toLowerCase();
+
+        // heurística para detectar rechazo por diferido (mejorar con códigos reales si los tienes)
+        final likelyDiffReject = message.contains('difer') ||
+            message.contains('no permite pagos diferidos') ||
+            message.contains('diff') ||
+            message.contains('install');
+
+        if (likelyDiffReject && installmentsCount > 1) {
+          // Mostrar mensaje y ofrecer reintentar en 1 cuota
+          final retry = await _askRetrySingleCustomMessage(payResp.message);
+          if (retry == true) {
+            // Reintentar en 1 cuota
+            await payWithToken(card, isRetrySingle: true);
+            return;
+          } else {
+            // Usuario decidió no reintentar
+            Get.snackbar(
+              'Pago cancelado',
+              'No se realizó el pago diferido',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.orange,
+              colorText: Colors.white,
+            );
+            return;
+          }
+        }
+
+        // Rechazo genérico (no es un rechazo por diferido)
         Get.snackbar(
           'Error en pago',
           payResp.message ?? 'Falló el pago',
@@ -182,36 +268,44 @@ class UserPlanBuyResumeController extends GetxController {
     }
   }
 
+  // =============================================================
+  // Confirmación plan y redirección — mantiene la lógica original
+  // =============================================================
   Future<void> _onPaymentApprovedDirect(String transactionId) async {
     final box = GetStorage();
     final user = User.fromJson(box.read('user') ?? {});
     final userPlan = UserPlan(
       userId: user.id!,
       planId: plan.id!,
-      transactionId:
-      transactionId.isNotEmpty ? transactionId : null, // ✅ solo si existe
+      transactionId: transactionId.isNotEmpty ? transactionId : null,
     );
 
     final planProvider = UserPlanProvider();
-    ResponseApi? planResp = await planProvider.acquire(
-      userPlan,
-      user.session_token ?? '',
-    );
+    ResponseApi? planResp =
+    await planProvider.acquire(userPlan, user.session_token ?? '');
 
     if (planResp?.success == true) {
-      Get.snackbar('Plan adquirido',
-          planResp!.message ?? 'Tu plan y rides han sido acreditados',
-          backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar(
+        'Plan adquirido',
+        planResp!.message ?? 'Tu plan y rides han sido acreditados',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
       Get.offAllNamed('/user/home');
     } else {
-      Get.snackbar('Error acreditación',
-          planResp?.message ?? 'Pago ok, pero no se acreditó el plan',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orangeAccent,
-          colorText: Colors.white);
+      Get.snackbar(
+        'Error acreditación',
+        planResp?.message ?? 'Pago ok, pero no se acreditó el plan',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orangeAccent,
+        colorText: Colors.white,
+      );
     }
   }
 
+  // =============================================================
+  // DIALOGO OTP (igual que antes)
+  // =============================================================
   Future<String?> _showOtpDialog() {
     final codeCtrl = TextEditingController();
     return Get.defaultDialog<String?>(
@@ -220,7 +314,8 @@ class UserPlanBuyResumeController extends GetxController {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
-            Text('Ingresa el código enviado por tu banco', style: TextStyle(color: almostBlack),),
+            Text('Ingresa el código enviado por tu banco',
+                style: TextStyle(color: almostBlack)),
             const SizedBox(height: 12),
             TextField(
               controller: codeCtrl,
@@ -243,40 +338,81 @@ class UserPlanBuyResumeController extends GetxController {
     );
   }
 
-  Future<int?> _showInstallmentDialog() {
+  // =============================================================
+  // DIALOGO DINÁMICO DE CUOTAS (igual que antes)
+  // =============================================================
+  Future<int?> _showInstallmentDialog(List<int> options) {
+    final opts = options.toSet().toList()..sort();
+    if (!opts.contains(1)) opts.insert(0, 1);
+
     return Get.defaultDialog<int?>(
-        title: 'Selecciona cuotas',
-        content: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              Text('Elige la cantidad de cuotas', style: TextStyle(color: almostBlack)),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                children: [3,6,9,12].map((c) {
-                  return ElevatedButton(
-                    onPressed: () => Get.back(result: c),
-                    child: Text('$c cuotas'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: almostBlack,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => Get.back(result: 1),
-                child: Text('Pagar de contado', style: TextStyle(color: darkGrey)),
-              )
-            ],
-          ),
+      title: 'Selecciona cuotas',
+      content: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Text('Elige la cantidad de cuotas',
+                style: TextStyle(color: almostBlack)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              children: opts.map((c) {
+                final label = c == 1 ? 'Pagar de contado' : '$c cuotas';
+                return ElevatedButton(
+                  onPressed: () => Get.back(result: c),
+                  child: Text(label),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: almostBlack,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Get.back(result: 1),
+              child: Text('Cancelar y pagar contado',
+                  style: TextStyle(color: darkGrey)),
+            )
+          ],
         ),
-        barrierDismissible: true
+      ),
+      barrierDismissible: true,
+    );
+  }
+
+  // =============================================================
+  // DIALOGO: Preguntar si desea reintentar en 1 cuota (para rechazo por diferido)
+  // =============================================================
+  Future<bool?> _askRetrySingle() {
+    return Get.defaultDialog<bool?>(
+      title: 'Reintentar en 1 cuota',
+      middleText:
+      'La tarjeta no permite pagos diferidos. ¿Deseas reintentar el pago en 1 cuota (contado)?',
+      textConfirm: 'Sí, reintentar',
+      textCancel: 'No, cancelar',
+      onConfirm: () => Get.back(result: true),
+      onCancel: () => Get.back(result: false),
+      barrierDismissible: false,
+    );
+  }
+
+  // Variante que muestra mensaje del backend (si existe)
+  Future<bool?> _askRetrySingleCustomMessage(String? backendMessage) {
+    final display = backendMessage ?? 'La tarjeta no permite pagos diferidos.';
+    return Get.defaultDialog<bool?>(
+      title: 'Pago diferido no permitido',
+      middleText: '$display\n\n¿Deseas reintentar el pago en 1 cuota (contado)?',
+      textConfirm: 'Sí, reintentar',
+      textCancel: 'No, cancelar',
+      onConfirm: () => Get.back(result: true),
+      onCancel: () => Get.back(result: false),
+      barrierDismissible: false,
     );
   }
 

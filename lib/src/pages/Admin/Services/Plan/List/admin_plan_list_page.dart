@@ -1,12 +1,13 @@
-import 'package:amina_ec/src/pages/Admin/Plan/List/admin_plan_list_controller.dart';
+
+import 'package:amina_ec/src/pages/Admin/Services/Plan/List/admin_plan_list_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../models/plan.dart';
-import '../../../../utils/iconos.dart';
-import '../../../../widgets/no_data_widget.dart';
+import '../../../../../models/plan.dart';
+import '../../../../../utils/iconos.dart';
+import '../../../../../widgets/no_data_widget.dart';
 
 class AdminPlanListPage extends StatelessWidget {
   final AdminPlanListController con = Get.put(AdminPlanListController());

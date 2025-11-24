@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../utils/color.dart';
+import '../../../../../utils/color.dart';
 import 'admin_plan_update_controller.dart';
 
 class AdminPlanUpdatePage extends StatelessWidget {

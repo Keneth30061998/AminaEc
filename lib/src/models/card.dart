@@ -26,14 +26,15 @@ class CardModel {
   });
 
   factory CardModel.fromJson(Map<String, dynamic> json) => CardModel(
-        token: json["token"],
-        type: json["type"],
-        last4: json["last4"],
-        bin: json["bin"],
-        expiryMonth: json["expiry_month"].toString(),
-        expiryYear: json["expiry_year"].toString(),
-        bank: json["bank"],
-      );
+    token: json["token"]?.toString(),
+    type: json["type"]?.toString(),
+    last4: json["last4"]?.toString(),
+    bin: json["bin"]?.toString(),
+    expiryMonth: json["expiry_month"] != null ? json["expiry_month"].toString() : null,
+    expiryYear: json["expiry_year"] != null ? json["expiry_year"].toString() : null,
+    bank: json["bank"]?.toString(),
+  );
+
 
   Map<String, dynamic> toJson() => {
         "token": token,

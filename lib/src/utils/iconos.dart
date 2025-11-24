@@ -29,6 +29,7 @@ const iconInfo = RemixIcons.information_2_fill;
 const iconReschedule = RemixIcons.history_line;
 const iconBirthDate = RemixIcons.cake_fill;
 const iconCloseSession = RemixIcons.logout_circle_line;
+const iconGift = RemixIcons.gift_fill;
 
 const iconNext = RemixIcons.arrow_right_wide_line;
 const iconOpenEye = RemixIcons.eye_2_line;
