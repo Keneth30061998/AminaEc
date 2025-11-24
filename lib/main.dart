@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -5,46 +6,60 @@ import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 
+import 'firebase_options.dart';
 import 'globals.dart';
+
+// Servicios / configuración
 import 'src/components/Socket/socket_service.dart';
 import 'src/components/events/coach_events.dart';
 import 'src/pages/maintenance/maintenance_page.dart';
 import 'src/routes/app_routes.dart';
 import 'src/utils/color.dart';
 
-// Servicios separados
 import 'src/services/fcm_service.dart';
 import 'src/services/notifications_service.dart';
 import 'src/services/app_config_service.dart';
 import 'src/services/att_service.dart';
 
-// =====================================
-// 🌟 Variables Globales
-// =====================================
-
-
-// =====================================
-// 🌟 Función principal
-// =====================================
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   Get.put(CoachEvents());
 
+  // =====================================
+  // 1️⃣ Inicializar Firebase
+  // =====================================
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await initializeDateFormatting('es_ES', null);
+  // =====================================
+  // 2️⃣ Simular versión antigua: Delay antes de ATT
+  // Solo en iOS, ayuda a que el cuadro ATT aparezca
+  // =====================================
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    await Future.delayed(const Duration(seconds: 3));
+  }
+
+  // Solicitar permiso ATT
+  await requestTrackingAuthorization();
+
+  // =====================================
+  // 3️⃣ Inicializar notificaciones locales
+  // =====================================
   await initializeLocalNotifications();
 
-  // FCM y ATT
+  // =====================================
+  // 4️⃣ Inicializar FCM
+  // =====================================
   await setupFCM();
-  await Future.delayed(const Duration(seconds: 3));
-  await requestTrackingAuthorization();
+
+  // =====================================
+  // 5️⃣ Configuraciones generales
+  // =====================================
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await initializeDateFormatting('es_ES', null);
 
   // Conectar sockets solo si hay session_token
   if (userSession.session_token != null &&
@@ -52,7 +67,9 @@ void main() async {
     SocketService().connect();
   }
 
-  // Consultamos el estado remoto antes de construir la UI
+  // =====================================
+  // 6️⃣ Consultar configuración remota (mantenimiento)
+  // =====================================
   final remoteCfg = await fetchRemoteAppConfig();
   final bool isMaintenance = remoteCfg['maintenance'] == true;
   final String maintenanceTitle = remoteCfg['title'] ?? 'Mantenimiento';
@@ -68,9 +85,6 @@ void main() async {
   ));
 }
 
-// =====================================
-// 🌟 MyAppBootstrap decide si mostrar MaintenancePage o la app normal
-// =====================================
 class MyAppBootstrap extends StatelessWidget {
   final bool isMaintenance;
   final String title;
@@ -98,14 +112,10 @@ class MyAppBootstrap extends StatelessWidget {
       );
     }
 
-    // No maintenance -> app normal
     return const MyApp();
   }
 }
 
-// =====================================
-// 🌟 Clase MyApp (sin modificar tu flujo)
-// =====================================
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 

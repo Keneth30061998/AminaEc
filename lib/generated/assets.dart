@@ -79,6 +79,7 @@ class Assets {
   static const String providersClassReservationProvider = 'lib/src/providers/class_reservation_provider.dart';
   static const String providersCoachsProvider = 'lib/src/providers/coachs_provider.dart';
   static const String providersFirebaseStorageHelper = 'lib/src/providers/firebase_storage_helper.dart';
+  static const String providersNotificationsProvider = 'lib/src/providers/notifications_provider.dart';
   static const String providersPlansProvider = 'lib/src/providers/plans_provider.dart';
   static const String providersRemoteConfigProvider = 'lib/src/providers/remote_config_provider.dart';
   static const String providersScheduledClassProvider = 'lib/src/providers/scheduled_class_provider.dart';

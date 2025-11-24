@@ -79,30 +79,38 @@ Future<void> setupFCM() async {
     print("⚠️ Permiso de notificaciones no autorizado");
   }
 
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print("📩 Mensaje FCM recibido: ${message.notification?.title} - ${message.notification?.body}");
-    if (message.notification != null) {
-      flutterLocalNotificationsPlugin.show(
-        message.hashCode,
-        message.notification!.title ?? '',
-        message.notification!.body ?? '',
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            classReminderChannel.id,
-            classReminderChannel.name,
-            channelDescription: classReminderChannel.description,
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            icon: '@mipmap/ic_launcher',
-            color: const Color(0xFF1D1C21),
-            styleInformation: BigTextStyleInformation(message.notification!.body ?? ''),
-          ),
-          iOS: const DarwinNotificationDetails(),
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    print("📩 Mensaje FCM recibido (foreground): ${message.notification?.title} - ${message.notification?.body}");
+
+    // Extraer título y cuerpo
+    final title = message.notification?.title ?? "Notificación";
+    final body = message.notification?.body ?? "";
+
+    // Mostrar notificación local en iOS / Android
+    await flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'class_reminders',
+          'Recordatorios de Clases',
+          channelDescription: 'Canal para recordatorios de clases',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
         ),
-      );
-      print("🔔 Notificación local mostrada");
-    }
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,     // 👈 muestra alerta
+          presentBadge: true,     // 👈 actualiza badge
+          presentSound: true,     // 👈 reproduce sonido
+        ),
+      ),
+    );
+
+    print("🔔 Notificación mostrada en foreground");
   });
+
 
 }

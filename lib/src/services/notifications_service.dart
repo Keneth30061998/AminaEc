@@ -1,19 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
 import '../../globals.dart';
 
-
-// =====================================
-// 🌟 Inicialización de notificaciones locales
-// =====================================
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings androidSettings =
   AndroidInitializationSettings('@mipmap/ic_launcher');
 
+  // ⚠️ iOS: NO pedir permisos aquí, solo configurar
   const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-    requestAlertPermission: true,
-    requestBadgePermission: true,
-    requestSoundPermission: true,
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
   );
 
   const InitializationSettings initSettings = InitializationSettings(
@@ -23,6 +19,7 @@ Future<void> initializeLocalNotifications() async {
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 
+  // Crear canal para Android
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
       AndroidFlutterLocalNotificationsPlugin>()

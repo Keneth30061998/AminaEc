@@ -5,12 +5,13 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../providers/notifications_provider.dart';
 import '../../../widgets/no_data_widget.dart';
 import 'admin_start_controller.dart';
 
 class AdminStartPage extends StatelessWidget {
   final AdminStartController con = Get.put(AdminStartController());
-
+  final NotificationsProvider _notificationsProvider = NotificationsProvider();
   AdminStartPage({super.key});
 
   @override
@@ -40,6 +41,20 @@ class AdminStartPage extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             title: _appBarTitle(),
+            centerTitle: false,
+            actions: [
+              Padding(
+                padding:  EdgeInsets.symmetric(horizontal: 5),
+                child: FilledButton.tonalIcon(
+                  onPressed: () => _openGlobalNotificationDialog(context),
+                  icon: Icon(iconNotification, color: whiteLight),
+                  label: Text('Notify', style: TextStyle(color: whiteLight)),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(indigoAmina),
+                  ),
+                ),
+              ),
+            ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: TabBar(
@@ -232,6 +247,211 @@ class AdminStartPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  // ======== NUEVO SELECTOR DE EMOJI ========
+  Widget _EmojiSelector({
+    required String selectedEmoji,
+    required Function(String) onSelect,
+  }) {
+    final emojis = ["🔴","🟠","🟡","🟢","⏱️","🚴‍♂️","🚨","⏳", "🎵"];
+
+    return DropdownButton<String>(
+      value: selectedEmoji.isNotEmpty ? selectedEmoji : null,
+      hint: const Text("Emoji"),
+      items: emojis.map((e) {
+        return DropdownMenuItem(
+          value: e,
+          child: Text(e, style: GoogleFonts.poppins(fontSize: 26)),
+        );
+      }).toList(),
+      onChanged: (value) => onSelect(value!),
+    );
+  }
+  // ==========================================
+
+  void _openGlobalNotificationDialog(BuildContext context) {
+    final TextEditingController titleController = TextEditingController();
+    final TextEditingController messageController = TextEditingController();
+
+    String selectedEmoji = ""; // 👈 nuevo estado local sólo del diálogo
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: whiteLight,
+              shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Enviar Notificación',
+                      style: GoogleFonts.poppins(
+                        color: almostBlack,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Text(
+                      'Redacta el título, selecciona un emoji y escribe el mensaje.',
+                      style: GoogleFonts.poppins(
+                        color: Colors.black54,
+                        fontSize: 14,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ====== CAMPO TÍTULO + EMOJI ======
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: titleController,
+                            style: GoogleFonts.poppins(),
+                            decoration: InputDecoration(
+                              labelText: "Título",
+                              labelStyle:
+                              GoogleFonts.poppins(color: Colors.black54),
+                              prefixIcon:
+                              const Icon(Icons.title, color: Colors.black),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                const BorderSide(color: Colors.black),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _EmojiSelector(
+                          selectedEmoji: selectedEmoji,
+                          onSelect: (e) {
+                            setState(() => selectedEmoji = e);
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    TextField(
+                      controller: messageController,
+                      maxLines: 3,
+                      style: GoogleFonts.poppins(),
+                      decoration: InputDecoration(
+                        labelText: "Mensaje",
+                        labelStyle: GoogleFonts.poppins(color: Colors.black54),
+                        prefixIcon: const Icon(Icons.message_rounded,
+                            color: Colors.black),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.black),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 18, horizontal: 16),
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            "Cancelar",
+                            style: GoogleFonts.poppins(
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        ElevatedButton(
+                          onPressed: () async {
+                            String title = titleController.text.trim();
+                            String message = messageController.text.trim();
+
+                            if (title.isEmpty || selectedEmoji.isEmpty) {
+                              Get.snackbar(
+                                'Error',
+                                'Debe ingresar un título y elegir un emoji',
+                                backgroundColor: Colors.white,
+                                colorText: Colors.redAccent,
+                              );
+                              return;
+                            }
+
+                            final finalTitle = "$title $selectedEmoji";
+
+                            final res = await _notificationsProvider
+                                .sendGlobalNotification(finalTitle, message);
+
+                            if (res["success"] == true) {
+                              Get.snackbar(
+                                'Éxito 🎉',
+                                'Notificación enviada correctamente',
+                                backgroundColor: Colors.white,
+                                colorText: Colors.green,
+                              );
+                              Navigator.pop(context);
+                            } else {
+                              Get.snackbar(
+                                'Error',
+                                res["message"] ??
+                                    "No se pudo enviar la notificación",
+                                backgroundColor: Colors.white,
+                                colorText: Colors.redAccent,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: almostBlack,
+                            foregroundColor: whiteLight,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 26, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            "Enviar",
+                            style: GoogleFonts.poppins(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
