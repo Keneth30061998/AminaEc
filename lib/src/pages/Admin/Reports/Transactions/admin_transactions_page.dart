@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../utils/color.dart';
 import '../../../../utils/iconos.dart';
-import '../../../../utils/textos.dart';
 import 'admin_transactions_controller.dart';
 
 class AdminTransactionsPage extends StatefulWidget {

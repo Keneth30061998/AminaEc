@@ -39,7 +39,7 @@ void main() async {
   // Solo en iOS, ayuda a que el cuadro ATT aparezca
   // =====================================
   if (defaultTargetPlatform == TargetPlatform.iOS) {
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 5));
   }
 
   // Solicitar permiso ATT

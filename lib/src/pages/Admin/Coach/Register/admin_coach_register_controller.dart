@@ -6,7 +6,6 @@ import 'package:amina_ec/src/models/coach.dart';
 import 'package:amina_ec/src/models/schedule.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/providers/coachs_provider.dart';
-import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
