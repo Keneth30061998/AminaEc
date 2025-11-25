@@ -147,5 +147,7 @@ class Assets {
   static const String utilsIconos = 'lib/src/utils/iconos.dart';
   static const String utilsTextos = 'lib/src/utils/textos.dart';
   static const String widgetsNoDataWidget = 'lib/src/widgets/no_data_widget.dart';
+  static const String widgetsStudentAttendanceCard = 'lib/src/widgets/student_attendance_card.dart';
+  static const String widgetsStudentAttendanceTile = 'lib/src/widgets/student_attendance_tile.dart';
 
 }

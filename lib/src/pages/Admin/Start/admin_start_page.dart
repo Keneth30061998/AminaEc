@@ -8,10 +8,12 @@ import 'package:intl/intl.dart';
 import '../../../providers/notifications_provider.dart';
 import '../../../widgets/no_data_widget.dart';
 import 'admin_start_controller.dart';
+import '../../../widgets/student_attendance_card.dart';
 
 class AdminStartPage extends StatelessWidget {
   final AdminStartController con = Get.put(AdminStartController());
   final NotificationsProvider _notificationsProvider = NotificationsProvider();
+
   AdminStartPage({super.key});
 
   @override
@@ -44,13 +46,13 @@ class AdminStartPage extends StatelessWidget {
             centerTitle: false,
             actions: [
               Padding(
-                padding:  EdgeInsets.symmetric(horizontal: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: FilledButton.tonalIcon(
                   onPressed: () => _openGlobalNotificationDialog(context),
                   icon: Icon(iconNotification, color: whiteLight),
                   label: Text('Notify', style: TextStyle(color: whiteLight)),
                   style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(indigoAmina),
+                    backgroundColor: MaterialStateProperty.all(indigoAmina),
                   ),
                 ),
               ),
@@ -62,7 +64,6 @@ class AdminStartPage extends StatelessWidget {
                 indicatorColor: almostBlack,
                 labelColor: Colors.black,
                 unselectedLabelColor: Colors.black54,
-                // ✅ Actualiza el coach activo al cambiar de pestaña
                 onTap: (index) {
                   final id = con.coaches[index].id;
                   if (id != null) con.selectCoach(id);
@@ -83,71 +84,33 @@ class AdminStartPage extends StatelessWidget {
                 final coachId = coach.id!;
                 final selectedDate =
                     con.selectedDatePerCoach[coachId]?.value ?? con.today;
-                final students =
-                con.getStudentsByCoachAndDate(coachId, selectedDate);
 
                 return RefreshIndicator(
                   onRefresh: () => con.refreshAll(),
-                  child: ListView(
-                    padding: const EdgeInsets.only(top: 10),
+                  child: Column(
                     children: [
                       _dateSelector(con, coachId),
-                      const SizedBox(height: 30),
-                      if (students.isEmpty)
-                        const NoDataWidget(text: 'No hay estudiantes inscritos')
-                      else
-                        ...students.map((s) {
-                          final timeFormatted = s.classTime.substring(0, 5);
-                          final key = con.getStudentKey(s);
-                          return Obx(() {
-                            final isPresent =
-                                con.attendanceMap[key]?.value ?? false;
-                            return Card(
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                leading: CircleAvatar(
-                                  radius: 24,
-                                  backgroundImage:
-                                  NetworkImage(s.photo_url ?? ''),
-                                ),
-                                title: Text(
-                                  s.studentName,
-                                  style: GoogleFonts.montserrat(
-                                      fontWeight: FontWeight.w600),
-                                ),
-                                subtitle: Text(
-                                  'Hora: $timeFormatted  |  Máquina: ${s.bicycle}',
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                                trailing: Checkbox(
-                                  value: isPresent,
-                                  onChanged: (value) {
-                                    con.attendanceMap[key]?.value = value!;
-                                  },
-                                ),
-                              ),
-                            );
-                          });
-                        }).toList()
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: StudentAttendanceCard(
+                          coachId: coachId,
+                          date: selectedDate,
+                        ),
+                      ),
                     ],
                   ),
                 );
               }).toList(),
             ),
           ),
-          bottomNavigationBar: _bottomRegisterBar(),
         ),
       );
     });
   }
 
+  // ============================
+  // APP BAR TITLE
+  // ============================
   Widget _appBarTitle() {
     return Text(
       'Administrador',
@@ -158,6 +121,9 @@ class AdminStartPage extends StatelessWidget {
     );
   }
 
+  // ============================
+  // SELECTOR DE FECHAS
+  // ============================
   Widget _dateSelector(AdminStartController con, String coachId) {
     final dates = con.generateDateRange();
 
@@ -213,49 +179,14 @@ class AdminStartPage extends StatelessWidget {
     });
   }
 
-  Widget _bottomRegisterBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          )
-        ],
-      ),
-      child: SafeArea(
-        child: ElevatedButton.icon(
-          onPressed: () => con.confirmAttendanceRegister(),
-          icon: Icon(iconCheck),
-          label: Text(
-            'Registrar Asistencia',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: almostBlack,
-            foregroundColor: whiteLight,
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ======== NUEVO SELECTOR DE EMOJI ========
+  // ============================
+  // SELECTOR DE EMOJI
+  // ============================
   Widget _EmojiSelector({
     required String selectedEmoji,
     required Function(String) onSelect,
   }) {
-    final emojis = ["🔴","🟠","🟡","🟢","⏱️","🚴‍♂️","🚨","⏳", "🎵"];
+    final emojis = ["🔴", "🟠", "🟡", "🟢", "⏱️", "🚴‍♂️", "🚨", "⏳", "🎵"];
 
     return DropdownButton<String>(
       value: selectedEmoji.isNotEmpty ? selectedEmoji : null,
@@ -269,13 +200,15 @@ class AdminStartPage extends StatelessWidget {
       onChanged: (value) => onSelect(value!),
     );
   }
-  // ==========================================
 
+  // ============================
+  // DIALOG PARA NOTIFICACIÓN GLOBAL
+  // ============================
   void _openGlobalNotificationDialog(BuildContext context) {
     final TextEditingController titleController = TextEditingController();
     final TextEditingController messageController = TextEditingController();
 
-    String selectedEmoji = ""; // 👈 nuevo estado local sólo del diálogo
+    String selectedEmoji = "";
 
     showDialog(
       context: context,
@@ -284,9 +217,9 @@ class AdminStartPage extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
-              backgroundColor: whiteLight,
-              shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding:
                 const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
@@ -297,13 +230,12 @@ class AdminStartPage extends StatelessWidget {
                     Text(
                       'Enviar Notificación',
                       style: GoogleFonts.poppins(
-                        color: almostBlack,
+                        color: Colors.black87,
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 8),
-
                     Text(
                       'Redacta el título, selecciona un emoji y escribe el mensaje.',
                       style: GoogleFonts.poppins(
@@ -311,10 +243,8 @@ class AdminStartPage extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
-
                     const SizedBox(height: 20),
 
-                    // ====== CAMPO TÍTULO + EMOJI ======
                     Row(
                       children: [
                         Expanded(
@@ -323,17 +253,12 @@ class AdminStartPage extends StatelessWidget {
                             style: GoogleFonts.poppins(),
                             decoration: InputDecoration(
                               labelText: "Título",
-                              labelStyle:
-                              GoogleFonts.poppins(color: Colors.black54),
-                              prefixIcon:
-                              const Icon(Icons.title, color: Colors.black),
+                              labelStyle: GoogleFonts.poppins(
+                                  color: Colors.black54),
+                              prefixIcon: const Icon(Icons.title,
+                                  color: Colors.black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                const BorderSide(color: Colors.black),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: 16, horizontal: 14),
@@ -349,7 +274,6 @@ class AdminStartPage extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 15),
 
                     TextField(
@@ -358,7 +282,8 @@ class AdminStartPage extends StatelessWidget {
                       style: GoogleFonts.poppins(),
                       decoration: InputDecoration(
                         labelText: "Mensaje",
-                        labelStyle: GoogleFonts.poppins(color: Colors.black54),
+                        labelStyle:
+                        GoogleFonts.poppins(color: Colors.black54),
                         prefixIcon: const Icon(Icons.message_rounded,
                             color: Colors.black),
                         border: OutlineInputBorder(
@@ -388,9 +313,7 @@ class AdminStartPage extends StatelessWidget {
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 10),
-
                         ElevatedButton(
                           onPressed: () async {
                             String title = titleController.text.trim();
@@ -431,7 +354,7 @@ class AdminStartPage extends StatelessWidget {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: almostBlack,
-                            foregroundColor: whiteLight,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 26, vertical: 14),
                             shape: RoundedRectangleBorder(
