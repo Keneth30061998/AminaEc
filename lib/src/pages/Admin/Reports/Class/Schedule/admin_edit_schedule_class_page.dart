@@ -39,7 +39,7 @@ class AdminCoachSchedulePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: SfCalendar(
                         key: ValueKey(con.calendarRefreshTrigger.value),
-                        minDate: DateTime.now(),
+                        //minDate: DateTime.now(),
                         view: CalendarView.month,
                         dataSource: con.calendarDataSource.value,
                         onTap: (details) {

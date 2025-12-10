@@ -7,8 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../../../../models/coach.dart';
+import '../../../../models/schedule.dart';
 import '../../../../utils/color.dart';
 import '../../../../widgets/no_data_widget.dart';
+
 class _ClassCardEntry {
   final DateTime time;
   final Widget card;
@@ -117,10 +119,8 @@ class UserCoachSchedulePage extends StatelessWidget {
                   );
                 }
 
-                // Vamos a guardar una lista de objetos que contengan:
-                // - el widget card
-                // - la hora de inicio como DateTime
                 final List<_ClassCardEntry> entries = [];
+                final seenScheduleIds = <String>{};
 
                 for (final coach in con.filteredCoaches) {
                   final schedules = coach.schedules.where((s) {
@@ -135,13 +135,16 @@ class UserCoachSchedulePage extends StatelessWidget {
                     });
 
                   for (final s in schedules) {
-                    final card = _coachClassCard(coach, s, isTablet);
+                    final scheduleId = (s.id ?? '').toString();
+                    if (scheduleId.isNotEmpty && seenScheduleIds.contains(scheduleId)) continue;
+                    seenScheduleIds.add(scheduleId);
+
+                    final card = _coachClassCardWithMulti(coach, s, isTablet);
                     final time = DateTime.parse('${s.date} ${s.start_time}');
                     entries.add(_ClassCardEntry(time: time, card: card));
                   }
                 }
 
-                // ✅ Ordenamos por hora
                 entries.sort((a, b) => a.time.compareTo(b.time));
 
                 return ListView(
@@ -151,8 +154,6 @@ class UserCoachSchedulePage extends StatelessWidget {
                   children: entries.map((e) => e.card).toList(),
                 );
               }),
-
-
             ],
           ),
         ),
@@ -160,107 +161,68 @@ class UserCoachSchedulePage extends StatelessWidget {
     );
   }
 
-  // Si el coach tiene múltiples horarios en el día, se renderiza un card por horario.
-  Widget _coachCardsForCoach(Coach coach, DateTime date, bool isTablet) {
-    final schedules = coach.schedules.where((s) {
-      final sDate = DateTime.tryParse(s.date ?? '');
-      return sDate != null &&
-          sDate.year == date.year &&
-          sDate.month == date.month &&
-          sDate.day == date.day;
-    }).toList()
-      ..sort((a, b) {
-        final t1 = (a.start_time ?? '00:00').split(':');
-        final t2 = (b.start_time ?? '00:00').split(':');
-        final aMinutes = int.parse(t1[0]) * 60 + int.parse(t1[1]);
-        final bMinutes = int.parse(t2[0]) * 60 + int.parse(t2[1]);
-        return aMinutes.compareTo(bMinutes);
-      });
+  Widget _coachClassCardWithMulti(Coach coachPrincipal, Schedule schedule, bool isTablet) {
+    List<Coach> relatedCoaches = [];
 
-    // Antes de construir las tarjetas, solicitamos los contadores que aún no estén en el mapa
-    for (final s in schedules) {
-      final key = '${coach.id}-${s.date}-${s.start_time}';
-      // Solo solicitar si no existe la key para evitar múltiples requests por rebuilds
-      if (!con.occupiedBikeMap.containsKey(key)) {
-        // No await: disparamos la carga en background (se actualizará reactivamente)
-        con.fetchOccupiedCount(
-          coachId: coach.id ?? '',
-          date: s.date ?? '',
-          time: s.start_time ?? '',
-        );
+    try {
+      if (schedule.coaches is List && (schedule.coaches as List).isNotEmpty) {
+        final List<String> coachIds =
+        (schedule.coaches as List).map((e) => e.toString()).toList();
+        for (final cid in coachIds) {
+          final c = con.allCoaches.firstWhereOrNull((x) => (x.id ?? '').toString() == cid);
+          if (c != null) relatedCoaches.add(c);
+        }
       }
+    } catch (e) {
+      print('⚠️ parsing coaches for schedule failed: $e');
     }
 
-    return Column(
-      children: schedules.map((s) {
-        final theme = (s.class_theme?.isNotEmpty == true) ? s.class_theme! : 'Clase';
-        final formattedTime = _formatTime(s.start_time);
-        final key = '${coach.id}-${s.date}-${s.start_time}';
-        const total = 18; // bicicletas totales
+    if (relatedCoaches.isEmpty) relatedCoaches = [coachPrincipal];
 
-        // Usamos Obx para que el badge se actualice reactivamente cuando cambia el mapa
-        return Obx(() {
-          final occupied = con.occupiedBikeMap[key] ?? 0;
-
-          return _AnimatedClassCard(
-            coachName: coach.user?.name ?? '',
-            coachImageUrl: coach.user?.photo_url ?? '',
-            classTheme: theme,
-            duration: '$formattedTime — ${_formatTime(s.end_time)}',
-            locationName: coach.hobby?.isNotEmpty == true ? coach.hobby! : 'Studio',
-            occupiedCount: occupied,
-            totalCount: total,
-            isTablet: isTablet,
-            onTap: () {
-              con.goToUserCoachReservePage(
-                coachId: coach.id ?? '',
-                classTime: s.start_time ?? '00:00:00',
-                coachName: coach.user?.name ?? '',
-                classTheme: theme,
-              );
-            },
-            heroTag: '${coach.id}_${s.date}_${s.start_time}',
-          );
-        });
-      }).toList(),
-    );
-  }
-  Widget _coachClassCard(Coach coach, schedule, bool isTablet) {
     final theme = (schedule.class_theme?.isNotEmpty == true) ? schedule.class_theme! : 'Clase';
     final formattedTime = _formatTime(schedule.start_time);
-    final key = '${coach.id}-${schedule.date}-${schedule.start_time}';
+    final key = '${relatedCoaches.first.id}-${schedule.date}-${schedule.start_time}';
     const total = 18;
 
-    // Dispara carga si falta
     if (!con.occupiedBikeMap.containsKey(key)) {
       con.fetchOccupiedCount(
-        coachId: coach.id ?? '',
+        coachId: relatedCoaches.first.id ?? '',
         date: schedule.date ?? '',
         time: schedule.start_time ?? '',
       );
     }
 
+    final avatarWidget = PremiumAnimatedAvatar(
+      coaches: relatedCoaches,
+      isTablet: isTablet,
+      size: isTablet ? 86 : 68,
+    );
+
     return Obx(() {
       final occupied = con.occupiedBikeMap[key] ?? 0;
 
+      final coachNames = relatedCoaches.take(2).map((c) => c.user?.name ?? '').where((n) => n.isNotEmpty).toList();
+      final title = coachNames.isNotEmpty ? 'Rueda con ${coachNames.join(' & ')}' : 'Rueda';
+
       return _AnimatedClassCard(
-        coachName: coach.user?.name ?? '',
-        coachImageUrl: coach.user?.photo_url ?? '',
+        avatar: avatarWidget,
+        coachName: title,
+        coachImageUrl: relatedCoaches.first.user?.photo_url ?? '',
         classTheme: theme,
         duration: '$formattedTime — ${_formatTime(schedule.end_time)}',
-        locationName: coach.hobby?.isNotEmpty == true ? coach.hobby! : 'Studio',
+        locationName: coachPrincipal.hobby?.isNotEmpty == true ? coachPrincipal.hobby! : 'Studio',
         occupiedCount: occupied,
         totalCount: total,
         isTablet: isTablet,
         onTap: () {
           con.goToUserCoachReservePage(
-            coachId: coach.id ?? '',
+            coachId: relatedCoaches.first.id ?? '',
             classTime: schedule.start_time ?? '00:00:00',
-            coachName: coach.user?.name ?? '',
+            coachName: relatedCoaches.first.user?.name ?? '',
             classTheme: theme,
           );
         },
-        heroTag: '${coach.id}_${schedule.date}_${schedule.start_time}',
+        heroTag: '${relatedCoaches.first.id}_${schedule.date}_${schedule.start_time}',
       );
     });
   }
@@ -272,7 +234,138 @@ class UserCoachSchedulePage extends StatelessWidget {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Animated avatar para 2 coaches (flip cada 3s)
+// -----------------------------------------------------------------------------
+class PremiumAnimatedAvatar extends StatefulWidget {
+  final List<Coach> coaches;
+  final bool isTablet;
+  final double size;
+
+  const PremiumAnimatedAvatar({
+    super.key,
+    required this.coaches,
+    required this.isTablet,
+    required this.size,
+  });
+
+  @override
+  State<PremiumAnimatedAvatar> createState() => _PremiumAnimatedAvatarState();
+}
+
+class _PremiumAnimatedAvatarState extends State<PremiumAnimatedAvatar> {
+  bool _flipped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 3000), _swapAvatarsLoop);
+  }
+
+  void _swapAvatarsLoop() {
+    if (!mounted) return;
+    setState(() {
+      _flipped = !_flipped;
+    });
+    Future.delayed(const Duration(milliseconds: 3000), _swapAvatarsLoop);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final overlap = widget.size * 0.3;
+    final coaches = widget.coaches.take(2).toList();
+
+    if (coaches.length == 1) {
+      final c = coaches.first;
+      final url = c.user?.photo_url ?? '';
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          color: Colors.grey.shade100,
+          child: url.isNotEmpty
+              ? Image.network(url, fit: BoxFit.cover)
+              : Icon(Icons.person, size: widget.size * 0.55, color: Colors.grey.shade500),
+        ),
+      );
+    }
+
+    final firstCoach = _flipped ? coaches[1] : coaches[0];
+    final secondCoach = _flipped ? coaches[0] : coaches[1];
+
+    return SizedBox(
+      width: widget.size + overlap,
+      height: widget.size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: overlap,
+            top: 0,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 600),
+              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+              child: Container(
+                key: ValueKey(secondCoach.id),
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 3,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                  color: Colors.grey.shade200,
+                ),
+                child: (secondCoach.user?.photo_url ?? '').isNotEmpty
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(secondCoach.user!.photo_url!, fit: BoxFit.cover),
+                )
+                    : Icon(Icons.person, size: widget.size * 0.55, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 600),
+              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+              child: Container(
+                key: ValueKey(firstCoach.id),
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white, width: 2),
+                  color: Colors.grey.shade100,
+                ),
+                child: (firstCoach.user?.photo_url ?? '').isNotEmpty
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(firstCoach.user!.photo_url!, fit: BoxFit.cover),
+                )
+                    : Icon(Icons.person, size: widget.size * 0.55, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Animated card (acepta avatar Widget para 1 o 2 fotos)
+// -----------------------------------------------------------------------------
 class _AnimatedClassCard extends StatefulWidget {
+  final Widget avatar;
   final String coachName;
   final String coachImageUrl;
   final String classTheme;
@@ -286,6 +379,7 @@ class _AnimatedClassCard extends StatefulWidget {
 
   const _AnimatedClassCard({
     super.key,
+    required this.avatar,
     required this.coachName,
     required this.coachImageUrl,
     required this.classTheme,
@@ -318,7 +412,6 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
     _fade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
-    // arrancar la animación de entrada
     _animController.forward();
   }
 
@@ -328,12 +421,24 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
     super.dispose();
   }
 
+  String _prettyDateFromHeroTag(String heroTag) {
+    final parts = heroTag.split('_');
+    if (parts.length >= 3) {
+      final dateIso = parts[1];
+      try {
+        final d = DateTime.parse(dateIso);
+        return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+      } catch (_) {
+        return dateIso;
+      }
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = widget.isTablet ? 640.0 : double.infinity;
 
-    // blancos diferenciados: colorBackgroundBox para internal card, y fondo blanco para page.
-    // Sombra menos difuminada (más definida) parecida al calendario
     return SlideTransition(
       position: _slide,
       child: FadeTransition(
@@ -352,10 +457,9 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
               margin: const EdgeInsets.symmetric(vertical: 10),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white, // card blanco principal
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  // sombra más definida, menos difuminada, similar al calendario
                   BoxShadow(
                     color: Colors.black26,
                     blurRadius: 3,
@@ -366,43 +470,27 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
               ),
               child: Row(
                 children: [
-                  // Imagen circular
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: widget.isTablet ? 86 : 68,
-                      height: widget.isTablet ? 86 : 68,
-                      color: Colors.grey.shade100, // ligero contraste con el blanco de la card
-                      child: widget.coachImageUrl.isNotEmpty
-                          ? Image.network(widget.coachImageUrl, fit: BoxFit.cover)
-                          : Icon(Icons.person, size: widget.isTablet ? 40 : 36, color: Colors.grey.shade500),
-                    ),
-                  ),
+                  widget.avatar,
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Fecha (arriba)
                         Text(
-                          // Parseamos fecha humana (ISO yyyy-mm-dd) a dd/mm/yyyy
                           _prettyDateFromHeroTag(widget.heroTag),
                           style: TextStyle(
                             fontSize: widget.isTablet ? 14 : 12,
                             color: Colors.grey.shade600,
                           ),
                         ),
-
                         const SizedBox(height: 6),
-                        // Nombre del coach con Hero (opción 3)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Hero(
-                                tag: widget.heroTag, // tag único por coach+date+time
+                                tag: widget.heroTag,
                                 flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
-                                  // transición sutil para texto
                                   return DefaultTextStyle(
                                     style: TextStyle(
                                       fontSize: widget.isTablet ? 22 : 18,
@@ -413,7 +501,7 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                                   );
                                 },
                                 child: Text(
-                                  'Rueda con ${widget.coachName}',
+                                  widget.coachName,
                                   style: TextStyle(
                                     fontSize: widget.isTablet ? 20 : 16,
                                     fontWeight: FontWeight.w800,
@@ -425,7 +513,6 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 6),
                         Text(
                           widget.classTheme,
@@ -435,7 +522,6 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                             color: Colors.grey.shade800,
                           ),
                         ),
-
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -447,8 +533,6 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                                 color: Colors.grey.shade700,
                               ),
                             ),
-
-                            // 🔥 CONTADOR DE BICICLETAS (ocupadas/total)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
@@ -470,12 +554,10 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                                 ],
                               ),
                             ),
-
                             const SizedBox(width: 8),
                             Icon(Icons.chevron_right, color: Colors.grey.shade600),
                           ],
                         ),
-
                       ],
                     ),
                   ),
@@ -486,20 +568,5 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
         ),
       ),
     );
-  }
-
-  // Extrae fecha legible desde heroTag que armamos en la page: '${coach.id}_${s.date}_${s.start_time}'
-  String _prettyDateFromHeroTag(String heroTag) {
-    final parts = heroTag.split('_');
-    if (parts.length >= 3) {
-      final dateIso = parts[1]; // yyyy-mm-dd
-      try {
-        final d = DateTime.parse(dateIso);
-        return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-      } catch (_) {
-        return dateIso;
-      }
-    }
-    return '';
   }
 }

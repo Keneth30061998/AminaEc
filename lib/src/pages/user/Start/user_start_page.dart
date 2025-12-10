@@ -449,7 +449,7 @@ class UserStartPage extends StatelessWidget {
   static const String _ridesTerms = '''
 En AMINA, valoramos tu tiempo y compromiso con nuestras clases. Reconocemos que a veces surgen imprevistos que requieren cambios en los horarios de clases. Con el fin de brindar flexibilidad y mantener la eficiencia en nuestra programación, hemos establecido la siguiente política de cancelación.
 
-Cancelación con 12 horas de anticipación: tienen derecho a cancelar una clase sin penalización si lo hacen con al menos 12 horas de anticipación antes de la hora de inicio programada.
+Cancelación con 12 horas de ANTICIPACIÓN: tienen derecho a cancelar una clase sin penalización si lo hacen con al menos 12 horas de anticipación antes de la hora de inicio programada.
 
 Proceso de Cancelación: En la pantalla de inicio se mostrarán las clases que el usuario agendó. En la sección derecha encontrará un botón que da paso al proceso de reagendamiento de clases.''';
 }

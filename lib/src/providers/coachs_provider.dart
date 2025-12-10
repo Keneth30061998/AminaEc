@@ -15,7 +15,9 @@ class CoachProvider extends GetConnect {
   User userSession = User.fromJson(GetStorage().read('user') ?? {});
   String url = '${Environment.API_URL}api/coachs';
 
-  // Registrar coach con imagen y horarios
+  // ==========================================================
+  // REGISTER COACH WITH IMAGE
+  // ==========================================================
   Future<Stream> registerCoach({
     required User user,
     required Coach coach,
@@ -23,13 +25,21 @@ class CoachProvider extends GetConnect {
     required File image,
   }) async {
 
+    print("\n==============================================");
+    print("🟦 [registerCoach] Iniciando registro de coach");
+    print("==============================================");
 
-    Uri uri =
-    Uri.parse('${Environment.API_URL_OLD}/api/coachs/createWithImage');
+    Uri uri = Uri.parse('${Environment.API_URL_OLD}/api/coachs/createWithImage');
+    print("📡 URL: $uri");
+
     final request = http.MultipartRequest('POST', uri);
-
     request.headers['Authorization'] = userSession.session_token ?? '';
 
+    print("📋 Headers enviados:");
+    print(request.headers);
+
+    // Imagen
+    print("🖼 Imagen adjunta: ${image.path}");
     request.files.add(http.MultipartFile(
       'image',
       http.ByteStream(image.openRead().cast()),
@@ -37,97 +47,138 @@ class CoachProvider extends GetConnect {
       filename: basename(image.path),
     ));
 
+    // Body
     request.fields['user'] = json.encode(user.toJson());
     request.fields['coach'] = json.encode(coach.toJson());
-    // <-- Aquí pones el print para ver el contenido de los schedules
-    print('📤 Schedules JSON: ${json.encode(schedule.map((s) => s.toJson()).toList())}');
+
+    print("📤 Schedules enviados:");
+    for (var s in schedule) {
+      print("  → ${s.toJson()}");
+    }
+
     request.fields['schedule'] =
         json.encode(schedule.map((s) => s.toJson()).toList());
-    // Antes de enviar la request
-    print('📤 Request fields:');
-    request.fields.forEach((key, value) {
-      print('$key: $value');
-    });
+
+    print("📦 Campos enviados en Multipart:");
+    request.fields.forEach((k, v) => print("  $k: $v"));
 
     final response = await request.send();
-    //print('📥 Respuesta recibida en registerCoach(), statusCode=${response.statusCode}');
+
+    print("📥 Respuesta received statusCode=${response.statusCode}");
+
     return response.stream.transform(utf8.decoder);
   }
 
-  // Obtener todos los coaches
+  // ==========================================================
+  // GET ALL COACHS
+  // ==========================================================
   Future<List<Coach>> getAll() async {
-    //print('📌 [CoachProvider] → Iniciando getAll()');
-    final response = await get('$url/getAll', headers: {
+    print("\n==============================================");
+    print("🟧 [getAll] Cargando coaches desde API");
+    print("==============================================");
+
+    final endpoint = '$url/getAll';
+    print("📡 URL: $endpoint");
+
+    final response = await get(endpoint, headers: {
       'Content-Type': 'application/json',
       'Authorization': userSession.session_token ?? ''
     });
 
-    //print('📥 Respuesta cruda en getAll(): status=${response.statusCode}, body=${response.body}');
+    print("📥 StatusCode: ${response.statusCode}");
+    print("📥 Body crudo: ${response.body}");
 
     if (response.statusCode == 401) {
-      //print('❌ No autorizado en getAll()');
+      print("❌ No autorizado para obtener coaches");
       return [];
     }
 
     try {
       final coaches = await compute(_parseCoaches, response.body);
-      //print('📊 Coaches obtenidos: ${coaches.length}');
+      print("📌 Coaches parseados: ${coaches.length}");
       return coaches;
     } catch (e) {
-      //print('❌ Error parsing coaches: $e');
+      print("❌ Error parseando coaches: $e");
       return [];
     }
   }
 
-  // Función para parsear en background
   static List<Coach> _parseCoaches(dynamic responseBody) {
-    //print('🔄 Parseando coaches en _parseCoaches()');
+    print("🔄 [parseCoaches] Procesando coaches...");
+
     Map<String, dynamic> body;
-    if (responseBody is Map<String, dynamic>) {
-      body = responseBody;
-    } else if (responseBody is String) {
-      body = json.decode(responseBody);
-    } else {
-      body = {};
+
+    try {
+      if (responseBody is Map<String, dynamic>) {
+        body = responseBody;
+      } else if (responseBody is String) {
+        body = json.decode(responseBody);
+      } else {
+        body = {};
+      }
+    } catch (e) {
+      print("❌ Error en JSON decode: $e");
+      return [];
     }
 
     final List<dynamic> list = body['data'] ?? [];
-    //print('📊 Cantidad de coaches en JSON: ${list.length}');
+    print("📊 Total coaches encontrados: ${list.length}");
+
     return Coach.fromJsonList(list);
   }
 
-  // Eliminar coach
+  // ==========================================================
+  // DELETE COACH
+  // ==========================================================
   Future<http.Response> deleteCoach(String id) async {
-    //print('📌 [CoachProvider] → Iniciando deleteCoach($id)');
+    print("\n==============================================");
+    print("🟥 [deleteCoach] Eliminando coach ID: $id");
+    print("==============================================");
+
+    final endpoint = '$url/delete/$id';
+    print("📡 URL: $endpoint");
+
     final res = await http.delete(
-      Uri.parse('$url/delete/$id'),
+      Uri.parse(endpoint),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': userSession.session_token ?? ''
       },
     );
 
-    //print('📥 Respuesta deleteCoach: status=${res.statusCode}, body=${res.body}');
+    print("📥 StatusCode: ${res.statusCode}");
+    print("📥 Respuesta: ${res.body}");
+
     return res;
   }
 
-  // Actualizar coach sin imagen
+  // ==========================================================
+  // UPDATE COACH WITHOUT IMAGE
+  // ==========================================================
   Future<http.Response> updateWithoutImage({
     required User user,
     required Coach coach,
     required List<Schedule> schedules,
   }) async {
-    //print('📌 [CoachProvider] → Iniciando updateWithoutImage()');
+
+    print("\n=======================================================");
+    print("🟪 [updateWithoutImage] Actualizando coach SIN imagen");
+    print("=======================================================\n");
+
+    final endpoint = '$url/updateWithoutImage';
+    print("📡 URL: $endpoint");
+
     final body = {
       'user': user.toJson(),
       'coach': coach.toJson(),
       'schedule': schedules.map((s) => s.toJson()).toList(),
     };
 
-    //print('📤 Body enviado: $body');
+    print("📤 Body JSON enviado:");
+    print(json.encode(body));
 
     final response = await http.put(
-      Uri.parse('$url/updateWithoutImage'),
+      Uri.parse(endpoint),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': userSession.session_token ?? '',
@@ -135,29 +186,36 @@ class CoachProvider extends GetConnect {
       body: json.encode(body),
     );
 
-    //print('📥 Respuesta updateWithoutImage: status=${response.statusCode}, body=${response.body}');
+    print("📥 StatusCode: ${response.statusCode}");
+    print("📥 Body recibido: ${response.body}");
+
     return response;
   }
 
-  // Actualizar coach con imagen
+  // ==========================================================
+  // UPDATE COACH WITH IMAGE
+  // ==========================================================
   Future<Stream> updateWithImage({
     required User user,
     required Coach coach,
     required List<Schedule> schedules,
     required File image,
   }) async {
-    //print('📌 [CoachProvider] → Iniciando updateWithImage()');
-    //print('📤 User: ${user.toJson()}');
-    //print('📤 Coach: ${coach.toJson()}');
-    //print('📤 Schedule: ${schedules.map((s) => s.toJson()).toList()}');
-    //print('🖼 Imagen: ${image.path}');
 
-    Uri uri =
-    Uri.parse('${Environment.API_URL_OLD}/api/coachs/updateWithImage');
+    print("\n=======================================================");
+    print("🟦 [updateWithImage] Actualizando coach CON imagen");
+    print("=======================================================\n");
+
+    Uri uri = Uri.parse('${Environment.API_URL_OLD}/api/coachs/updateWithImage');
+    print("📡 URL: $uri");
+
     final request = http.MultipartRequest('PUT', uri);
-
     request.headers['Authorization'] = userSession.session_token ?? '';
 
+    print("📋 Headers:");
+    print(request.headers);
+
+    print("🖼 Imagen: ${image.path}");
     request.files.add(http.MultipartFile(
       'image',
       http.ByteStream(image.openRead().cast()),
@@ -170,24 +228,39 @@ class CoachProvider extends GetConnect {
     request.fields['schedule'] =
         json.encode(schedules.map((s) => s.toJson()).toList());
 
+    print("📤 Campos enviados:");
+    request.fields.forEach((k, v) => print("  $k: $v"));
+
     final response = await request.send();
-    //print('📥 Respuesta updateWithImage: statusCode=${response.statusCode}');
+
+    print("📥 StatusCode: ${response.statusCode}");
+
     return response.stream.transform(utf8.decoder);
   }
 
-  // Actualizar horarios
+  // ==========================================================
+  // UPDATE SCHEDULE
+  // ==========================================================
   Future<http.Response> updateSchedule(
       String coachId, List<Schedule> schedules) async {
-    //print('📌 [CoachProvider] → Iniciando updateSchedule($coachId)');
+
+    print("\n==============================================");
+    print("🟩 [updateSchedule] Actualizando horario");
+    print("==============================================");
+
+    final endpoint = '$url/updateSchedule';
+    print("📡 URL: $endpoint");
+
     final body = {
       'id_user': coachId,
       'schedule': schedules.map((e) => e.toJson()).toList(),
     };
 
-    //print('📤 Body enviado: $body');
+    print("📤 Body enviado a backend:");
+    print(json.encode(body));
 
     final response = await http.put(
-      Uri.parse('$url/updateSchedule'),
+      Uri.parse(endpoint),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': userSession.session_token ?? '',
@@ -195,19 +268,35 @@ class CoachProvider extends GetConnect {
       body: json.encode(body),
     );
 
-    //print('📥 Respuesta updateSchedule: status=${response.statusCode}, body=${response.body}');
+    print("📥 StatusCode: ${response.statusCode}");
+    print("📥 Body: ${response.body}");
+
     return response;
   }
 
+  // ==========================================================
+  // CHANGE STATE
+  // ==========================================================
   Future<http.Response> setState(String id, int state) async {
+    print("\n==============================================");
+    print("🟦 [setState] Cambiando estado del coach");
+    print("==============================================");
+
+    final endpoint = '$url/setState/$id';
+    print("📡 URL: $endpoint");
+
     final response = await http.put(
-      Uri.parse('$url/setState/$id'),
+      Uri.parse(endpoint),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': userSession.session_token ?? ''
       },
       body: json.encode({'state': state}),
     );
+
+    print("📥 StatusCode: ${response.statusCode}");
+    print("📥 Body: ${response.body}");
+
     return response;
   }
 }

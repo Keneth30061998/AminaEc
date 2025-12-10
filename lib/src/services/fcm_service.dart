@@ -14,7 +14,7 @@ Future<void> sendTokenToServer(String token) async {
   if (userSession.id != null && token.isNotEmpty) {
     try {
       final response = await http.post(
-        Uri.parse('https://api.pruebasinventario.com/api/notifications/token'),
+        Uri.parse('https://apiv1.pruebasinventario.com/api/notifications/token'),
         headers: {'Content-Type': 'application/json'},
         body: '{"user_id": ${userSession.id}, "token": "$token"}',
       );

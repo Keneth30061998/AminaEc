@@ -47,6 +47,8 @@ class Assets {
   static const String listAdminPlanListPage = 'lib/src/pages/Admin/Services/Plan/List/admin_plan_list_page.dart';
   static const String listAdminSponsorListController = 'lib/src/pages/Admin/Services/Sponsor/List/admin_sponsor_list_controller.dart';
   static const String listAdminSponsorListPage = 'lib/src/pages/Admin/Services/Sponsor/List/admin_sponsor_list_page.dart';
+  static const String listCoachSponsorListController = 'lib/src/pages/Coach/Sponsor/list/coach_sponsor_list_controller.dart';
+  static const String listCoachSponsorListPage = 'lib/src/pages/Coach/Sponsor/list/coach_sponsor_list_page.dart';
   static const String listUserCoachListController = 'lib/src/pages/user/Coach/List/user_coach_list_controller.dart';
   static const String listUserCoachListPage = 'lib/src/pages/user/Coach/List/user_coach_list_page.dart';
   static const String listUserPlanListController = 'lib/src/pages/user/Plan/List/user_plan_list_controller.dart';

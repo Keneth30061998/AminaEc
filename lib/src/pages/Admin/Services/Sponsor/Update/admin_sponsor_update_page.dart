@@ -41,8 +41,12 @@ class AdminSponsorUpdatePage extends StatelessWidget {
               const SizedBox(height: 10),
 
               _prioritySelector(),
-
               const SizedBox(height: 20),
+
+              /// 🔥 NUEVO: selector de target
+              _targetSelector(),
+              const SizedBox(height: 20),
+
               _buttonUpdate(context),
             ],
           ),
@@ -133,6 +137,39 @@ class AdminSponsorUpdatePage extends StatelessWidget {
       ),
       selected: selected,
       onSelected: (_) => con.priority.value = value,
+      selectedColor: indigoAmina,
+      backgroundColor: Colors.grey[200],
+    );
+  }
+
+  /// 🔥 SELECTOR DE TARGET (igual estilo que priority)
+  Widget _targetSelector() {
+    return Obx(
+          () => Row(
+        children: [
+          _targetChip("student", "Estudiantes"),
+          const SizedBox(width: 10),
+          _targetChip("coach", "Coaches"),
+          const SizedBox(width: 10),
+          _targetChip("both", "Ambos"),
+        ],
+      ),
+    );
+  }
+
+  Widget _targetChip(String value, String label) {
+    final selected = con.target.value == value;
+
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: GoogleFonts.poppins(
+          color: selected ? Colors.white : Colors.black,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      selected: selected,
+      onSelected: (_) => con.target.value = value,
       selectedColor: indigoAmina,
       backgroundColor: Colors.grey[200],
     );

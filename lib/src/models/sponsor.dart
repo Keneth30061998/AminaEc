@@ -9,7 +9,8 @@ class Sponsor {
   String? name;
   String? description;
   String? image;
-  int? priority; // 1: grande, 2: mediana, 3: pequeña
+  int? priority; // tamaño del card
+  String? target; // 👈 NEW ('coach' | 'student' | 'both')
 
   Sponsor({
     this.id,
@@ -17,6 +18,7 @@ class Sponsor {
     this.description,
     this.image,
     this.priority,
+    this.target,
   });
 
   factory Sponsor.fromJson(Map<String, dynamic> json) => Sponsor(
@@ -27,6 +29,7 @@ class Sponsor {
     priority: json['priority'] is int
         ? json['priority']
         : int.tryParse(json['priority']?.toString() ?? '3') ?? 3,
+    target: json['target'] ?? 'both',
   );
 
   static List<Sponsor> fromJsonList(List<dynamic> jsonList) {
@@ -43,5 +46,6 @@ class Sponsor {
     "description": description,
     "image": image,
     "priority": priority,
+    "target": target ?? 'both',
   };
 }

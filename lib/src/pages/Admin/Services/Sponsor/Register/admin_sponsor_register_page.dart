@@ -39,6 +39,8 @@ class AdminSponsorRegisterPage extends StatelessWidget {
               const SizedBox(height: 4),
               _prioritySelector(),
               const SizedBox(height: 12),
+              _targetSelector(), // 🔥 NUEVO
+              const SizedBox(height: 12),
               _imagePicker(context),
               const SizedBox(height: 28),
               _submitButton(),
@@ -75,7 +77,7 @@ class AdminSponsorRegisterPage extends StatelessWidget {
     );
   }
 
-  // TEXT FIELD estilo RegisterPage
+  // TEXT FIELD
   Widget _textField(String label, TextEditingController controller, IconData icon,
       {int maxLines = 1}) {
     return Container(
@@ -99,7 +101,7 @@ class AdminSponsorRegisterPage extends StatelessWidget {
     );
   }
 
-  // PRIORIDAD (Grande / Mediana / Pequeña)
+  // PRIORIDAD
   Widget _prioritySelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,12 +136,50 @@ class AdminSponsorRegisterPage extends StatelessWidget {
         onSelected: (_) => controller.priority.value = value,
         backgroundColor: colorBackgroundBox,
         elevation: controller.priority.value == value ? 4 : 0,
-        pressElevation: 0,
       );
     });
   }
 
-  // IMAGE PICKER estilo moderno
+  // 🔥 SELECTOR DE TARGET
+  Widget _targetSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Dirigido a",
+          style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black38),
+        ),
+        const SizedBox(height: 8),
+        Obx(() {
+          return Row(
+            children: [
+              _targetChip("student", "Estudiantes"),
+              const SizedBox(width: 10),
+              _targetChip("coach", "Coaches"),
+              const SizedBox(width: 10),
+              _targetChip("both", "Ambos"),
+            ],
+          );
+        })
+      ],
+    );
+  }
+
+  Widget _targetChip(String value, String label) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: controller.target.value == value,
+      labelStyle: GoogleFonts.poppins(
+        color: controller.target.value == value ? Colors.white : almostBlack,
+      ),
+      selectedColor: indigoAmina,
+      onSelected: (_) => controller.target.value = value,
+      backgroundColor: colorBackgroundBox,
+      elevation: controller.target.value == value ? 4 : 0,
+    );
+  }
+
+  // IMAGE PICKER
   Widget _imagePicker(BuildContext context) {
     return Obx(() {
       return GestureDetector(
@@ -181,7 +221,7 @@ class AdminSponsorRegisterPage extends StatelessWidget {
     });
   }
 
-  // BOTÓN DE REGISTRO estilo RegisterPage
+  // BOTÓN
   Widget _submitButton() {
     return SizedBox(
       width: double.infinity,

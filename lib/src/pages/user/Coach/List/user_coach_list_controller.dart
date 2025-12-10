@@ -1,4 +1,3 @@
-// File: user_coach_schedule_controller.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,10 +23,10 @@ class UserCoachScheduleController extends GetxController {
 
   Timer? _midnightTimer;
 
-  // ✅ Contador de bicicletas ocupadas reactivo
+  // Contador reactivo de bicicletas ocupadas
   final occupiedBikeMap = <String, int>{}.obs;
 
-  // Mapa de colores persistentes
+  // Colores persistentes por coach
   final Map<String, Color> _coachColors = {};
   final List<Color> _palette = [
     Colors.blue,
@@ -62,7 +61,7 @@ class UserCoachScheduleController extends GetxController {
     });
     SocketService().on('coach:delete', (_) => CoachEvents.to.notifyCoachesUpdated());
 
-    // ✅ Socket en tiempo real para actualizar contador de bicicletas
+    // Actualización en tiempo real del contador
     SocketService().on('reservation:update', (data) {
       if (data is Map) {
         fetchOccupiedCount(
@@ -78,9 +77,12 @@ class UserCoachScheduleController extends GetxController {
     try {
       final list = await _provider.getAll();
       allCoaches.value = list;
+
       _filterCoachesByDate(selectedDate.value);
       _updateCalendar();
-    } catch (_) {}
+    } catch (e, st) {
+      print('❌ Error loadCoaches: $e\n$st');
+    }
   }
 
   void selectDate(DateTime date) {
@@ -100,13 +102,27 @@ class UserCoachScheduleController extends GetxController {
     }).toList();
   }
 
+  Coach? _findCoachById(String id) {
+    try {
+      return allCoaches.firstWhere((c) => (c.id ?? '').toString() == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // 🔥 Construcción de calendario con soporte para clases de 1 o 2 coaches
   void _updateCalendar() {
     final appointments = <Appointment>[];
+    final seenSchedules = <String>{};
 
     for (final coach in allCoaches) {
       final coachColor = _assignColor(coach.id ?? '');
 
       for (final s in coach.schedules) {
+        final scheduleId = (s.id ?? '').toString();
+        if (scheduleId.isNotEmpty && seenSchedules.contains(scheduleId)) continue;
+        seenSchedules.add(scheduleId);
+
         final date = DateTime.tryParse(s.date ?? '');
         if (date == null) continue;
 
@@ -114,11 +130,35 @@ class UserCoachScheduleController extends GetxController {
         final end = _parseTime(date, s.end_time);
         final theme = (s.class_theme?.trim().isNotEmpty == true) ? s.class_theme! : 'Clase';
 
+        // EXTRAER COACHES: (corrección clave) -------------------------------
+        final List<dynamic> coachIds =
+        List<dynamic>.from(s.coaches ?? []); // <-- 💙 FIX DEFINITIVO
+
+        String subject;
+        if (coachIds.isEmpty) {
+          subject = "${coach.user?.name ?? 'Coach'} - $theme";
+        } else {
+          // buscar nombres
+          final names = coachIds.map((cid) {
+            final c = _findCoachById(cid.toString());
+            return c?.user?.name ?? '';
+          }).where((n) => n.isNotEmpty).toList();
+
+          if (names.isEmpty) {
+            subject = "${coach.user?.name ?? 'Coach'} - $theme";
+          } else if (names.length == 1) {
+            subject = "${names.first} - $theme";
+          } else {
+            subject = "${names.join(' & ')} - $theme";
+          }
+        }
+        //------------------------------------------------------------------
+
         appointments.add(
           Appointment(
             startTime: start,
             endTime: end,
-            subject: "${coach.user?.name ?? 'Coach'} - $theme",
+            subject: subject,
             color: coachColor,
             isAllDay: false,
           ),
@@ -127,7 +167,6 @@ class UserCoachScheduleController extends GetxController {
     }
 
     calendarDataSource.value = ScheduleDataSource.fromAppointments(appointments);
-
     calendarRefreshTrigger.value++;
     calendarDataSource.refresh();
   }
@@ -183,7 +222,7 @@ class UserCoachScheduleController extends GetxController {
     super.onClose();
   }
 
-  // ✅ NUEVO: obtiene y guarda bicicletas ocupadas en el mapa reactivo
+  // contador de bicicletas ocupadas
   Future<void> fetchOccupiedCount({
     required String coachId,
     required String date,

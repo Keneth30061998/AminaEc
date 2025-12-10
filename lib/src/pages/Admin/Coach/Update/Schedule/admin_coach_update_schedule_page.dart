@@ -91,6 +91,9 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
                       schedule: item,
                       onDelete: () =>
                           con.removeSchedule(con.selectedSchedules.indexOf(item)),
+                      onEditSecondCoach: () =>
+                          con.openSecondCoachSelector(con.selectedSchedules.indexOf(item)),
+                      secondCoachName: _secondCoachNameForSchedule(item, con),
                     )),
                   ];
                 }).toList(),
@@ -135,16 +138,30 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
     final fullDateTime = DateTime.parse('2000-01-01 $timeStr');
     return DateFormat.Hm().format(fullDateTime);
   }
+
+  // obtiene el nombre del segundo coach (si existe)
+  String? _secondCoachNameForSchedule(dynamic schedule, AdminCoachUpdateScheduleController con) {
+    if (schedule.coaches != null && schedule.coaches is List && schedule.coaches.length >= 2) {
+      final id = schedule.coaches[1] as int?;
+      final name = con.coachesNameById[id];
+      return name ?? 'Coach #$id';
+    }
+    return null;
+  }
 }
 
 class _ScheduleCard extends StatelessWidget {
   final dynamic schedule;
   final VoidCallback onDelete;
+  final VoidCallback onEditSecondCoach;
+  final String? secondCoachName;
 
   const _ScheduleCard({
     super.key,
     required this.schedule,
     required this.onDelete,
+    required this.onEditSecondCoach,
+    required this.secondCoachName,
   });
 
   @override
@@ -164,43 +181,72 @@ class _ScheduleCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(DateTime.parse(schedule.date!)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      schedule.class_theme ?? 'Clase',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: almostBlack,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${formatTime(schedule.start_time!)} — ${formatTime(schedule.end_time!)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.person_add_alt_1_outlined, color: Colors.blueAccent),
+                    tooltip: 'Agregar/Editar segundo coach',
+                    onPressed: onEditSecondCoach,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Si tiene segundo coach mostrar su nombre debajo de la fila principal
+          if (secondCoachName != null) ...[
+            const SizedBox(height: 8),
+            Row(
               children: [
-                Text(
-                  DateFormat('dd/MM/yyyy').format(DateTime.parse(schedule.date!)),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  schedule.class_theme ?? 'Clase',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: almostBlack,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${formatTime(schedule.start_time!)} — ${formatTime(schedule.end_time!)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade700,
+                const Icon(Icons.people, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Segundo coach: $secondCoachName',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade800, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.redAccent),
-            onPressed: onDelete,
-          ),
+            )
+          ],
         ],
       ),
     );

@@ -65,6 +65,7 @@ class UserCoachReserveController extends GetxController {
   }
 
   Future<void> reserveClass() async {
+    // 1️⃣ Validaciones iniciales
     if (totalRides.value <= 0) {
       Get.snackbar(
         'No tienes rides disponibles',
@@ -86,6 +87,7 @@ class UserCoachReserveController extends GetxController {
 
     int bicycle = selectedEquipos.first;
 
+    // 2️⃣ Llamada a la API
     ResponseApi response = await _provider.scheduleClass(
       coachId: coachId,
       bicycle: bicycle,
@@ -93,31 +95,48 @@ class UserCoachReserveController extends GetxController {
       classTime: classTime,
     );
 
-    if (response.success! && response.data != null) {
-      ClassReservation reservation = response.data as ClassReservation;
-      showReservationDialog(Get.context!);
+    // 3️⃣ Verificación de éxito y conversión segura
+    if (response.success == true && response.data != null) {
+      try {
+        final reservationMap = response.data as Map<String, dynamic>;
+        final reservation = ClassReservation.fromJson(reservationMap);
 
-      if (Get.isRegistered<UserStartController>()) {
-        Get.find<UserStartController>().getScheduledClasses();
+        // 4️⃣ Mostrar diálogo de confirmación
+        showReservationDialog(Get.context!);
+
+        // 5️⃣ Actualizar listado de clases si está registrado UserStartController
+        if (Get.isRegistered<UserStartController>()) {
+          Get.find<UserStartController>().getScheduledClasses();
+        }
+
+        // 6️⃣ Emitir eventos por socket
+        final reservationJson = reservation.toJson();
+        SocketService().emit('class:reserved', reservationJson);
+        SocketService().emit('class:coach:reserved', reservationJson);
+        SocketService().emit('machine:status:update', {
+          'bicycle': bicycle,
+          'class_date': classDate,
+          'class_time': classTime,
+          'status': 'occupied'
+        });
+
+        // 7️⃣ Redirección con delay
+        Future.delayed(const Duration(seconds: 7), () {
+          if (Get.isOverlaysOpen) Get.back();
+          Get.offAllNamed('/user/home');
+        });
+
+      } catch (e) {
+        print('❌ Error convirtiendo respuesta a ClassReservation: $e');
+        Get.snackbar('Error', 'No se pudo procesar la reserva correctamente');
       }
 
-      SocketService().emit('class:reserved', reservation.toJson());
-      SocketService().emit('class:coach:reserved', reservation.toJson());
-      SocketService().emit('machine:status:update', {
-        'bicycle': bicycle,
-        'class_date': classDate,
-        'class_time': classTime,
-        'status': 'occupied'
-      });
-
-      Future.delayed(const Duration(seconds: 7), () {
-        if (Get.isOverlaysOpen) Get.back();
-        Get.offAllNamed('/user/home');
-      });
     } else {
+      // 8️⃣ Manejo de error de API
       Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
     }
   }
+
 
   void showReservationDialog(BuildContext context) {
     showDialog(

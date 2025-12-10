@@ -7,20 +7,19 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../../models/sponsor.dart';
 import '../../../../widgets/no_data_widget.dart';
 import '../../../../utils/color.dart';
-import 'user_sponsor_list_controller.dart';
+import 'coach_sponsor_list_controller.dart';
 
-class UserSponsorListPage extends StatelessWidget {
-  final controller = Get.put(UserSponsorListController());
+class CoachSponsorListPage extends StatelessWidget {
+  final controller = Get.put(CoachSponsorListController());
 
-  UserSponsorListPage({super.key});
+  CoachSponsorListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       appBar: AppBar(
         title: Text(
-          "Beneficios",
+          "Beneficios para Coaches",
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.w800,
             color: almostBlack,
@@ -49,9 +48,7 @@ class UserSponsorListPage extends StatelessWidget {
               final sponsor = sorted[index];
               return _animatedItem(
                 index,
-                _tapAnimation(
-                  child: _buildMosaicCard(sponsor),
-                ),
+                _tapAnimation(child: _buildMosaicCard(sponsor)),
               );
             },
           ),
@@ -60,7 +57,6 @@ class UserSponsorListPage extends StatelessWidget {
     );
   }
 
-  // Número de columnas responsive
   int _getColumnCount(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
 
@@ -69,7 +65,6 @@ class UserSponsorListPage extends StatelessWidget {
     return 2;
   }
 
-  /// Animación elegante de aparición
   Widget _animatedItem(int index, Widget child) {
     return TweenAnimationBuilder(
       tween: Tween<double>(begin: 0.7, end: 1),
@@ -93,35 +88,34 @@ class UserSponsorListPage extends StatelessWidget {
     );
   }
 
-  /// Animación al tocar (zoom + rebote + haptic)
   Widget _tapAnimation({required Widget child}) {
     return StatefulBuilder(
       builder: (context, setState) {
-        late AnimationController controller;
+        late AnimationController animationController;
         late Animation<double> scaleAnimation;
 
-        controller = AnimationController(
+        animationController = AnimationController(
           duration: const Duration(milliseconds: 140),
           vsync: Navigator.of(context),
-          lowerBound: 0.5, // zoom fuerte y visible
+          lowerBound: 0.5,
           upperBound: 1.0,
         );
 
         scaleAnimation = CurvedAnimation(
-          parent: controller,
+          parent: animationController,
           curve: Curves.easeOutBack,
         );
 
         return GestureDetector(
           onTapDown: (_) {
             HapticFeedback.lightImpact();
-            controller.reverse(); // hace zoom
+            animationController.reverse();
           },
           onTapUp: (_) async {
             await Future.delayed(const Duration(milliseconds: 60));
-            controller.forward(); // regresa
+            animationController.forward();
           },
-          onTapCancel: () => controller.forward(),
+          onTapCancel: () => animationController.forward(),
           child: AnimatedBuilder(
             animation: scaleAnimation,
             builder: (context, childWidget) {
@@ -137,17 +131,14 @@ class UserSponsorListPage extends StatelessWidget {
     );
   }
 
-
-
-  /// Card estilo mosaico con alturas variables
   Widget _buildMosaicCard(Sponsor sponsor) {
     int p = sponsor.priority ?? 3;
 
     double height = p == 1
-        ? 280 // Grande
+        ? 280
         : p == 2
-        ? 220 // Mediano
-        : 160; // Pequeño
+        ? 220
+        : 160;
 
     return Material(
       color: Colors.transparent,
@@ -201,7 +192,6 @@ class UserSponsorListPage extends StatelessWidget {
               ),
             ),
 
-            /// Texto sobre la imagen
             Positioned(
               left: 12,
               right: 12,

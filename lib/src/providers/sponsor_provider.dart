@@ -13,30 +13,59 @@ import '../models/user.dart';
 
 class SponsorProvider extends GetConnect {
   User userSession = User.fromJson(GetStorage().read('user') ?? {});
-  String url = '${Environment.API_URL}api/sponsors';
 
-  // Listar todos los sponsors
+  /// Construye URL base respetando si Environment.API_URL ya tiene o no la barra final.
+  String _buildBaseUrl(String path) {
+    final base = Environment.API_URL ?? '';
+    if (base.endsWith('/')) {
+      return '$base$path';
+    } else {
+      return '$base/$path';
+    }
+  }
+
+  /// Base completa para sponsors (ej: https://apiv1.pruebasinventario.com/api/sponsors)
+  String get _baseSponsorsUrl => _buildBaseUrl('api/sponsors');
+
+  /// Mantengo tu método original (para uso admin/listados sin filtro)
   Future<List<Sponsor>> getAll() async {
-    final response = await get('$url/getAll', headers: {
+    final uri = Uri.parse('$_baseSponsorsUrl/getAll');
+    final response = await get(uri.toString(), headers: {
       'Content-Type': 'application/json',
       'Authorization': userSession.session_token ?? ''
     });
 
-    if (response.statusCode == 401) {
-      return [];
-    }
+    if (response.statusCode == 401) return [];
 
     try {
       final List<dynamic> list = response.body['data'] ?? [];
       return Sponsor.fromJsonList(list);
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
 
-  // Crear sponsor con imagen (multipart/form-data)
+  /// NUEVO: Obtener sponsors dependiendo del rol (target)
+  Future<List<Sponsor>> getAllByTarget(String targetRole) async {
+    final uri = Uri.parse('$_baseSponsorsUrl/getAll?target=$targetRole');
+    final response = await get(uri.toString(), headers: {
+      'Content-Type': 'application/json',
+      'Authorization': userSession.session_token ?? ''
+    });
+
+    if (response.statusCode == 401) return [];
+
+    try {
+      final List<dynamic> list = response.body['data'] ?? [];
+      return Sponsor.fromJsonList(list);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Crear sponsor con imagen (multipart/form-data)
   Future<Stream<String>> createWithImage(Sponsor sponsor, File image) async {
-    Uri uri = Uri.parse('$url/createWithImage');
+    final uri = Uri.parse('$_baseSponsorsUrl/createWithImage');
     final request = http.MultipartRequest('POST', uri);
 
     request.headers['Authorization'] = userSession.session_token ?? '';
@@ -52,7 +81,6 @@ class SponsorProvider extends GetConnect {
     final response = await request.send();
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      // intentar leer el body por si viene HTML o error legible
       final bodyStr = await response.stream.bytesToString();
       throw Exception(
           'Error creando sponsor: status=${response.statusCode}, body=$bodyStr');
@@ -61,9 +89,9 @@ class SponsorProvider extends GetConnect {
     return response.stream.transform(utf8.decoder);
   }
 
-  // Actualizar sponsor con imagen
+  /// Actualizar sponsor con imagen
   Future<Stream<String>> updateWithImage(Sponsor sponsor, File image) async {
-    Uri uri = Uri.parse('$url/updateWithImage');
+    final uri = Uri.parse('$_baseSponsorsUrl/updateWithImage');
     final request = http.MultipartRequest('PUT', uri);
 
     request.headers['Authorization'] = userSession.session_token ?? '';
@@ -87,9 +115,9 @@ class SponsorProvider extends GetConnect {
     return response.stream.transform(utf8.decoder);
   }
 
-  // Actualizar sponsor sin imagen (JSON)
+  /// Actualizar sponsor sin imagen (JSON)
   Future<http.Response> updateWithoutImage(Sponsor sponsor) async {
-    Uri uri = Uri.parse('$url/update');
+    final uri = Uri.parse('$_baseSponsorsUrl/update');
     final res = await http.put(
       uri,
       headers: {
@@ -102,10 +130,11 @@ class SponsorProvider extends GetConnect {
     return res;
   }
 
-  // Eliminar sponsor
+  /// Eliminar sponsor
   Future<http.Response> deleteSponsor(String id) async {
+    final uri = Uri.parse('$_baseSponsorsUrl/delete/$id');
     final res = await http.delete(
-      Uri.parse('$url/delete/$id'),
+      uri,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': userSession.session_token ?? ''

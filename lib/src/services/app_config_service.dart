@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 // Si hay error retorna maintenance: false
 // =====================================
 Future<Map<String, dynamic>> fetchRemoteAppConfig() async {
-  const String endpoint = 'https://api.pruebasinventario.com/api/app-config';
+  const String endpoint = 'https://apiv1.pruebasinventario.com/api/app-config';
   try {
     final resp = await http
         .get(Uri.parse(endpoint))

@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AdminSponsorUpdateController extends GetxController {
-
   final SponsorProvider sponsorProvider = SponsorProvider();
   Sponsor sponsor = Get.arguments['sponsor'];
 
@@ -17,15 +16,23 @@ class AdminSponsorUpdateController extends GetxController {
   final descriptionController = TextEditingController();
 
   RxInt priority = 3.obs;
+
+  /// 🔥 NUEVO: target del sponsor
+  RxString target = "student".obs;
+
   File? imageFile;
   final picker = ImagePicker();
 
   @override
   void onInit() {
     super.onInit();
+
     nameController.text = sponsor.name ?? '';
     descriptionController.text = sponsor.description ?? '';
     priority.value = sponsor.priority ?? 3;
+
+    // 🔥 IMPORTANTE: cargar target actual del sponsor
+    target.value = sponsor.target ?? "student";
   }
 
   // -------------------------------------------
@@ -77,6 +84,7 @@ class AdminSponsorUpdateController extends GetxController {
     sponsor.name = name;
     sponsor.description = description;
     sponsor.priority = priority.value;
+    sponsor.target = target.value; // 🔥 NUEVO
 
     // loader
     Get.dialog(

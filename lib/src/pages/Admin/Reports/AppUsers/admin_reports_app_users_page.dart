@@ -18,6 +18,18 @@ class AdminReportsAppUsersPage extends StatelessWidget {
         backgroundColor: whiteLight,
         surfaceTintColor: whiteLight,
         forceMaterialTransparency: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.black87),
+            onPressed: () => con.exportPDF(context),
+            tooltip: 'Exportar PDF',
+          ),
+          IconButton(
+            icon: const Icon(Icons.grid_on, color: Colors.black87),
+            onPressed: () => con.exportExcel(context),
+            tooltip: 'Exportar Excel',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -42,7 +54,7 @@ class AdminReportsAppUsersPage extends StatelessWidget {
             ),
           ),
 
-          // 🧾 Contenido principal (lista o mensajes)
+          // 🧾 Contenido principal
           Expanded(
             child: Obx(() {
               if (con.loading.value) {
@@ -89,16 +101,19 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                         ),
                         elevation: 2,
                         shadowColor: Colors.black26,
-                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        margin:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
                               CircleAvatar(
                                 radius: 30,
-                                backgroundImage: user.photo_url != null && user.photo_url!.isNotEmpty
+                                backgroundImage: user.photo_url != null &&
+                                    user.photo_url!.isNotEmpty
                                     ? NetworkImage(user.photo_url!)
-                                    : const AssetImage('assets/img/user_placeholder.png')
+                                    : const AssetImage(
+                                    'assets/img/user_placeholder.png')
                                 as ImageProvider,
                                 backgroundColor: whiteLight,
                               ),
@@ -126,33 +141,42 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
-                                        const Icon(Icons.badge_outlined, size: 16, color: Colors.grey),
+                                        const Icon(Icons.badge_outlined,
+                                            size: 16, color: Colors.grey),
                                         const SizedBox(width: 6),
                                         Text(
                                           'CI: ${user.ci ?? ''}',
-                                          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              color: Colors.grey[700]),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+                                        const Icon(Icons.calendar_today_outlined,
+                                            size: 16, color: Colors.grey),
                                         const SizedBox(width: 6),
                                         Text(
                                           'Nacimiento: ${user.birthDate?.split('T').first.split('-').reversed.join('/') ?? ''}',
-                                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700]),
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color: Colors.grey[700]),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        const Icon(Icons.directions_bike_outlined, size: 16, color: Colors.grey),
+                                        const Icon(Icons.directions_bike_outlined,
+                                            size: 16, color: Colors.grey),
                                         const SizedBox(width: 6),
                                         Text(
                                           'Rides: ${user.totalRides ?? 0}',
-                                          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              color: Colors.grey[700]),
                                         ),
                                       ],
                                     ),
@@ -184,7 +208,6 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                         ),
                       ),
                     );
-
                   },
                 ),
               );

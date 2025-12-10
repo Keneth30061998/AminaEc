@@ -1,45 +1,50 @@
 import 'dart:convert';
-
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:http/http.dart' as http;
-
 import '../environment/environment.dart';
 
 class AdminUsersProvider {
-  // URL base
-  final String _baseUrl = Environment.API_URL_SOCKET; // producción
+  final String _baseUrl = Environment.API_URL_SOCKET;
   final String _api = '/api/admin/users';
 
-  // =======================
-  // Obtener todos los usuarios
-  // =======================
+  /// Traer **todos** los usuarios, manejando paginación si es necesario
   Future<List<User>> getAllUsers(String token) async {
-    try {
-      Uri url = Uri.parse('$_baseUrl$_api');
-      final res = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token,
-      });
+    List<User> allUsers = [];
+    int page = 1;
+    int limit = 100; // Ajusta según tu backend
+    bool hasMore = true;
 
-      if (res.statusCode == 200) {
-        final data = responseApiFromJson(res.body);
-        return data.data != null
-            ? List<User>.from(data.data.map((u) => User.fromJson(u)))
-            : [];
-      } else {
-        print('❌ Error getAllUsers: ${res.statusCode} ${res.body}');
-        return [];
+    try {
+      while (hasMore) {
+        Uri url = Uri.parse('$_baseUrl$_api?page=$page&limit=$limit');
+        final res = await http.get(url, headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        });
+
+        if (res.statusCode == 200) {
+          final data = responseApiFromJson(res.body);
+          if (data.data != null && (data.data as List).isNotEmpty) {
+            allUsers.addAll(List<User>.from(data.data.map((u) => User.fromJson(u))));
+            // Si el número de usuarios recibidos es menor que el límite, es la última página
+            hasMore = (data.data as List).length == limit;
+            page++;
+          } else {
+            hasMore = false;
+          }
+        } else {
+          print('❌ Error getAllUsers: ${res.statusCode} ${res.body}');
+          hasMore = false;
+        }
       }
+      return allUsers;
     } catch (e) {
       print('❌ Exception getAllUsers: $e');
       return [];
     }
   }
 
-  // =======================
-  // Extender días del plan de un usuario
-  // =======================
   Future<ResponseApi> extendPlan(String userId, int days, String token) async {
     try {
       Uri url = Uri.parse('$_baseUrl$_api/$userId/extend-expiration');
@@ -51,7 +56,6 @@ class AdminUsersProvider {
         },
         body: '{"days": $days}',
       );
-
       return responseApiFromJson(res.body);
     } catch (e) {
       print('❌ Exception extendPlan: $e');
@@ -59,9 +63,6 @@ class AdminUsersProvider {
     }
   }
 
-  // =======================
-  // Devolver rides a un usuario
-  // =======================
   Future<ResponseApi> returnRides(String userId, int rides, String token) async {
     try {
       Uri url = Uri.parse('$_baseUrl$_api/$userId/return-rides');
@@ -73,7 +74,6 @@ class AdminUsersProvider {
         },
         body: '{"rides": $rides}',
       );
-
       return responseApiFromJson(res.body);
     } catch (e) {
       print('❌ Exception returnRides: $e');
@@ -83,37 +83,17 @@ class AdminUsersProvider {
 
   Future<List<Map<String, dynamic>>> getUserPlansSummary(String userId, String token) async {
     final url = Uri.parse('${Environment.API_URL}api/users/$userId/plans/summary');
-
-    //print('===============');
-    //print('📡 Consultando planes del usuario: $userId');
-    //print('➡️ URL: $url');
-    //print('🔑 TOKEN: $token');
-    //print('===============');
-
     final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization': token,
     });
 
-    //print('📥 STATUS: ${response.statusCode}');
-    //print('📥 BODY: ${response.body}');
-
     try {
       final data = json.decode(response.body);
-      //print('📦 Data decodificada: $data');
-
       final List<dynamic> rawList = data['plans'] ?? [];
-      //print('📋 Lista encontrada: $rawList');
-
-      final list = List<Map<String, dynamic>>.from(rawList);
-      //print('✅ Retornando lista de planes: $list');
-      //print('===============');
-
-      return list;
+      return List<Map<String, dynamic>>.from(rawList);
     } catch (e) {
-      //print('❌ Error parseando JSON: $e');
       return [];
     }
   }
-
 }

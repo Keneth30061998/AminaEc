@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AdminSponsorRegisterController extends GetxController {
-
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
 
@@ -20,6 +19,9 @@ class AdminSponsorRegisterController extends GetxController {
 
   /// prioridad 1 = grande, 2 = mediano, 3 = pequeño
   RxInt priority = 3.obs;
+
+  /// 🔥 NUEVO: target del sponsor (student / coach / both)
+  RxString target = "student".obs;
 
   // -------------------------------------------
   // VALIDACIÓN PROFESIONAL
@@ -80,6 +82,7 @@ class AdminSponsorRegisterController extends GetxController {
         name: name,
         description: description,
         priority: priority.value,
+        target: target.value, // 🔥 NUEVO
       );
 
       Stream stream = await sponsorProvider.createWithImage(
@@ -115,6 +118,7 @@ class AdminSponsorRegisterController extends GetxController {
     descriptionController.clear();
     priority.value = 3;
     imageFile.value = null;
+    target.value = "student"; // 🔥 RESET
     update();
   }
 

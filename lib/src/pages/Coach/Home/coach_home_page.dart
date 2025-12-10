@@ -1,11 +1,14 @@
 import 'package:amina_ec/src/pages/Coach/Home/coach_home_controller.dart';
 import 'package:amina_ec/src/pages/Coach/Profile/Info/coach_profile_info_page.dart';
 import 'package:amina_ec/src/pages/Coach/Schedule/coach_schedule_page.dart';
+import 'package:amina_ec/src/pages/Coach/Sponsor/list/coach_sponsor_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 import '../../../utils/color.dart';
+import '../../../utils/iconos.dart';
+import '../../user/Sponsor/List/user_sponsor_list_page.dart';
 import '../Class/coach_class_page.dart';
 
 class CoachHomePage extends StatelessWidget {
@@ -14,17 +17,18 @@ class CoachHomePage extends StatelessWidget {
   final List<Widget> _pageViews = [
     CoachClassPage(),
     CoachSchedulePage(),
+    CoachSponsorListPage(),
     CoachProfileInfoPage(),
   ];
 
   // Constantes para el BottomNavigationBar
   //static const double _bottomNavBorderRadius = 20.0;
   static const EdgeInsets _bottomNavPadding =
-      EdgeInsets.symmetric(horizontal: 60, vertical: 14);
+      EdgeInsets.symmetric(horizontal: 25, vertical: 14);
   static const EdgeInsets _gNavButtonPadding =
-      EdgeInsets.symmetric(horizontal: 15, vertical: 10);
+      EdgeInsets.symmetric(horizontal: 14, vertical: 10);
   static const double _gNavIconSize = 26.5;
-  static const double _gNavGap = 10.0;
+  static const double _gNavGap = 14;
   static const int _gNavAnimationMillis = 460;
   static const double _gNavTabBorderRadius = 15.0;
 
@@ -90,6 +94,10 @@ class CoachHomePage extends StatelessWidget {
           const GButton(
             icon: Icons.calendar_month,
             text: 'Agenda',
+          ),
+          const GButton(
+            icon: iconGift,
+            text: 'Exclusivo',
           ),
           const GButton(
             icon: Icons.person,

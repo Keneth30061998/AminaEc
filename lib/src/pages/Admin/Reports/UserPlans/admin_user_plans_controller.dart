@@ -19,6 +19,8 @@ class AdminUserPlansController extends GetxController {
 
   final token = ''.obs;
   var loading = false.obs;
+  var saving = false.obs; // Previene doble envío
+
   var plans = <Map<String, dynamic>>[].obs;
   var availablePlans = <Plan>[].obs;
 
@@ -57,16 +59,21 @@ class AdminUserPlansController extends GetxController {
 
   String formatSend(DateTime d) => dateFormatSend.format(d);
 
+  // ASIGNAR PLAN MANUAL
   void openAssignPlanSheet() {
     selectedPlan.value = null;
     startDate.value = DateTime.now();
-    endDate.value = DateTime.now();
+    endDate.value = null; // Muy importante
     rides.value = 0;
     _openBottomSheet(isEdit: false);
   }
 
+  // EDITAR PLAN EXISTENTE
   void openEditPlanSheet(Map<String, dynamic> userPlan) {
-    selectedPlan.value = availablePlans.firstWhereOrNull((p) => p.name == (userPlan['plan_name'] ?? ''));
+    // Buscar el plan de la lista por id (más seguro que por nombre)
+    selectedPlan.value = availablePlans.firstWhereOrNull(
+          (p) => p.id.toString() == (userPlan['plan_id']?.toString() ?? ''),
+    );
 
     DateTime? parseDate(String? input) {
       if (input == null) return null;
@@ -79,12 +86,23 @@ class AdminUserPlansController extends GetxController {
     }
 
     startDate.value = parseDate(userPlan['start_date']) ?? DateTime.now();
-    endDate.value = parseDate(userPlan['end_date']) ?? startDate.value!;
+
+    // Recalcular si end_date no existe o es igual
+    final parsedEnd = parseDate(userPlan['end_date']);
+    if (parsedEnd == null && selectedPlan.value != null) {
+      endDate.value = startDate.value!.add(
+        Duration(days: selectedPlan.value?.duration_days ?? 0),
+      );
+    } else {
+      endDate.value = parsedEnd ?? startDate.value;
+    }
+
     rides.value = int.tryParse('${userPlan['remaining_rides']}') ?? 0;
 
     _openBottomSheet(isEdit: true, editingPlan: userPlan);
   }
 
+  // BOTTOM SHEET GENERAL
   void _openBottomSheet({required bool isEdit, Map<String, dynamic>? editingPlan}) {
     Get.bottomSheet(
       StatefulBuilder(builder: (context, setState) {
@@ -118,8 +136,9 @@ class AdminUserPlansController extends GetxController {
                     physics: const BouncingScrollPhysics(),
                     child: Column(
                       children: [
+                        // SELECT PLAN
                         DropdownButtonFormField<Plan>(
-                          initialValue: selectedPlan.value,
+                          value: selectedPlan.value,
                           items: availablePlans.map((p) {
                             return DropdownMenuItem<Plan>(
                               value: p,
@@ -132,10 +151,15 @@ class AdminUserPlansController extends GetxController {
                           onChanged: (p) {
                             setState(() {
                               selectedPlan.value = p;
-                              if (!isEdit && p != null) {
+
+                              if (p != null) {
                                 rides.value = p.rides ?? 0;
-                                endDate.value = (startDate.value ?? DateTime.now())
-                                    .add(Duration(days: p.duration_days ?? 0));
+
+                                if (startDate.value != null) {
+                                  endDate.value = startDate.value!.add(
+                                    Duration(days: p.duration_days ?? 0),
+                                  );
+                                }
                               }
                             });
                           },
@@ -150,6 +174,7 @@ class AdminUserPlansController extends GetxController {
                         ),
                         const SizedBox(height: 16),
 
+                        // FECHAS
                         Row(
                           children: [
                             Expanded(
@@ -163,13 +188,18 @@ class AdminUserPlansController extends GetxController {
                                     firstDate: DateTime(2000),
                                     lastDate: DateTime(2100),
                                   );
+
                                   if (picked != null) {
                                     setState(() {
                                       startDate.value = picked;
-                                      if (!isEdit && selectedPlan.value != null) {
+
+                                      // Si hay plan seleccionado recalcular fecha fin
+                                      if (selectedPlan.value != null) {
                                         endDate.value = picked.add(
                                           Duration(days: selectedPlan.value?.duration_days ?? 0),
                                         );
+                                      } else {
+                                        endDate.value = null;
                                       }
                                     });
                                   }
@@ -194,8 +224,10 @@ class AdminUserPlansController extends GetxController {
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 18),
 
+                        // RIDES
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -215,55 +247,85 @@ class AdminUserPlansController extends GetxController {
                   ),
                 ),
 
+                // BOTONES
                 Row(
                   children: [
                     Expanded(
                       child: TextButton(
-                        onPressed: Get.back,
+                        onPressed: saving.value ? null : Get.back,
                         child: Text('Cancelar', style: GoogleFonts.poppins(color: almostBlack)),
                       ),
                     ),
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: almostBlack),
-                        onPressed: () async {
+                        onPressed: saving.value ? null : () async {
+                          if (saving.value) return;
+                          saving.value = true;
+
+                          // VALIDACIONES
                           if (!isEdit && selectedPlan.value == null) {
+                            saving.value = false;
                             Get.snackbar('Error', 'Seleccione un plan');
                             return;
                           }
-                          if (startDate.value == null || endDate.value == null) {
-                            Get.snackbar('Error', 'Seleccione fechas válidas');
+
+                          if (startDate.value == null) {
+                            saving.value = false;
+                            Get.snackbar('Error', 'Seleccione fecha inicio');
                             return;
                           }
+
+                          if (endDate.value == null) {
+                            if (selectedPlan.value != null) {
+                              endDate.value = startDate.value!.add(
+                                Duration(days: selectedPlan.value?.duration_days ?? 0),
+                              );
+                            } else {
+                              saving.value = false;
+                              Get.snackbar('Error', 'Seleccione fecha fin');
+                              return;
+                            }
+                          }
+
                           if (endDate.value!.isBefore(startDate.value!)) {
-                            Get.snackbar('Error', 'Fecha fin debe ser posterior a inicio');
+                            saving.value = false;
+                            Get.snackbar('Error', 'Fecha fin no puede ser menor a inicio');
                             return;
                           }
 
                           final t = token.value;
-                          if (isEdit && editingPlan != null) {
-                            final res = await _provider.updateUserPlan(
-                              userPlanId: editingPlan['id'].toString(),
-                              token: t,
-                              startDate: formatSend(startDate.value!),
-                              endDate: formatSend(endDate.value!),
-                              remainingRides: rides.value,
-                            );
-                            Get.back();
-                            Get.snackbar('Editar plan', res['message'] ?? 'Actualizado');
-                          } else {
-                            final res = await _provider.assignPlan(
-                              userId: user.id!,
-                              token: t,
-                              planId: selectedPlan.value!.id!,
-                              startDate: formatSend(startDate.value!),
-                              endDate: formatSend(endDate.value!),
-                              remainingRides: rides.value,
-                            );
-                            Get.back();
-                            Get.snackbar('Asignar plan', res['message'] ?? 'Plan asignado');
+
+                          try {
+                            if (isEdit && editingPlan != null) {
+                              final res = await _provider.updateUserPlan(
+                                userPlanId: editingPlan['id'].toString(),
+                                token: t,
+                                startDate: formatSend(startDate.value!),
+                                endDate: formatSend(endDate.value!),
+                                remainingRides: rides.value,
+                              );
+                              Get.back();
+                              Get.snackbar('Editar plan', res['message'] ?? 'Actualizado');
+                            } else {
+                              final res = await _provider.assignPlan(
+                                userId: user.id!,
+                                token: t,
+                                planId: selectedPlan.value!.id!,
+                                startDate: formatSend(startDate.value!),
+                                endDate: formatSend(endDate.value!),
+                                remainingRides: rides.value,
+                              );
+                              Get.back();
+                              Get.snackbar('Asignar plan', res['message'] ?? 'Plan asignado');
+                            }
+
+                            await loadUserPlans();
+                          } catch (e) {
+                            Get.snackbar('Error', 'Ocurrió un error al guardar');
                           }
-                          await loadUserPlans();
+
+                          saving.value = false;
                         },
                         child: Text('Guardar', style: GoogleFonts.poppins(color: whiteLight)),
                       ),
@@ -279,7 +341,11 @@ class AdminUserPlansController extends GetxController {
     );
   }
 
-  Widget _buildDateField({required String label, required DateTime? date, required Function() onTap}) {
+  Widget _buildDateField({
+    required String label,
+    required DateTime? date,
+    required Function() onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -315,6 +381,7 @@ class AdminUserPlansController extends GetxController {
     );
 
     if (confirmed != true) return;
+
     final res = await _provider.deleteUserPlan(userPlanId: userPlanId, token: token.value);
     Get.snackbar('Eliminar plan', res['message'] ?? 'Eliminado');
     await loadUserPlans();

@@ -4,7 +4,7 @@ import '../../../../components/Socket/socket_service.dart';
 import '../../../../models/sponsor.dart';
 import '../../../../providers/sponsor_provider.dart';
 
-class UserSponsorListController extends GetxController {
+class CoachSponsorListController extends GetxController {
   final SponsorProvider provider = SponsorProvider();
 
   RxList<Sponsor> sponsors = <Sponsor>[].obs;
@@ -14,7 +14,7 @@ class UserSponsorListController extends GetxController {
     super.onInit();
     getSponsors();
 
-    // tiempo real
+    // Eventos en tiempo real
     SocketService().on('sponsor:new', (_) => getSponsors());
     SocketService().on('sponsor:update', (_) => getSponsors());
     SocketService().on('sponsor:delete', (_) => getSponsors());
@@ -23,9 +23,9 @@ class UserSponsorListController extends GetxController {
   void getSponsors() async {
     final list = await provider.getAll();
 
-    // 🔥 FILTRAR SOLO sponsors válidos para estudiantes
+    // 🔥 Filtrar solo sponsors para COACHES
     sponsors.value = list.where((s) {
-      return s.target == "student" || s.target == "both" || s.target == null;
+      return s.target == "coach" || s.target == "both";
     }).toList();
   }
 

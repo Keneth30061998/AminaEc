@@ -20,7 +20,6 @@ class AdminStartController extends GetxController {
   RxList<Coach> coaches = <Coach>[].obs;
   RxString selectedCoachId = ''.obs;
 
-  // Mapas para mantener estado de estudiantes, fechas y asistencia
   Map<String, RxList<StudentInscription>> studentMap = {};
   Map<String, Rx<DateTime>> selectedDatePerCoach = {};
   Map<String, RxBool> attendanceMap = {};
@@ -40,8 +39,21 @@ class AdminStartController extends GetxController {
     await getCoaches();
   }
 
+  // =====================================================
+  // GET COACHES
+  // =====================================================
   Future<void> getCoaches() async {
+    print("\n===============================");
+    print("🔵 [getCoaches] Iniciando...");
+    print("===============================\n");
+
     final result = await coachProvider.getAll();
+
+    print("📌 [getCoaches] Resultado API coaches (${result.length} coaches):");
+    for (var c in result) {
+      print("  → CoachID: ${c.id}  | Nombre: ${c.user?.name}");
+    }
+
     coaches.value = result;
 
     if (result.isNotEmpty && selectedCoachId.value.isEmpty) {
@@ -53,31 +65,57 @@ class AdminStartController extends GetxController {
         coach.id!,
             () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
       );
+
       await loadStudents(coach.id!);
-      refreshAttendanceMapForCoachDate(coach.id!, selectedDatePerCoach[coach.id!]!.value);
+
+      refreshAttendanceMapForCoachDate(
+        coach.id!,
+        selectedDatePerCoach[coach.id!]!.value,
+      );
     }
   }
 
+  // =====================================================
+  // LOAD STUDENTS
+  // =====================================================
   Future<void> loadStudents(String coachId) async {
+    print("\n========================================");
+    print("🟠 [loadStudents] coachId: $coachId");
+    print("========================================");
+
     final list = await classReservationProvider.getStudentsByCoach(coachId);
+
+    print("📌 Estudiantes recibidos desde API (${list.length}) →");
+    for (var s in list) {
+      print("  🧍 ${s.studentName} | Fecha: ${s.classDate} | Hora: ${s.classTime}");
+    }
+
     studentMap[coachId] = RxList<StudentInscription>.from(list);
 
     for (var s in list) {
       final key = getStudentKey(s);
       attendanceMap.putIfAbsent(key, () => false.obs);
+      print("  🔑 KEY generado: $key");
     }
 
-    print('📌 Students cargados para coach $coachId: ${list.map((s) => s.studentName).toList()}');
+    print("🔵 Fin de loadStudents()");
   }
 
   void selectCoach(String coachId) {
+    print("🔄 [selectCoach] coachId seleccionado: $coachId");
     selectedCoachId.value = coachId;
   }
 
   void selectDateForCoach(String coachId, DateTime date) {
+    print("📅 [selectDateForCoach] coachId=$coachId  | date=$date");
+
     selectedDatePerCoach[coachId]?.value =
         DateTime(date.year, date.month, date.day);
-    refreshAttendanceMapForCoachDate(coachId, selectedDatePerCoach[coachId]!.value);
+
+    refreshAttendanceMapForCoachDate(
+      coachId,
+      selectedDatePerCoach[coachId]!.value,
+    );
   }
 
   List<DateTime> generateDateRange() {
@@ -85,40 +123,68 @@ class AdminStartController extends GetxController {
     return List.generate(daysToShow, (i) => base.add(Duration(days: i)));
   }
 
-  List<StudentInscription> getStudentsByCoachAndDate(String coachId, DateTime date) {
+  // =====================================================
+  // FILTER STUDENTS BY DATE
+  // =====================================================
+  List<StudentInscription> getStudentsByCoachAndDate(
+      String coachId,
+      DateTime date,
+      ) {
     final students = studentMap[coachId]?.toList() ?? <StudentInscription>[];
     final selectedDateStr = DateFormat('yyyy-MM-dd').format(date);
+
+    print("\n------------------------------------");
+    print("🔍 [getStudentsByCoachAndDate]");
+    print("  coachId: $coachId");
+    print("  selectedDate: $selectedDateStr");
+    print("------------------------------------");
 
     final filtered = students.where((s) {
       try {
         final classDate = DateTime.parse(s.classDate).toLocal();
         final classDateOnlyStr = DateFormat('yyyy-MM-dd').format(classDate);
-        return classDateOnlyStr == selectedDateStr;
+        final match = classDateOnlyStr == selectedDateStr;
+
+        print(
+            "  ✔ Estudiante: ${s.studentName} | FechaClase: $classDateOnlyStr | Match: $match");
+
+        return match;
       } catch (e) {
+        print("  ❌ Error parseando fecha: ${s.classDate}");
         return false;
       }
     }).toList();
 
     filtered.sort((a, b) => a.classTime.compareTo(b.classTime));
+
+    print("📌 Filtrados final: ${filtered.length} estudiantes\n");
+
     return filtered;
   }
 
-  Map<String, List<StudentInscription>> groupStudentsByTime(String coachId, DateTime date) {
+  // =====================================================
+  // GROUP BY TIME
+  // =====================================================
+  Map<String, List<StudentInscription>> groupStudentsByTime(
+      String coachId,
+      DateTime date) {
     final students = getStudentsByCoachAndDate(coachId, date);
+
+    print("⏱ [groupStudentsByTime] Total estudiantes: ${students.length}");
+
     final Map<String, List<StudentInscription>> groups = {};
 
     for (var s in students) {
-      final timeKey = s.classTime.length >= 5 ? s.classTime.substring(0, 5) : s.classTime;
+      final timeKey =
+      s.classTime.length >= 5 ? s.classTime.substring(0, 5) : s.classTime;
+
       groups.putIfAbsent(timeKey, () => []);
       groups[timeKey]!.add(s);
+
+      print("  ⏰ Grupo $timeKey → ${groups[timeKey]!.length} estudiantes");
     }
 
-    final sortedKeys = groups.keys.toList()..sort();
-    final Map<String, List<StudentInscription>> ordered = {};
-    for (var k in sortedKeys) {
-      ordered[k] = groups[k]!;
-    }
-    return ordered;
+    return groups;
   }
 
   String getStudentKey(StudentInscription s) {
@@ -132,30 +198,55 @@ class AdminStartController extends GetxController {
   }
 
   void refreshAttendanceMapForCoachDate(String coachId, DateTime date) {
+    print("\n🔄 [refreshAttendanceMap] coach=$coachId | date=$date");
+
     final students = getStudentsByCoachAndDate(coachId, date);
 
     for (var s in students) {
       final key = getStudentKey(s);
       attendanceMap.putIfAbsent(key, () => false.obs);
+      print("  🎯 KEY válido: $key");
     }
 
-    final validKeys = students.map((s) => getStudentKey(s)).toSet();
-    final keysToRemove = attendanceMap.keys.where((k) => !validKeys.contains(k)).toList();
-    for (var k in keysToRemove) attendanceMap.remove(k);
+    final validKeys =
+    students.map((s) => getStudentKey(s)).toSet();
+
+    final keysToRemove =
+    attendanceMap.keys.where((k) => !validKeys.contains(k)).toList();
+
+    for (var k in keysToRemove) {
+      print("  🗑 Eliminando KEY inválido: $k");
+      attendanceMap.remove(k);
+    }
   }
 
+  // =====================================================
+  // REGISTER ATTENDANCE
+  // =====================================================
   Future<void> registerAttendanceForGroup({
     required String coachId,
     required DateTime date,
     required String classTime,
   }) async {
+    print("\n=======================================");
+    print("🟢 [registerAttendanceForGroup]");
+    print("  coachId: $coachId");
+    print("  date: $date");
+    print("  classTime: $classTime");
+    print("=======================================\n");
+
     final students = getStudentsByCoachAndDate(coachId, date)
         .where((s) => s.classTime.substring(0, 5) == classTime)
         .toList();
 
+    print("📌 Total estudiantes en este grupo: ${students.length}");
+
     for (var s in students) {
       final key = getStudentKey(s);
       final isPresent = attendanceMap[key]?.value ?? false;
+
+      print(
+          "  ↳ Enviando asistencia: ${s.studentName} | status=${isPresent ? 'present' : 'absent'}");
 
       final attendance = Attendance(
         userId: s.studentId,
@@ -202,6 +293,7 @@ class AdminStartController extends GetxController {
   void setupSockets() {
     SocketService().on('class:reserved', (data) {
       final coachId = data['coach_id'].toString();
+      print("📡 SOCKET EVENT → class:reserved | coachId=$coachId");
       loadStudents(coachId);
     });
   }
