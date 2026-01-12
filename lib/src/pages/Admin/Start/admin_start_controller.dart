@@ -240,6 +240,12 @@ class AdminStartController extends GetxController {
         .toList();
 
     print("📌 Total estudiantes en este grupo: ${students.length}");
+    // UI optimista: remover grupo inmediatamente
+    removeGroupLocally(
+      coachId: coachId,
+      date: date,
+      classTime: classTime,
+    );
 
     for (var s in students) {
       final key = getStudentKey(s);
@@ -252,7 +258,7 @@ class AdminStartController extends GetxController {
         userId: s.studentId,
         coachId: coachId,
         classDate: DateTime.parse(s.classDate).toLocal(),
-        classTime: s.classTime,
+        classTime: s.classTime.split(".").first,
         bicycle: s.bicycle,
         status: isPresent ? 'present' : 'absent',
       );
@@ -296,5 +302,47 @@ class AdminStartController extends GetxController {
       print("📡 SOCKET EVENT → class:reserved | coachId=$coachId");
       loadStudents(coachId);
     });
+
+    SocketService().on('attendance:group:registered', (data) {
+      final coachId = data['coach_id'].toString();
+      final date = DateTime.parse(data['class_date']);
+      final classTime = data['class_time'].substring(0, 5);
+
+      print("📡 SOCKET → attendance:group:registered | $coachId $classTime");
+
+      removeGroupLocally(
+        coachId: coachId,
+        date: date,
+        classTime: classTime,
+      );
+    });
+
   }
+
+  void removeGroupLocally({
+    required String coachId,
+    required DateTime date,
+    required String classTime,
+  }) {
+    final list = studentMap[coachId];
+    if (list == null) return;
+
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+
+    list.removeWhere((s) {
+      final sDate = DateFormat('yyyy-MM-dd')
+          .format(DateTime.parse(s.classDate).toLocal());
+
+      final sameDate = sDate == dateStr;
+      final sameTime = s.classTime.substring(0, 5) == classTime;
+
+      return sameDate && sameTime;
+    });
+
+    list.refresh();
+
+    attendanceMap.removeWhere((key, _) =>
+    key.contains(classTime) && key.contains(dateStr));
+  }
+
 }

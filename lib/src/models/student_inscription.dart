@@ -22,7 +22,7 @@ class StudentInscription {
   factory StudentInscription.fromJson(Map<String, dynamic> json) {
     return StudentInscription(
       classDate: json['class_date'],
-      classTime: json['class_time'],
+      classTime: json['class_time'].toString().split(".").first, // 🔧
       studentId: json['student_id'].toString(),
       studentName: json['student_name'],
       email: json['email'],
