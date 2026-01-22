@@ -1,6 +1,5 @@
-import 'package:amina_ec/src/utils/color.dart';
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -63,7 +62,7 @@ class AdminStartController extends GetxController {
     for (var coach in result) {
       selectedDatePerCoach.putIfAbsent(
         coach.id!,
-            () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
+        () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
       );
 
       await loadStudents(coach.id!);
@@ -87,7 +86,8 @@ class AdminStartController extends GetxController {
 
     print("📌 Estudiantes recibidos desde API (${list.length}) →");
     for (var s in list) {
-      print("  🧍 ${s.studentName} | Fecha: ${s.classDate} | Hora: ${s.classTime}");
+      print(
+          "  🧍 ${s.studentName} | Fecha: ${s.classDate} | Hora: ${s.classTime}");
     }
 
     studentMap[coachId] = RxList<StudentInscription>.from(list);
@@ -127,9 +127,9 @@ class AdminStartController extends GetxController {
   // FILTER STUDENTS BY DATE
   // =====================================================
   List<StudentInscription> getStudentsByCoachAndDate(
-      String coachId,
-      DateTime date,
-      ) {
+    String coachId,
+    DateTime date,
+  ) {
     final students = studentMap[coachId]?.toList() ?? <StudentInscription>[];
     final selectedDateStr = DateFormat('yyyy-MM-dd').format(date);
 
@@ -166,8 +166,7 @@ class AdminStartController extends GetxController {
   // GROUP BY TIME
   // =====================================================
   Map<String, List<StudentInscription>> groupStudentsByTime(
-      String coachId,
-      DateTime date) {
+      String coachId, DateTime date) {
     final students = getStudentsByCoachAndDate(coachId, date);
 
     print("⏱ [groupStudentsByTime] Total estudiantes: ${students.length}");
@@ -176,7 +175,7 @@ class AdminStartController extends GetxController {
 
     for (var s in students) {
       final timeKey =
-      s.classTime.length >= 5 ? s.classTime.substring(0, 5) : s.classTime;
+          s.classTime.length >= 5 ? s.classTime.substring(0, 5) : s.classTime;
 
       groups.putIfAbsent(timeKey, () => []);
       groups[timeKey]!.add(s);
@@ -208,11 +207,10 @@ class AdminStartController extends GetxController {
       print("  🎯 KEY válido: $key");
     }
 
-    final validKeys =
-    students.map((s) => getStudentKey(s)).toSet();
+    final validKeys = students.map((s) => getStudentKey(s)).toSet();
 
     final keysToRemove =
-    attendanceMap.keys.where((k) => !validKeys.contains(k)).toList();
+        attendanceMap.keys.where((k) => !validKeys.contains(k)).toList();
 
     for (var k in keysToRemove) {
       print("  🗑 Eliminando KEY inválido: $k");
@@ -221,7 +219,7 @@ class AdminStartController extends GetxController {
   }
 
   // =====================================================
-  // REGISTER ATTENDANCE
+  // REGISTER ATTENDANCE  ✅ FIX A + 6A
   // =====================================================
   Future<void> registerAttendanceForGroup({
     required String coachId,
@@ -240,16 +238,29 @@ class AdminStartController extends GetxController {
         .toList();
 
     print("📌 Total estudiantes en este grupo: ${students.length}");
-    // UI optimista: remover grupo inmediatamente
+
+    // ✅ FIX A: Snapshot del estado ANTES de tocar UI / maps
+    final presenceSnapshot = <String, bool>{};
+    for (final s in students) {
+      final key = getStudentKey(s);
+      presenceSnapshot[key] = attendanceMap[key]?.value ?? false;
+    }
+
+    // ✅ Opción 6A: UI optimista, pero SIN borrar keys antes del loop
     removeGroupLocally(
       coachId: coachId,
       date: date,
       classTime: classTime,
+      removeAttendanceKeys: false, // 👈 clave para evitar el bug
     );
+
+    bool allOk = true;
 
     for (var s in students) {
       final key = getStudentKey(s);
-      final isPresent = attendanceMap[key]?.value ?? false;
+
+      // ✅ Usar snapshot (no depende del mapa que puede mutar)
+      final isPresent = presenceSnapshot[key] ?? false;
 
       print(
           "  ↳ Enviando asistencia: ${s.studentName} | status=${isPresent ? 'present' : 'absent'}");
@@ -263,10 +274,35 @@ class AdminStartController extends GetxController {
         status: isPresent ? 'present' : 'absent',
       );
 
-      await attendanceProvider.registerAttendance(attendance);
+      final res = await attendanceProvider.registerAttendance(attendance);
+      // No cambiamos la lógica de negocio, solo controlamos el resultado
+      if (res.success != true) {
+        allOk = false;
+        print("❌ Error registrando ${s.studentName}: ${res.message}");
+      }
     }
 
-    Get.snackbar("Éxito", "Asistencia del grupo $classTime registrada correctamente");
+    if (allOk) {
+      // Limpieza final de keys del grupo (antes no se borraban para no romper el snapshot)
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      attendanceMap.removeWhere(
+        (key, _) => key.contains(classTime) && key.contains(dateStr),
+      );
+
+      Get.snackbar(
+        "Éxito",
+        "Asistencia del grupo $classTime registrada correctamente",
+      );
+    } else {
+      // Si falló algo: re-sincronizar para no dejar UI “optimista” incorrecta
+      Get.snackbar(
+        "Error",
+        "No se pudo registrar toda la asistencia. Intenta nuevamente.",
+      );
+
+      await loadStudents(coachId);
+      refreshAttendanceMapForCoachDate(coachId, date);
+    }
   }
 
   void confirmRegisterGroup(String coachId, DateTime date, String classTime) {
@@ -286,7 +322,11 @@ class AdminStartController extends GetxController {
           FilledButton(
             onPressed: () async {
               Get.back();
-              await registerAttendanceForGroup(coachId: coachId, date: date, classTime: classTime);
+              await registerAttendanceForGroup(
+                coachId: coachId,
+                date: date,
+                classTime: classTime,
+              );
             },
             child: const Text("Confirmar"),
           ),
@@ -310,19 +350,24 @@ class AdminStartController extends GetxController {
 
       print("📡 SOCKET → attendance:group:registered | $coachId $classTime");
 
+      // Por sockets mantenemos el comportamiento original (borra también keys)
       removeGroupLocally(
         coachId: coachId,
         date: date,
         classTime: classTime,
+        removeAttendanceKeys: true,
       );
     });
-
   }
 
+  // =====================================================
+  // REMOVE GROUP LOCALLY ✅ FIX B (parámetro)
+  // =====================================================
   void removeGroupLocally({
     required String coachId,
     required DateTime date,
     required String classTime,
+    bool removeAttendanceKeys = true,
   }) {
     final list = studentMap[coachId];
     if (list == null) return;
@@ -341,8 +386,10 @@ class AdminStartController extends GetxController {
 
     list.refresh();
 
-    attendanceMap.removeWhere((key, _) =>
-    key.contains(classTime) && key.contains(dateStr));
+    if (removeAttendanceKeys) {
+      attendanceMap.removeWhere(
+        (key, _) => key.contains(classTime) && key.contains(dateStr),
+      );
+    }
   }
-
 }

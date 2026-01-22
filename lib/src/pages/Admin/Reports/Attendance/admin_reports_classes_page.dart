@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../utils/color.dart';
 import '../../../../utils/iconos.dart';
 import 'admin_reports_controller.dart';
@@ -19,16 +20,6 @@ class AdminClassesTab extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Column(
           children: [
-            const SizedBox(height: 10),
-            Text(
-              'Asistencia',
-              style: GoogleFonts.montserrat(
-                color: almostBlack,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-              textAlign: TextAlign.center,
-            ),
             _filterSection(context),
             const SizedBox(height: 8),
             Expanded(child: _attendanceTableCard()),
@@ -67,39 +58,59 @@ class AdminClassesTab extends StatelessWidget {
                 style: GoogleFonts.montserrat(color: almostBlack, fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ), */
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
 
             // Año y mes
             Row(
               children: [
                 Expanded(
-                  child: _modernSelector(label: "Año", value: con.selectedYear, icon: Icons.calendar_today_outlined, items: con.years),
+                  child: _modernSelector(
+                      label: "Año",
+                      value: con.selectedYear,
+                      icon: Icons.calendar_today_outlined,
+                      items: con.years),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _modernSelector(label: "Mes", value: con.selectedMonth, icon: Icons.event_note_outlined, items: con.months),
+                  child: _modernSelector(
+                      label: "Mes",
+                      value: con.selectedMonth,
+                      icon: Icons.event_note_outlined,
+                      items: con.months),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Día y horas
             Row(
               children: [
                 Expanded(
-                  child: _modernSelector(label: "Día", value: con.selectedDay, icon: Icons.date_range, items: con.days),
+                  child: _modernSelector(
+                      label: "Día",
+                      value: con.selectedDay,
+                      icon: Icons.date_range,
+                      items: con.days),
                 ),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: _modernSelector(label: "Desde", value: con.startHour, icon: Icons.access_time, items: con.hours),
+                  child: _modernSelector(
+                      label: "Desde",
+                      value: con.startHour,
+                      icon: Icons.access_time,
+                      items: con.hours),
                 ),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: _modernSelector(label: "Hasta", value: con.endHour, icon: Icons.access_time, items: con.hours),
+                  child: _modernSelector(
+                      label: "Hasta",
+                      value: con.endHour,
+                      icon: Icons.access_time,
+                      items: con.hours),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 15),
 
             // Botón buscar
             SizedBox(
@@ -107,11 +118,14 @@ class AdminClassesTab extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: con.buscar,
                 icon: Icon(iconSearch, color: whiteLight),
-                label: Text('Buscar', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, color: Colors.white)),
+                label: Text('Buscar',
+                    style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w600, color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: almostBlack,
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ),
@@ -121,12 +135,17 @@ class AdminClassesTab extends StatelessWidget {
     );
   }
 
-  Widget _modernSelector({required String label, required RxString value, required IconData icon, required List<String> items}) {
+  Widget _modernSelector(
+      {required String label,
+      required RxString value,
+      required IconData icon,
+      required List<String> items}) {
     return InkWell(
       onTap: () async {
         final selected = await showDialog<String>(
           context: Get.context!,
-          builder: (_) => _simpleListDialog(title: "Seleccionar $label", items: items, selected: value.value),
+          builder: (_) => _simpleListDialog(
+              title: "Seleccionar $label", items: items, selected: value.value),
         );
         if (selected != null) value.value = selected;
       },
@@ -146,8 +165,17 @@ class AdminClassesTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: GoogleFonts.montserrat(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w500)),
-                  Obx(() => Text(value.value.isEmpty ? "Seleccionar" : value.value, style: GoogleFonts.poppins(color: almostBlack, fontSize: 12, fontWeight: FontWeight.w600))),
+                  Text(label,
+                      style: GoogleFonts.montserrat(
+                          color: Colors.grey[600],
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500)),
+                  Obx(() => Text(
+                      value.value.isEmpty ? "Seleccionar" : value.value,
+                      style: GoogleFonts.poppins(
+                          color: almostBlack,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600))),
                 ],
               ),
             ),
@@ -158,13 +186,20 @@ class AdminClassesTab extends StatelessWidget {
     );
   }
 
-  Widget _simpleListDialog({required String title, required List<String> items, required String selected}) {
+  Widget _simpleListDialog(
+      {required String title,
+      required List<String> items,
+      required String selected}) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(title, style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.bold, color: almostBlack)),
+          Text(title,
+              style: GoogleFonts.montserrat(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: almostBlack)),
           const SizedBox(height: 10),
           SizedBox(
             height: 300,
@@ -174,9 +209,16 @@ class AdminClassesTab extends StatelessWidget {
                 final item = items[i];
                 final isSelected = item == selected;
                 return ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  title: Text(item, style: GoogleFonts.montserrat(fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? almostBlack : Colors.grey[800])),
-                  trailing: isSelected ? const Icon(Icons.check_circle, color: almostBlack) : null,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  title: Text(item,
+                      style: GoogleFonts.montserrat(
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected ? almostBlack : Colors.grey[800])),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle, color: almostBlack)
+                      : null,
                   onTap: () => Get.back(result: item),
                 );
               },
@@ -194,7 +236,13 @@ class AdminClassesTab extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Obx(() {
-          if (con.attendanceResults.isEmpty) return Center(child: Text('No hay resultados', style: GoogleFonts.montserrat(color: Colors.grey[700], fontSize: 16, fontWeight: FontWeight.w500)));
+          if (con.attendanceResults.isEmpty)
+            return Center(
+                child: Text('No hay resultados',
+                    style: GoogleFonts.montserrat(
+                        color: Colors.grey[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500)));
 
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -204,8 +252,10 @@ class AdminClassesTab extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(almostBlack),
-                  headingTextStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: Colors.white),
-                  dataTextStyle: GoogleFonts.montserrat(color: Colors.black87, fontSize: 12),
+                  headingTextStyle: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold, color: Colors.white),
+                  dataTextStyle: GoogleFonts.montserrat(
+                      color: Colors.black87, fontSize: 12),
                   columnSpacing: 14,
                   columns: const [
                     DataColumn(label: Text('Fecha')),
@@ -216,11 +266,13 @@ class AdminClassesTab extends StatelessWidget {
                   ],
                   rows: con.attendanceResults.map((r) {
                     return DataRow(cells: [
-                      DataCell(Text(DateFormat('dd/MM/yyyy').format(DateTime.parse(r.classDate)))),
+                      DataCell(Text(DateFormat('dd/MM/yyyy')
+                          .format(DateTime.parse(r.classDate)))),
                       DataCell(Text(r.userName)),
                       DataCell(Text(r.coachName)),
                       DataCell(Text(r.bicycle.toString())),
-                      DataCell(Text(r.status == 'present' ? '✅ Presente' : '❌ Ausente')),
+                      DataCell(Text(
+                          r.status == 'present' ? '✅ Presente' : '❌ Ausente')),
                     ]);
                   }).toList(),
                 ),
