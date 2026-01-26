@@ -5,6 +5,7 @@ import 'package:amina_ec/src/pages/Admin/Coach/Update/Schedule/admin_coach_updat
 import 'package:amina_ec/src/pages/Admin/Coach/Update/admin_coach_update_page.dart';
 // --- Admin: Home, Coach y Planes ---
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_page.dart';
+import 'package:amina_ec/src/pages/Admin/Reports/PlanUsage/admin_reports_plan_usage_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Sponsor/List/admin_sponsor_list_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Sponsor/Register/admin_sponsor_register_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Sponsor/Update/admin_sponsor_update_page.dart';
@@ -89,4 +90,6 @@ final List<GetPage> appRoutes = [
 
   // --- Admin > user - plan
   GetPage(name: '/admin/users/plans', page: () => AdminUserPlansPage()),
+  GetPage(name: '/admin/users/history', page: () => AdminUserHistoryPage()),
+
 ];

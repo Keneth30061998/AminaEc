@@ -64,6 +64,7 @@ class Assets {
   static const String modelsClassReservation = 'lib/src/models/class_reservation.dart';
   static const String modelsCoach = 'lib/src/models/coach.dart';
   static const String modelsPlan = 'lib/src/models/plan.dart';
+  static const String modelsPlanUsageEvent = 'lib/src/models/plan_usage_event.dart';
   static const String modelsResponseApi = 'lib/src/models/response_api.dart';
   static const String modelsRol = 'lib/src/models/rol.dart';
   static const String modelsSchedule = 'lib/src/models/schedule.dart';
@@ -74,6 +75,8 @@ class Assets {
   static const String modelsUser = 'lib/src/models/user.dart';
   static const String modelsUserPlan = 'lib/src/models/user_plan.dart';
   static const String pDFPdfService = 'lib/src/components/PDF/pdf_service.dart';
+  static const String planUsageAdminReportsPlanUsageController = 'lib/src/pages/Admin/Reports/PlanUsage/admin_reports_plan_usage_controller.dart';
+  static const String planUsageAdminReportsPlanUsagePage = 'lib/src/pages/Admin/Reports/PlanUsage/admin_reports_plan_usage_page.dart';
   static const String providersAdminUserPlansProvider = 'lib/src/providers/admin_user_plans_provider.dart';
   static const String providersAdminUsersProvider = 'lib/src/providers/admin_users_provider.dart';
   static const String providersAttendanceProvider = 'lib/src/providers/attendance_provider.dart';
@@ -82,6 +85,7 @@ class Assets {
   static const String providersCoachsProvider = 'lib/src/providers/coachs_provider.dart';
   static const String providersFirebaseStorageHelper = 'lib/src/providers/firebase_storage_helper.dart';
   static const String providersNotificationsProvider = 'lib/src/providers/notifications_provider.dart';
+  static const String providersPlanUsageReportProvider = 'lib/src/providers/plan_usage_report_provider.dart';
   static const String providersPlansProvider = 'lib/src/providers/plans_provider.dart';
   static const String providersRemoteConfigProvider = 'lib/src/providers/remote_config_provider.dart';
   static const String providersScheduledClassProvider = 'lib/src/providers/scheduled_class_provider.dart';

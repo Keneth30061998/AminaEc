@@ -1,12 +1,15 @@
+import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/AppUsers/admin_reports_app_users_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class AdminReportsAppUsersPage extends StatelessWidget {
-  final AdminReportsAppUsersController con =
-  Get.put(AdminReportsAppUsersController());
+  final AdminReportsAppUsersController con = Get.put(AdminReportsAppUsersController());
+
+  AdminReportsAppUsersPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,202 +22,538 @@ class AdminReportsAppUsersPage extends StatelessWidget {
         surfaceTintColor: whiteLight,
         forceMaterialTransparency: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: Colors.black87),
-            onPressed: () => con.exportPDF(context),
+          _AppBarIcon(
+            icon: Icons.picture_as_pdf,
             tooltip: 'Exportar PDF',
+            onTap: () => con.exportPDF(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.grid_on, color: Colors.black87),
-            onPressed: () => con.exportExcel(context),
+          const SizedBox(width: 6),
+          _AppBarIcon(
+            icon: Icons.grid_on,
             tooltip: 'Exportar Excel',
+            onTap: () => con.exportExcel(context),
           ),
+          const SizedBox(width: 10),
         ],
       ),
-      body: Column(
-        children: [
-          // 🔍 Campo de búsqueda
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: TextField(
-              controller: con.searchController,
-              onChanged: con.filterUsers,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar por nombre...',
-                hintStyle: GoogleFonts.poppins(fontSize: 14),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // HEADER + SEARCH
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  _SearchPill(
+                    controller: con.searchController,
+                    onChanged: con.filterUsers,
+                  ),
+                ],
               ),
             ),
-          ),
 
-          // 🧾 Contenido principal
-          Expanded(
-            child: Obx(() {
-              if (con.loading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
+            // LIST
+            Expanded(
+              child: Obx(() {
+                if (con.loading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              if (con.filteredUsers.isEmpty) {
+                final list = con.filteredUsers;
+                if (list.isEmpty) {
+                  return RefreshIndicator(
+                    color: almostBlack,
+                    onRefresh: con.getUsers,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: const [
+                        SizedBox(height: 110),
+                        _EmptyState(),
+                      ],
+                    ),
+                  );
+                }
+
                 return RefreshIndicator(
                   color: almostBlack,
-                  backgroundColor: almostBlack,
                   onRefresh: con.getUsers,
-                  child: ListView(
+                  child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: 150),
-                      Center(
-                        child: Text(
-                          'No hay usuarios registrados',
-                          style: TextStyle(fontSize: 15, color: Colors.grey),
-                        ),
-                      ),
-                    ],
+                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 18),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) {
+                      final user = list[i];
+                      return _UserCard(
+                        user: user,
+                        onTap: () => Get.toNamed('/admin/users/plans', arguments: user),
+                        onActions: () => _showUserActions(context, user),
+                      );
+                    },
                   ),
                 );
-              }
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              return RefreshIndicator(
-                onRefresh: con.getUsers,
-                color: almostBlack,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: con.filteredUsers.length,
-                  itemBuilder: (_, i) {
-                    final user = con.filteredUsers[i];
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () {
-                        Get.toNamed('/admin/users/plans', arguments: user);
-                      },
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 2,
-                        shadowColor: Colors.black26,
-                        margin:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 30,
-                                backgroundImage: user.photo_url != null &&
-                                    user.photo_url!.isNotEmpty
-                                    ? NetworkImage(user.photo_url!)
-                                    : const AssetImage(
-                                    'assets/img/user_placeholder.png')
-                                as ImageProvider,
-                                backgroundColor: whiteLight,
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      user.name ?? '',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: almostBlack,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      user.email ?? '',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 10,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.badge_outlined,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'CI: ${user.ci ?? ''}',
-                                          style: GoogleFonts.poppins(
-                                              fontSize: 13,
-                                              color: Colors.grey[700]),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today_outlined,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Nacimiento: ${user.birthDate?.split('T').first.split('-').reversed.join('/') ?? ''}',
-                                          style: GoogleFonts.poppins(
-                                              fontSize: 12,
-                                              color: Colors.grey[700]),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.directions_bike_outlined,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Rides: ${user.totalRides ?? 0}',
-                                          style: GoogleFonts.poppins(
-                                              fontSize: 13,
-                                              color: Colors.grey[700]),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 5),
-                              Column(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.info_outline),
-                                    tooltip: 'Información de planes',
-                                    onPressed: () => con.showUserPlansInfo(user),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.calendar_month_outlined),
-                                    tooltip: 'Extender días',
-                                    onPressed: () => con.showExtendDialog(user),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    tooltip: 'Agregar rides',
-                                    onPressed: () => con.showRidesDialog(user),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            }),
+  void _showUserActions(BuildContext context, User user) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SheetHeader(user: user),
+              const SizedBox(height: 10),
+
+              _ActionTile(
+                icon: Icons.info_outline,
+                title: 'Información de planes',
+                subtitle: 'Ver planes activos y detalles',
+                onTap: () {
+                  Get.back();
+                  con.showUserPlansInfo(user);
+                },
+              ),
+              _ActionTile(
+                icon: Icons.calendar_month_outlined,
+                title: 'Extender días',
+                subtitle: 'Añadir días al plan activo',
+                onTap: () {
+                  Get.back();
+                  con.showExtendDialog(user);
+                },
+              ),
+              _ActionTile(
+                icon: Icons.add_circle_outline,
+                title: 'Agregar rides',
+                subtitle: 'Devolver rides al usuario',
+                onTap: () {
+                  Get.back();
+                  con.showRidesDialog(user);
+                },
+              ),
+              _ActionTile(
+                icon: Icons.timeline_outlined,
+                title: 'Histórico',
+                subtitle: 'Ver eventos del usuario (planes/clases/asistencia)',
+                onTap: () {
+                  Get.back();
+                  Get.toNamed('/admin/users/history', arguments: user);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AppBarIcon extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _AppBarIcon({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Icon(icon, color: Colors.black87, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xfff3f4f6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.black87),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    )),
+                const SizedBox(height: 2),
+                Text(value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      color: almostBlack,
+                      fontWeight: FontWeight.w800,
+                    )),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SearchPill extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _SearchPill({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black12),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: GoogleFonts.poppins(fontSize: 14),
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search, color: Colors.black54),
+          hintText: 'Buscar por nombre...',
+          hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+class _UserCard extends StatelessWidget {
+  final User user;
+  final VoidCallback onTap;
+  final VoidCallback onActions;
+
+  const _UserCard({
+    required this.user,
+    required this.onTap,
+    required this.onActions,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final birth = _fmtBirth(user.birthDate);
+
+    return Material(
+      color: colorBackgroundBox,
+      borderRadius: BorderRadius.circular(18),
+      elevation: 0,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.black12),
+            //boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: const Color(0xfff3f4f6),
+                backgroundImage: (user.photo_url != null && user.photo_url!.isNotEmpty)
+                    ? NetworkImage(user.photo_url!)
+                    : null,
+                child: (user.photo_url == null || user.photo_url!.isEmpty)
+                    ? const Icon(Icons.person, color: Colors.black54)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+
+              // INFO
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${user.name ?? ''} ${user.lastname ?? ''}'.trim(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: almostBlack,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      user.email ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _MetaChip(icon: Icons.badge_outlined, label: 'CI: ${user.ci ?? '-'}'),
+                        _MetaChip(
+                          icon: Icons.directions_bike_outlined,
+                          label: 'Rides: ${user.totalRides ?? 0}',
+                        ),
+                        if (birth.isNotEmpty)
+                          _MetaChip(icon: Icons.cake_outlined, label: birth),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // ACTIONS
+              InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: onActions,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xfff3f4f6),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.more_horiz, color: Colors.black87),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _fmtBirth(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(iso);
+      return 'Nacimiento: ${DateFormat('dd/MM/yyyy').format(dt)}';
+    } catch (_) {
+      // fallback si viene con formato raro
+      final raw = iso.split('T').first;
+      final parts = raw.split('-');
+      if (parts.length == 3) return 'Nacimiento: ${parts.reversed.join('/')}';
+      return '';
+    }
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _MetaChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xfff3f4f6),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.black54),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(fontSize: 11.5, color: Colors.black87, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetHeader extends StatelessWidget {
+  final User user;
+  const _SheetHeader({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xfff9f9f9),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: const Color(0xfff3f4f6),
+            backgroundImage: (user.photo_url != null && user.photo_url!.isNotEmpty)
+                ? NetworkImage(user.photo_url!)
+                : null,
+            child: (user.photo_url == null || user.photo_url!.isEmpty)
+                ? const Icon(Icons.person, color: Colors.black54)
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${user.name ?? ''} ${user.lastname ?? ''}'.trim(),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: almostBlack),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  user.email ?? '',
+                  style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[700]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: const Color(0xfff3f4f6),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: Colors.black87),
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[700]),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.black54),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.black12),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+          ),
+          child: const Icon(Icons.person_off_outlined, size: 34, color: Colors.black54),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'No hay usuarios registrados',
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Desliza hacia abajo para actualizar.',
+          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+        ),
+      ],
     );
   }
 }

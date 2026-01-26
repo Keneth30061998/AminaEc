@@ -375,7 +375,7 @@ class AdminUserPlansController extends GetxController {
         content: Text('¿Eliminar este plan? Esta acción no se puede deshacer.', style: GoogleFonts.poppins(color: almostBlack)),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: Text('Cancelar', style: TextStyle(color: almostBlack))),
-          ElevatedButton(onPressed: () => Get.back(result: true), child: Text('Eliminar', style: TextStyle(color: whiteLight))),
+          ElevatedButton(onPressed: () => Get.back(result: true), child: Text('Eliminar', style: TextStyle(color: indigoAmina))),
         ],
       ),
     );

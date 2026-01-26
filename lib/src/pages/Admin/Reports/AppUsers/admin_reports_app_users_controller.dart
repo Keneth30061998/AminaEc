@@ -1,63 +1,194 @@
 import 'dart:io';
+
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/providers/admin_users_provider.dart';
 import 'package:amina_ec/src/utils/color.dart';
+import 'package:excel/excel.dart' hide Border;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:excel/excel.dart' hide Border;
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AdminReportsAppUsersController extends GetxController {
   final AdminUsersProvider _provider = AdminUsersProvider();
 
-  var users = <User>[].obs; // Lista completa
-  var filteredUsers = <User>[].obs; // Lista filtrada
-  var loading = false.obs;
+  // State
+  final users = <User>[].obs;
+  final filteredUsers = <User>[].obs;
+  final loading = false.obs;
+  final error = RxnString();
 
-  var searchQuery = ''.obs; // Texto de búsqueda
+  // Search
+  final searchQuery = ''.obs;
   final searchController = TextEditingController();
 
-  User userSession = User.fromJson(GetStorage().read('user') ?? {});
+  final User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
   @override
   void onInit() {
     super.onInit();
+
+    // Debounce para que no filtre en cada tecla (mejor performance)
+    debounce<String>(
+      searchQuery,
+          (_) => _applyFilter(),
+      time: const Duration(milliseconds: 250),
+    );
+
     getUsers();
   }
 
-  /// Obtener todos los usuarios
-  Future<void> getUsers() async {
-    loading.value = true;
-    final result = await _provider.getAllUsers(userSession.session_token!);
-    users.value = result;
-    filteredUsers.value = result;
-    loading.value = false;
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
   }
 
-  /// Filtrar usuarios por nombre
-  void filterUsers(String query) {
-    searchQuery.value = query;
-    if (query.isEmpty) {
-      filteredUsers.value = users;
-    } else {
-      filteredUsers.value = users
-          .where(
-              (u) => (u.name ?? '').toLowerCase().contains(query.toLowerCase()))
-          .toList();
+  // ----------------------------
+  // Data
+  // ----------------------------
+  Future<void> getUsers() async {
+    try {
+      error.value = null;
+      loading.value = true;
+
+      final token = userSession.session_token;
+      if (token == null || token.isEmpty) {
+        error.value = 'Sesión inválida. Inicia sesión nuevamente.';
+        return;
+      }
+
+      final result = await _provider.getAllUsers(token);
+      users.assignAll(result);
+      _applyFilter();
+    } catch (e) {
+      error.value = 'Error cargando usuarios: $e';
+    } finally {
+      loading.value = false;
     }
   }
 
-  /// Extender plan
+  // ----------------------------
+  // Search
+  // ----------------------------
+  void onSearchChanged(String query) {
+    searchQuery.value = query;
+  }
+  void filterUsers(String query) => onSearchChanged(query);
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+  }
+
+  void _applyFilter() {
+    final q = searchQuery.value.trim().toLowerCase();
+
+    if (q.isEmpty) {
+      filteredUsers.assignAll(users);
+      return;
+    }
+
+    filteredUsers.assignAll(
+      users.where((u) {
+        final name = (u.name ?? '').toLowerCase();
+        final lastname = (u.lastname ?? '').toLowerCase();
+        final email = (u.email ?? '').toLowerCase();
+        return name.contains(q) || lastname.contains(q) || email.contains(q);
+      }),
+    );
+  }
+
+  // ----------------------------
+  // Navigation & Actions
+  // ----------------------------
+  void openUserPlans(User user) {
+    Get.toNamed('/admin/users/plans', arguments: user);
+  }
+
+  void openUserHistory(User user) {
+    Get.toNamed('/admin/users/history', arguments: user);
+  }
+
+  void openUserActionsSheet(User user) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text('Información de planes', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                onTap: () async {
+                  Get.back();
+                  showUserPlansInfo(user);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_month_outlined),
+                title: Text('Extender días', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Get.back();
+                  showExtendDialog(user);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.add_circle_outline),
+                title: Text('Agregar rides', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Get.back();
+                  showRidesDialog(user);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.timeline_outlined),
+                title: Text('Histórico', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Get.back();
+                  openUserHistory(user);
+                },
+              ),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: Get.back,
+                child: Text('Cerrar', style: GoogleFonts.poppins(color: indigoAmina, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  // ----------------------------
+  // API Actions
+  // ----------------------------
   Future<void> extendPlan(User user, int days) async {
-    ResponseApi res = await _provider.extendPlan(
+    final res = await _provider.extendPlan(
       user.id!,
       days,
       userSession.session_token!,
@@ -66,9 +197,8 @@ class AdminReportsAppUsersController extends GetxController {
     await getUsers();
   }
 
-  /// Devolver rides
   Future<void> returnRides(User user, int rides) async {
-    ResponseApi res = await _provider.returnRides(
+    final res = await _provider.returnRides(
       user.id!,
       rides,
       userSession.session_token!,
@@ -77,121 +207,63 @@ class AdminReportsAppUsersController extends GetxController {
     await getUsers();
   }
 
-  /// Diálogo para extender plan
+  // ----------------------------
+  // Dialogs (reutilizables)
+  // ----------------------------
   void showExtendDialog(User user) {
-    int days = 1;
-
-    Get.dialog(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text(
-              'Extender plan',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Selecciona los días a añadir:',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(color: darkGrey),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: days > 1 ? () => setState(() => days--) : null,
-                    ),
-                    Text(
-                      '$days días',
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: almostBlack,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () => setState(() => days++),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: Get.back,
-                child: Text('Cancelar', style: TextStyle(color: indigoAmina)),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black87,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () async {
-                  Get.back();
-                  await extendPlan(user, days);
-                },
-                child: Text('Confirmar', style: TextStyle(color: whiteLight)),
-              ),
-            ],
-          );
-        },
-      ),
+    _showCounterDialog(
+      title: 'Extender plan',
+      subtitle: 'Selecciona los días a añadir:',
+      unit: 'días',
+      confirmText: 'Confirmar',
+      onConfirm: (value) => extendPlan(user, value),
     );
   }
 
-  /// Diálogo para agregar rides
   void showRidesDialog(User user) {
-    int rides = 1;
+    _showCounterDialog(
+      title: 'Añadir Rides',
+      subtitle: 'Selecciona la cantidad de rides a añadir:',
+      unit: 'rides',
+      confirmText: 'Confirmar',
+      onConfirm: (value) => returnRides(user, value),
+    );
+  }
+
+  void _showCounterDialog({
+    required String title,
+    required String subtitle,
+    required String unit,
+    required String confirmText,
+    required Future<void> Function(int value) onConfirm,
+  }) {
+    int value = 1;
 
     Get.dialog(
       StatefulBuilder(
-        builder: (context, setState) {
+        builder: (_, setState) {
           return AlertDialog(
-            backgroundColor: Colors.grey[100],
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text(
-              'Añadir Rides',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: Text(title, textAlign: TextAlign.center, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Selecciona la cantidad de rides a añadir:',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(color: darkGrey),
-                ),
-                const SizedBox(height: 10),
+                Text(subtitle, textAlign: TextAlign.center, style: GoogleFonts.poppins(color: darkGrey)),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
-                      onPressed:
-                      rides > 1 ? () => setState(() => rides--) : null,
+                      onPressed: value > 1 ? () => setState(() => value--) : null,
                     ),
                     Text(
-                      '$rides rides',
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: almostBlack,
-                      ),
+                      '$value $unit',
+                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: almostBlack),
                     ),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () => setState(() => rides++),
+                      onPressed: () => setState(() => value++),
                     ),
                   ],
                 ),
@@ -200,19 +272,18 @@ class AdminReportsAppUsersController extends GetxController {
             actions: [
               TextButton(
                 onPressed: Get.back,
-                child: Text('Cancelar', style: TextStyle(color: indigoAmina)),
+                child: Text('Cancelar', style: GoogleFonts.poppins(color: indigoAmina, fontWeight: FontWeight.w700)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black87,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: almostBlack,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () async {
                   Get.back();
-                  await returnRides(user, rides);
+                  await onConfirm(value);
                 },
-                child: Text('Confirmar', style: TextStyle(color: whiteLight)),
+                child: Text(confirmText, style: GoogleFonts.poppins(color: whiteLight, fontWeight: FontWeight.w700)),
               ),
             ],
           );
@@ -221,7 +292,9 @@ class AdminReportsAppUsersController extends GetxController {
     );
   }
 
-  /// Mostrar planes de usuario
+  // ----------------------------
+  // Plans Info Dialog
+  // ----------------------------
   void showUserPlansInfo(User user) async {
     final token = userSession.session_token!;
     final plans = await _provider.getUserPlansSummary(user.id!, token);
@@ -233,13 +306,10 @@ class AdminReportsAppUsersController extends GetxController {
         title: Text(
           "Planes de ${user.name}",
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w700,
-            color: almostBlack,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: almostBlack),
         ),
         content: SizedBox(
-          width: Get.width * 0.8,
+          width: Get.width * 0.82,
           child: plans.isEmpty
               ? Center(
             child: Text(
@@ -247,124 +317,101 @@ class AdminReportsAppUsersController extends GetxController {
               style: GoogleFonts.poppins(color: Colors.grey),
             ),
           )
-              : Column(
-            mainAxisSize: MainAxisSize.min,
-            children: plans.map((plan) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
-                width: Get.width * 0.8,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.black12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      plan["plan_name"] ?? "Plan sin nombre",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: indigoAmina,
+              : SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: plans.map((plan) {
+                final start = plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida';
+                final end = plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xfff3f3f3),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.black12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        plan["plan_name"] ?? "Plan sin nombre",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: indigoAmina,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Rides restantes: ${plan["remaining_rides"]}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: almostBlack,
-                      ),
-                    ),
-                    Text(
-                      "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: almostBlack,
-                      ),
-                    ),
-                    Text(
-                      "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: almostBlack,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+                      const SizedBox(height: 8),
+                      Text("Rides restantes: ${plan["remaining_rides"]}",
+                          style: GoogleFonts.poppins(fontSize: 12, color: almostBlack)),
+                      Text("Inicio: $start", style: GoogleFonts.poppins(fontSize: 12, color: almostBlack)),
+                      Text("Fin: $end", style: GoogleFonts.poppins(fontSize: 12, color: almostBlack)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
             onPressed: Get.back,
-            child: Text("Cerrar",
-                style: TextStyle(
-                  color: indigoAmina,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                )),
+            child: Text("Cerrar", style: GoogleFonts.poppins(color: indigoAmina, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
     );
   }
 
-  /// Generar PDF de todos los usuarios (MultiPage)
+  // ----------------------------
+  // Export (PDF / Excel)
+  // ----------------------------
+  List<User> get _exportList => filteredUsers; // exporta lo que estás viendo
+
   Future<File> generatePDF() async {
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        build: (context) {
+        build: (_) {
           return [
             pw.Table.fromTextArray(
               headers: ['Nombre', 'Email', 'CI', 'Rides', 'Cumpleaños'],
-              data: users.map((u) => [
-                u.name ?? '',
-                u.email ?? '',
-                u.ci ?? '',
-                u.totalRides?.toString() ?? '0',
-                u.birthDate != null
+              data: _exportList.map((u) {
+                final birth = (u.birthDate != null && u.birthDate!.isNotEmpty)
                     ? DateFormat('dd/MM/yyyy').format(DateTime.parse(u.birthDate!))
-                    : '',
-              ]).toList(),
+                    : '';
+                return [
+                  '${u.name ?? ''} ${u.lastname ?? ''}'.trim(),
+                  u.email ?? '',
+                  u.ci ?? '',
+                  (u.totalRides ?? 0).toString(),
+                  birth,
+                ];
+              }).toList(),
               border: pw.TableBorder.all(),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
               cellAlignment: pw.Alignment.centerLeft,
-              headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
             ),
           ];
         },
       ),
     );
 
-    Directory dir;
-    if (Platform.isAndroid) {
-      final status = await Permission.manageExternalStorage.request();
-      dir = status.isGranted
-          ? Directory('/storage/emulated/0/Download')
-          : await getApplicationDocumentsDirectory();
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
+    final dir = await _resolveExportDir();
     final file = File('${dir.path}/reporte_usuarios.pdf');
     await file.writeAsBytes(await pdf.save(), flush: true);
     return file;
   }
 
-  /// Exportar PDF
   Future<void> exportPDF(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
-    final shareRect =
-    box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+    final shareRect = box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+
     final file = await generatePDF();
 
     final params = ShareParams(
@@ -375,12 +422,11 @@ class AdminReportsAppUsersController extends GetxController {
 
     try {
       await SharePlus.instance.share(params);
-    } catch (e) {
+    } catch (_) {
       Get.snackbar('Exportación', 'Archivo guardado en: ${file.path}');
     }
   }
 
-  /// Exportar Excel
   Future<void> exportExcel(BuildContext context) async {
     final excel = Excel.createExcel();
     final sheet = excel['Usuarios'];
@@ -394,38 +440,29 @@ class AdminReportsAppUsersController extends GetxController {
       TextCellValue('Cumpleaños'),
     ]);
 
-    for (var u in users) {
+    for (final u in _exportList) {
+      final birth = (u.birthDate != null && u.birthDate!.isNotEmpty)
+          ? DateFormat('dd/MM/yyyy').format(DateTime.parse(u.birthDate!))
+          : '';
       sheet.appendRow([
-        TextCellValue(u.name ?? ''),
+        TextCellValue('${u.name ?? ''} ${u.lastname ?? ''}'.trim()),
         TextCellValue(u.email ?? ''),
         TextCellValue(u.ci ?? ''),
-        DoubleCellValue(u.totalRides?.toDouble() ?? 0),
-        TextCellValue(u.birthDate != null
-            ? DateFormat('dd/MM/yyyy').format(DateTime.parse(u.birthDate!))
-            : ''),
+        DoubleCellValue((u.totalRides ?? 0).toDouble()),
+        TextCellValue(birth),
       ]);
     }
 
     final bytes = excel.encode();
     if (bytes == null) return;
 
-    Directory dir;
-    if (Platform.isAndroid) {
-      final status = await Permission.manageExternalStorage.request();
-      dir = status.isGranted
-          ? Directory('/storage/emulated/0/Download')
-          : await getApplicationDocumentsDirectory();
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
+    final dir = await _resolveExportDir();
     final file = File('${dir.path}/reporte_usuarios.xlsx');
     await file.writeAsBytes(bytes, flush: true);
 
     if (Platform.isIOS) {
       final box = context.findRenderObject() as RenderBox?;
-      final shareRect =
-      box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+      final shareRect = box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
@@ -437,4 +474,17 @@ class AdminReportsAppUsersController extends GetxController {
       Get.snackbar('Excel generado', 'Archivo guardado en: ${file.path}');
     }
   }
+
+  Future<Directory> _resolveExportDir() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.manageExternalStorage.request();
+      if (status.isGranted) {
+        return Directory('/storage/emulated/0/Download');
+      }
+      return getApplicationDocumentsDirectory();
+    }
+    return getApplicationDocumentsDirectory();
+  }
+
+
 }
