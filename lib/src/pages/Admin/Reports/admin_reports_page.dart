@@ -10,27 +10,28 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../utils/color.dart';
 import 'Transactions/admin_transactions_page.dart';
 
-final con = Get.put(AdminReportsController());
-
 class AdminReportsPage extends StatelessWidget {
   const AdminReportsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Mantiene la funcionalidad de tener el controller disponible para las tabs,
+    // pero evita crear instancias en variables globales (y duplicados).
+    if (!Get.isRegistered<AdminReportsController>()) {
+      Get.put(AdminReportsController());
+    }
+
     return DefaultTabController(
-      length: 4, // Usuarios, Clases y Transacciones
+      length: 4, // Usuarios, Clases, Asistencia, Transacciones
       child: Scaffold(
         appBar: AppBar(
           title: _appBarTitle(),
           bottom: TabBar(
             indicatorColor: almostBlack,
             labelColor: almostBlack,
-            tabs: [
+            tabs: const [
               Tab(icon: Icon(iconProfile), text: 'Usuarios'),
-              Tab(
-                icon: Icon(iconRides),
-                text: 'Clases',
-              ),
+              Tab(icon: Icon(iconRides), text: 'Clases'),
               Tab(icon: Icon(iconCheck), text: 'Asistencia'),
               Tab(icon: Icon(iconCard), text: 'Transacciones'),
             ],
@@ -40,10 +41,14 @@ class AdminReportsPage extends StatelessWidget {
           children: [
             // Tab 1: Usuarios
             AdminReportsAppUsersPage(),
+
+            // Tab 2: Clases (Schedule)
             AdminCoachSchedulePage(),
-            // Tab 2: Transacciones
+
+            // Tab 3: Asistencia
             AdminClassesTab(),
-            //Tab 3: clases
+
+            // Tab 4: Transacciones
             AdminTransactionsPage(),
           ],
         ),

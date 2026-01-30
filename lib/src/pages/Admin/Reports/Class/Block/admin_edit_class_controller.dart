@@ -22,17 +22,20 @@ class AdminCoachBlockController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
-    coachId = args['coach_id'] ?? '';
-    classDate = args['class_date'] ?? '';
-    classTime = args['class_time'] ?? '';
-    coachName = args['coach_name'] ?? '';
+
+    final args = (Get.arguments ?? {}) as Map;
+
+    // ✅ Parse seguro: si coach_id viene como int, no revienta.
+    coachId = (args['coach_id'] ?? '').toString();
+    classDate = (args['class_date'] ?? '').toString();
+    classTime = (args['class_time'] ?? '').toString();
+    coachName = (args['coach_name'] ?? '').toString();
 
     fetchInitialState();
     listenSocketUpdates();
   }
 
-  void fetchInitialState() async {
+  Future<void> fetchInitialState() async {
     final reservations = await _provider.getReservationsForSlot(
       classDate: classDate,
       classTime: classTime,
@@ -48,14 +51,20 @@ class AdminCoachBlockController extends GetxController {
         occupiedEquipos.add(r.bicycle);
       }
     }
+    // Normalmente RxSet ya refresca en add/remove/clear, pero esto
+    // no hace daño y asegura UI siempre actualizada.
+    occupiedEquipos.refresh();
+    blockedEquipos.refresh();
   }
 
   void listenSocketUpdates() {
     SocketService().on('machine:status:update', (payload) {
       if (payload['class_date'] == classDate &&
           payload['class_time'] == classTime) {
-        int bicycle = payload['bicycle'];
-        String status = payload['status'];
+        final bicycle = int.tryParse(payload['bicycle'].toString()) ?? 0;
+        final status = payload['status'].toString();
+
+        if (bicycle == 0) return;
 
         if (status == 'blocked') {
           blockedEquipos.add(bicycle);
@@ -67,6 +76,9 @@ class AdminCoachBlockController extends GetxController {
           occupiedEquipos.remove(bicycle);
           blockedEquipos.remove(bicycle);
         }
+
+        blockedEquipos.refresh();
+        occupiedEquipos.refresh();
       }
     });
   }
@@ -79,6 +91,7 @@ class AdminCoachBlockController extends GetxController {
     } else {
       selectedEquipos.add(number);
     }
+    selectedEquipos.refresh();
   }
 
   Future<void> applyBlock() async {
@@ -99,13 +112,16 @@ class AdminCoachBlockController extends GetxController {
         'bicycle': bicycle,
         'class_date': classDate,
         'class_time': classTime,
-        'status': 'blocked'
+        'status': 'blocked',
       });
 
       blockedEquipos.add(bicycle);
     }
 
     selectedEquipos.clear();
+
+    blockedEquipos.refresh();
+    selectedEquipos.refresh();
 
     Get.snackbar('Listo', 'Bicicletas bloqueadas correctamente');
   }
@@ -123,13 +139,16 @@ class AdminCoachBlockController extends GetxController {
         'bicycle': bicycle,
         'class_date': classDate,
         'class_time': classTime,
-        'status': 'available'
+        'status': 'available',
       });
 
       blockedEquipos.remove(bicycle);
     }
 
     selectedEquipos.clear();
+
+    blockedEquipos.refresh();
+    selectedEquipos.refresh();
 
     Get.snackbar('Listo', 'Bicicletas desbloqueadas');
   }
