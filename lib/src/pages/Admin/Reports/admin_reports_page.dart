@@ -1,6 +1,7 @@
 import 'package:amina_ec/src/pages/Admin/Reports/AppUsers/admin_reports_app_users_page.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Attendance/admin_reports_classes_page.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Attendance/admin_reports_controller.dart';
+import 'package:amina_ec/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_page.dart';
 import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,7 +18,7 @@ class AdminReportsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3, // Usuarios, Clases y Transacciones
+      length: 4, // Usuarios, Clases y Transacciones
       child: Scaffold(
         appBar: AppBar(
           title: _appBarTitle(),
@@ -26,6 +27,10 @@ class AdminReportsPage extends StatelessWidget {
             labelColor: almostBlack,
             tabs: [
               Tab(icon: Icon(iconProfile), text: 'Usuarios'),
+              Tab(
+                icon: Icon(iconRides),
+                text: 'Clases',
+              ),
               Tab(icon: Icon(iconCheck), text: 'Asistencia'),
               Tab(icon: Icon(iconCard), text: 'Transacciones'),
             ],
@@ -35,6 +40,7 @@ class AdminReportsPage extends StatelessWidget {
           children: [
             // Tab 1: Usuarios
             AdminReportsAppUsersPage(),
+            AdminCoachSchedulePage(),
             // Tab 2: Transacciones
             AdminClassesTab(),
             //Tab 3: clases
