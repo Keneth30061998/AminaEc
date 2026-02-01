@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 import '../../../components/Socket/socket_service.dart';
 import '../../../models/coach.dart';
 import '../../../models/scheduled_class.dart';
@@ -23,14 +22,14 @@ class UserStartController extends GetxController {
   final CoachProvider coachProvider = CoachProvider();
   final UserPlanProvider userPlanProvider = UserPlanProvider();
   final ScheduledClassProvider scheduledClassProvider =
-  ScheduledClassProvider();
+      ScheduledClassProvider();
   final ClassReservationProvider classResProv = ClassReservationProvider();
   final RxList<UserPlan> acquiredPlans = <UserPlan>[].obs;
   var coaches = <Coach>[].obs;
   final RxInt totalRides = 0.obs;
   final RxList<ScheduledClass> scheduledClasses = <ScheduledClass>[].obs;
   final RxInt attendedClasses = 0.obs;
-
+  final RxInt completedRides = 0.obs;
 
   @override
   void onInit() {
@@ -39,7 +38,8 @@ class UserStartController extends GetxController {
     getTotalRides();
     getScheduledClasses();
     getAcquiredPlans();
-    getAttendedClasses();
+    //getAttendedClasses();
+    getCompletedRides();
 
     // ---- Socket listeners ----
     SocketService().updateUserSession(user);
@@ -87,10 +87,22 @@ class UserStartController extends GetxController {
     });
   }
 
+  void getCompletedRides() async {
+    if (user.session_token == null || user.session_token!.isEmpty) return;
+
+    try {
+      final count = await UserProvider().getCompletedRides(user.session_token!);
+      completedRides.value = count;
+    } catch (_) {
+      completedRides.value = 0;
+    }
+  }
+
   void getAttendedClasses() async {
     if (user.session_token == null || user.session_token!.isEmpty) return;
     try {
-      int count = await UserProvider().getAttendedClasses(user.session_token!, userId: user.id);
+      int count = await UserProvider()
+          .getAttendedClasses(user.session_token!, userId: user.id);
       attendedClasses.value = count;
       //print('✅ attendedClasses cargadas: $count');
     } catch (e) {
@@ -98,11 +110,10 @@ class UserStartController extends GetxController {
     }
   }
 
-
   void getAcquiredPlans() async {
     if (user.session_token != null) {
       final result =
-      await userPlanProvider.getAllPlansWithRides(user.session_token!);
+          await userPlanProvider.getAllPlansWithRides(user.session_token!);
       acquiredPlans.value = result;
     }
   }
@@ -115,7 +126,7 @@ class UserStartController extends GetxController {
   void getTotalRides() async {
     if (user.session_token != null) {
       int rides =
-      await userPlanProvider.getTotalActiveRides(user.session_token!);
+          await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
@@ -189,12 +200,24 @@ class UserStartController extends GetxController {
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: Text('Volver', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: indigoAmina,),),
+              child: Text(
+                'Volver',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: indigoAmina,
+                ),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: almostBlack),
               onPressed: () => Get.back(result: true),
-              child: Text('Cancelar clase' ,style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: whiteLight,),),
+              child: Text(
+                'Cancelar clase',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: whiteLight,
+                ),
+              ),
             ),
           ],
         ),
@@ -220,7 +243,9 @@ class UserStartController extends GetxController {
         );
       } else {
         // si res es null o success != true
-        final msg = (res != null && res.message != null) ? res.message! : 'No se pudo cancelar la clase.';
+        final msg = (res != null && res.message != null)
+            ? res.message!
+            : 'No se pudo cancelar la clase.';
         Get.snackbar(
           'Error',
           msg,
@@ -238,8 +263,6 @@ class UserStartController extends GetxController {
       );
     }
   }
-
-
 
   void showUserPlansInfo() async {
     final token = user.session_token!;
@@ -261,62 +284,62 @@ class UserStartController extends GetxController {
           width: Get.width * 0.8,
           child: plans.isEmpty
               ? Center(
-            child: Text(
-              "Este usuario no tiene planes activos.",
-              style: GoogleFonts.poppins(color: Colors.grey),
-            ),
-          )
+                  child: Text(
+                    "Este usuario no tiene planes activos.",
+                    style: GoogleFonts.poppins(color: Colors.grey),
+                  ),
+                )
               : Column(
-            mainAxisSize: MainAxisSize.min,
-            children: plans.map((plan) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
-                width: Get.width * 0.8,
-                decoration: BoxDecoration(
-                  color: colorBackgroundBox,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.black12),
+                  mainAxisSize: MainAxisSize.min,
+                  children: plans.map((plan) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      width: Get.width * 0.8,
+                      decoration: BoxDecoration(
+                        color: colorBackgroundBox,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            plan["plan_name"] ?? "Plan sin nombre",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: indigoAmina,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "Rides restantes: ${plan["remaining_rides"]}",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: almostBlack,
+                            ),
+                          ),
+                          Text(
+                            "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: almostBlack,
+                            ),
+                          ),
+                          Text(
+                            "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: almostBlack,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      plan["plan_name"] ?? "Plan sin nombre",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: indigoAmina,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Rides restantes: ${plan["remaining_rides"]}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: almostBlack,
-                      ),
-                    ),
-                    Text(
-                      "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: almostBlack,
-                      ),
-                    ),
-                    Text(
-                      "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: almostBlack,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
@@ -333,6 +356,4 @@ class UserStartController extends GetxController {
       ),
     );
   }
-
-
 }

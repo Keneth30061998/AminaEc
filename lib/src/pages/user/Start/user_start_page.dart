@@ -11,7 +11,7 @@ import '../../../models/scheduled_class.dart';
 
 class UserStartPage extends StatelessWidget {
   final UserStartController con =
-  Get.put(UserStartController(), permanent: true);
+      Get.put(UserStartController(), permanent: true);
 
   UserStartPage({super.key});
 
@@ -31,6 +31,7 @@ class UserStartPage extends StatelessWidget {
           con.getTotalRides();
           con.getAcquiredPlans();
           con.getCoaches();
+          con.getCompletedRides();
           await Future.delayed(const Duration(seconds: 1));
         },
         child: SafeArea(
@@ -67,7 +68,8 @@ class UserStartPage extends StatelessWidget {
                         height: 130,
                         child: Obx(() {
                           if (con.coaches.isEmpty) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           return ListView.builder(
                             scrollDirection: Axis.horizontal,
@@ -107,8 +109,8 @@ class UserStartPage extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: con.scheduledClasses.length,
-                      itemBuilder: (context, index) =>
-                          _scheduledClassCard(con.scheduledClasses[index], context),
+                      itemBuilder: (context, index) => _scheduledClassCard(
+                          con.scheduledClasses[index], context),
                     );
                   }),
                   const SizedBox(height: 25),
@@ -122,40 +124,39 @@ class UserStartPage extends StatelessWidget {
   }
 
   Widget _appBarTitle() => Text(
-    'Amina',
-    style: GoogleFonts.montserrat(
-      fontSize: 26,
-      fontWeight: FontWeight.w800,
-      color: almostBlack,
-    ),
-  );
+        'Amina',
+        style: GoogleFonts.montserrat(
+          fontSize: 26,
+          fontWeight: FontWeight.w800,
+          color: almostBlack,
+        ),
+      );
 
   Widget _textGreeting() => Text(
-    'Hola, ${con.user.name}',
-    style: GoogleFonts.roboto(
-      fontSize: 20,
-      fontWeight: FontWeight.w900,
-      color: darkGrey,
-    ),
-  );
+        'Hola, ${con.user.name}',
+        style: GoogleFonts.roboto(
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+          color: darkGrey,
+        ),
+      );
 
   Widget _boxBikesComplete() => _boxTemplate(
-    title: 'Rides',
-    count: '${con.attendedClasses.value}',
-    subtitle: 'Completados',
-    color: Colors.blueGrey.shade50,
-  );
+        title: 'Rides',
+        count: '${con.completedRides.value}',
+        subtitle: 'Completados',
+        color: Colors.blueGrey.shade50,
+      );
 
   Widget _boxBikesPending() => GestureDetector(
-    onTap: () => con.showUserPlansInfo(),
-    child: _boxTemplate(
-      title: 'Rides',
-      count: '${con.totalRides.value}',
-      subtitle: 'Adquiridos',
-      color: Colors.blueGrey.shade50,
-    ),
-  );
-
+        onTap: () => con.showUserPlansInfo(),
+        child: _boxTemplate(
+          title: 'Rides',
+          count: '${con.totalRides.value}',
+          subtitle: 'Adquiridos',
+          color: Colors.blueGrey.shade50,
+        ),
+      );
 
   Widget _boxTemplate({
     required String title,
@@ -198,7 +199,8 @@ class UserStartPage extends StatelessWidget {
           color: whiteLight,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))
+            BoxShadow(
+                color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))
           ],
           border: Border.all(color: colorBackgroundBox, width: 2),
         ),
@@ -209,13 +211,14 @@ class UserStartPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(60),
               child: coach.user?.photo_url != null
                   ? Image.network(coach.user!.photo_url!,
-                  width: 70, height: 70, fit: BoxFit.cover)
+                      width: 70, height: 70, fit: BoxFit.cover)
                   : Container(
-                width: 70,
-                height: 70,
-                color: Colors.grey[300],
-                child: const Icon(Icons.person, size: 30, color: Colors.white),
-              ),
+                      width: 70,
+                      height: 70,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.person,
+                          size: 30, color: Colors.white),
+                    ),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -262,19 +265,20 @@ class UserStartPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(60),
               child: coach.user?.photo_url != null
                   ? Image.network(
-                coach.user!.photo_url!,
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.broken_image, size: 50),
-              )
+                      coach.user!.photo_url!,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 50),
+                    )
                   : Container(
-                width: 120,
-                height: 120,
-                color: Colors.grey[300],
-                child: const Icon(Icons.person, size: 60, color: Colors.white),
-              ),
+                      width: 120,
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.person,
+                          size: 60, color: Colors.white),
+                    ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -293,7 +297,8 @@ class UserStartPage extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   coach.user?.email ?? 'Correo no disponible',
-                  style: GoogleFonts.roboto(fontSize: 15, color: Colors.grey[700]),
+                  style:
+                      GoogleFonts.roboto(fontSize: 15, color: Colors.grey[700]),
                 ),
               ],
             ),
@@ -305,7 +310,7 @@ class UserStartPage extends StatelessWidget {
 
   Widget _scheduledClassCard(ScheduledClass c, BuildContext context) {
     final formattedDate =
-    c.classDate.split('T').first.split('-').reversed.join('/');
+        c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
 
     // Calcular diferencia en horas (mismo criterio para reagendar y cancelar)
@@ -340,17 +345,17 @@ class UserStartPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(50),
                 child: c.photo_url.isNotEmpty
                     ? Image.network(
-                  c.photo_url,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                )
+                        c.photo_url,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      )
                     : Container(
-                  width: 60,
-                  height: 60,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.person, color: Colors.white),
-                ),
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.person, color: Colors.white),
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -364,10 +369,10 @@ class UserStartPage extends StatelessWidget {
                             color: almostBlack)),
                     Text('Coach: ${c.coachName}',
                         style:
-                        GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
+                            GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
                     Text('Bicicleta: ${c.bicycle}',
                         style:
-                        GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
+                            GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
                   ],
                 ),
               ),
@@ -389,12 +394,11 @@ class UserStartPage extends StatelessWidget {
     );
   }
 
-
   Widget _scheduledClassesScrollableSection(BuildContext context) {
     if (con.scheduledClasses.isEmpty) {
       return Container(
         padding:
-        EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.15),
+            EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.15),
         child: Center(
           child: Text('No tienes clases agendadas.',
               style: GoogleFonts.roboto(fontSize: 16, color: Colors.grey[700])),
@@ -432,7 +436,7 @@ class UserStartPage extends StatelessWidget {
           title: Text('Rides',
               style: GoogleFonts.poppins(fontWeight: FontWeight.w800)),
           content:
-          Text(_ridesTerms, style: GoogleFonts.montserrat(color: darkGrey)),
+              Text(_ridesTerms, style: GoogleFonts.montserrat(color: darkGrey)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),

@@ -19,7 +19,7 @@ class User {
   String? birthDate;
   List<Rol>? roles = [];
   int? totalRides;
-
+  int? ridesCompleted;
   User({
     this.id,
     this.email,
@@ -33,6 +33,7 @@ class User {
     this.birthDate,
     this.roles,
     this.totalRides,
+    this.ridesCompleted,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -50,6 +51,7 @@ class User {
             ? []
             : List<Rol>.from(json["roles"].map((model) => Rol.fromJson(model))),
         totalRides: json['total_rides'],
+        ridesCompleted: json['rides_completed'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -65,5 +67,6 @@ class User {
         "birth_date": birthDate,
         "roles": roles,
         "total_rides": totalRides,
+        "rides_completed": ridesCompleted,
       };
 }
