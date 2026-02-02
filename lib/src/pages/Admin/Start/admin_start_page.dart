@@ -70,7 +70,7 @@ class AdminStartPage extends StatelessWidget {
                 },
                 tabs: List.generate(
                   con.coaches.length,
-                      (index) => Tab(
+                  (index) => Tab(
                     child: Text(con.coaches[index].user?.name ?? ''),
                   ),
                 ),
@@ -82,8 +82,17 @@ class AdminStartPage extends StatelessWidget {
             child: TabBarView(
               children: con.coaches.map((coach) {
                 final coachId = coach.id!;
-                final selectedDate =
-                    con.selectedDatePerCoach[coachId]?.value ?? con.today;
+                Expanded(
+                  child: Obx(() {
+                    final selectedDate =
+                        con.selectedDatePerCoach[coachId]?.value ?? con.today;
+
+                    return StudentAttendanceCard(
+                      coachId: coachId,
+                      date: selectedDate,
+                    );
+                  }),
+                );
 
                 return RefreshIndicator(
                   onRefresh: () => con.refreshAll(),
@@ -92,10 +101,16 @@ class AdminStartPage extends StatelessWidget {
                       _dateSelector(con, coachId),
                       const SizedBox(height: 10),
                       Expanded(
-                        child: StudentAttendanceCard(
-                          coachId: coachId,
-                          date: selectedDate,
-                        ),
+                        child: Obx(() {
+                          final selectedDate =
+                              con.selectedDatePerCoach[coachId]?.value ??
+                                  con.today;
+
+                          return StudentAttendanceCard(
+                            coachId: coachId,
+                            date: selectedDate,
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -222,7 +237,7 @@ class AdminStartPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
+                    const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,7 +259,6 @@ class AdminStartPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-
                     Row(
                       children: [
                         Expanded(
@@ -253,10 +267,10 @@ class AdminStartPage extends StatelessWidget {
                             style: GoogleFonts.poppins(),
                             decoration: InputDecoration(
                               labelText: "Título",
-                              labelStyle: GoogleFonts.poppins(
-                                  color: Colors.black54),
-                              prefixIcon: const Icon(Icons.title,
-                                  color: Colors.black),
+                              labelStyle:
+                                  GoogleFonts.poppins(color: Colors.black54),
+                              prefixIcon:
+                                  const Icon(Icons.title, color: Colors.black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -275,15 +289,13 @@ class AdminStartPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 15),
-
                     TextField(
                       controller: messageController,
                       maxLines: 3,
                       style: GoogleFonts.poppins(),
                       decoration: InputDecoration(
                         labelText: "Mensaje",
-                        labelStyle:
-                        GoogleFonts.poppins(color: Colors.black54),
+                        labelStyle: GoogleFonts.poppins(color: Colors.black54),
                         prefixIcon: const Icon(Icons.message_rounded,
                             color: Colors.black),
                         border: OutlineInputBorder(
@@ -297,9 +309,7 @@ class AdminStartPage extends StatelessWidget {
                             vertical: 18, horizontal: 16),
                       ),
                     ),
-
                     const SizedBox(height: 25),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [

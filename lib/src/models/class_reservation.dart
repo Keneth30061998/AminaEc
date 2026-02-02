@@ -15,6 +15,7 @@ class ClassReservation {
   String classTime;
   String status;
 
+
   ClassReservation({
     required this.id,
     required this.userId,
@@ -23,6 +24,7 @@ class ClassReservation {
     required this.classDate,
     required this.classTime,
     required this.status,
+
   });
 
   factory ClassReservation.fromJson(Map<String, dynamic> json) =>
@@ -36,6 +38,7 @@ class ClassReservation {
         classDate: json['class_date'],
         classTime: json['class_time'],
         status: json['status'],
+
       );
 
   Map<String, dynamic> toJson() => {
@@ -46,5 +49,6 @@ class ClassReservation {
         'class_date': classDate,
         'class_time': classTime,
         'status': status,
+
       };
 }

@@ -15,6 +15,7 @@ class AdminStartController extends GetxController {
   final coachProvider = CoachProvider();
   final classReservationProvider = ClassReservationProvider();
   final attendanceProvider = AttendanceProvider();
+  final RxInt completedRides = 0.obs;
 
   RxList<Coach> coaches = <Coach>[].obs;
   RxString selectedCoachId = ''.obs;
@@ -34,6 +35,7 @@ class AdminStartController extends GetxController {
     setupSockets();
   }
 
+
   Future<void> refreshAll() async {
     await getCoaches();
   }
@@ -48,31 +50,33 @@ class AdminStartController extends GetxController {
 
     final result = await coachProvider.getAll();
 
-    print("📌 [getCoaches] Resultado API coaches (${result.length} coaches):");
-    for (var c in result) {
-      print("  → CoachID: ${c.id}  | Nombre: ${c.user?.name}");
+    // ✅ 1) Inicializar maps ANTES de asignar coaches (para que UI encuentre keys)
+    for (var coach in result) {
+      final id = coach.id!;
+      selectedDatePerCoach.putIfAbsent(
+        id,
+            () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
+      );
+      studentMap.putIfAbsent(id, () => <StudentInscription>[].obs);
     }
 
+    // ✅ 2) Ahora sí setear coaches
     coaches.value = result;
 
     if (result.isNotEmpty && selectedCoachId.value.isEmpty) {
       selectedCoachId.value = result.first.id!;
     }
 
+    // ✅ 3) Cargar estudiantes
     for (var coach in result) {
-      selectedDatePerCoach.putIfAbsent(
-        coach.id!,
-        () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
-      );
-
       await loadStudents(coach.id!);
-
       refreshAttendanceMapForCoachDate(
         coach.id!,
         selectedDatePerCoach[coach.id!]!.value,
       );
     }
   }
+
 
   // =====================================================
   // LOAD STUDENTS
@@ -86,11 +90,12 @@ class AdminStartController extends GetxController {
 
     print("📌 Estudiantes recibidos desde API (${list.length}) →");
     for (var s in list) {
-      print(
-          "  🧍 ${s.studentName} | Fecha: ${s.classDate} | Hora: ${s.classTime}");
+      print("  🧍 ${s.studentName} | Fecha: ${s.classDate} | Hora: ${s.classTime}");
     }
 
-    studentMap[coachId] = RxList<StudentInscription>.from(list);
+    // ✅ NO reemplazar el RxList: mantener instancia y hacer assignAll
+    final rxList = studentMap.putIfAbsent(coachId, () => <StudentInscription>[].obs);
+    rxList.assignAll(list);
 
     for (var s in list) {
       final key = getStudentKey(s);
@@ -100,6 +105,7 @@ class AdminStartController extends GetxController {
 
     print("🔵 Fin de loadStudents()");
   }
+
 
   void selectCoach(String coachId) {
     print("🔄 [selectCoach] coachId seleccionado: $coachId");
