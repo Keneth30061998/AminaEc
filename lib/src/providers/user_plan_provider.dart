@@ -28,7 +28,7 @@ class UserPlanProvider {
       //print('📡 STATUS acquire: ${res.statusCode}');
       //print('📥 Response body: ${res.body}');
 
-      if (res.statusCode == 201) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
         final responseApi = ResponseApi.fromJson(json.decode(res.body));
         //print('✅ Acquire exitoso: ${responseApi.toJson()}');
         return responseApi;

@@ -25,33 +25,40 @@ class UserPlanBuyResumeController extends GetxController {
     super.onInit();
     plan = Get.arguments as Plan;
     user = User.fromJson(GetStorage().read('user') ?? {});
+    print("🟩 [onInit] user.id=${user.id} email=${user.email} tokenLen=${(user.session_token ?? '').length}");
+    print("🟩 [onInit] plan.id=${plan.id} plan.name=${plan.name} price=${plan.price} is_new_user_only=${plan.is_new_user_only}");
     loadCards();
   }
 
   Future<void> loadCards() async {
+    print("🟦 [loadCards] start...");
     isLoading.value = true;
     cards.value = await _cardProvider.listByUser();
     isLoading.value = false;
+    print("🟦 [loadCards] done. cards=${cards.length}");
   }
 
   double calculateSubtotal() => plan.price! / 1.15;
   double calculateIVA() => plan.price! - calculateSubtotal();
   double calculateTotal() => plan.price!;
 
-  /// payWithToken
-  /// - card: tarjeta seleccionada
-  /// - isRetrySingle: bandera interna para indicar que esta invocación es un reintento forzado en 1 cuota
-  ///    (evita volver a ofrecer cuotas y previene bucles)
   Future<void> payWithToken(CardModel card, {bool isRetrySingle = false}) async {
-    // VALIDACIÓN PLAN NUEVO USUARIO (Tu lógica original)
+    print("\n==================== 🧾 FLOW payWithToken ====================");
+    print("🧾 [payWithToken] isRetrySingle=$isRetrySingle");
+    print("🧾 [payWithToken] plan.id=${plan.id} plan.name=${plan.name} price=${plan.price} is_new_user_only=${plan.is_new_user_only}");
+    print("💳 [payWithToken] card.token=${card.token} last4=${card.last4} type=${card.type} bank=${card.bank} bin=${card.bin}");
+
+    // VALIDACIÓN PLAN NUEVO USUARIO
     if (plan.is_new_user_only == 1) {
       final user = User.fromJson(GetStorage().read('user') ?? {});
       final userPlanProvider = UserPlanProvider();
 
+      print("🔒 [new_user_only] consultando resumen de planes para user=${user.id}");
       final summary = await userPlanProvider.getUserPlansSummary(
         user.id.toString(),
         user.session_token ?? '',
       );
+      print("🔒 [new_user_only] summary.length=${summary.length}");
 
       if (summary.isNotEmpty) {
         Get.snackbar(
@@ -77,20 +84,17 @@ class UserPlanBuyResumeController extends GetxController {
     );
 
     try {
-      // =============================================================
-      // 1) Si es reintento forzado (isRetrySingle=true) -> no consultamos opciones
-      // =============================================================
       int installmentsCount = 1;
 
+      // 1) Selección de cuotas
       if (!isRetrySingle) {
-        // =============================================================
-        // 2) CONSULTAR SI LA TARJETA SOPORTA DIFERIDO Y OPCIONES
-        // (backend ya provee supports_installments e installment_options)
-        // =============================================================
         try {
+          print("🟦 [payWithToken] consultando payment options para token=${card.token}");
           final opts = await _cardProvider.getPaymentOptions(card.token!);
+          print("🟦 [payWithToken] paymentOptions raw: $opts");
 
           final supports = opts["supports_installments"] == true;
+          print("🟦 [payWithToken] supports_installments=$supports");
 
           List<int> options = [];
           if (opts["installment_options"] is List) {
@@ -98,9 +102,12 @@ class UserPlanBuyResumeController extends GetxController {
                 .map<int>((e) => int.tryParse(e.toString()) ?? 1)
                 .toList();
           }
+          print("🟦 [payWithToken] installment_options parsed=$options");
 
           if (supports && options.isNotEmpty) {
             final chosen = await _showInstallmentDialog(options);
+            print("🟦 [payWithToken] user chosen installments=$chosen");
+
             if (chosen == null) {
               pd.close();
               Get.snackbar(
@@ -114,37 +121,42 @@ class UserPlanBuyResumeController extends GetxController {
             }
             installmentsCount = chosen;
           } else {
-            // Si backend indica que NO soporta cuotas -> 1 cuota
             installmentsCount = 1;
           }
         } catch (err) {
-          // En caso de error en la consulta -> fallback seguro 1 cuota
+          print("⚠️ [payWithToken] getPaymentOptions ERROR: $err");
           installmentsCount = 1;
         }
       } else {
-        // isRetrySingle == true => forzamos 1 cuota
         installmentsCount = 1;
       }
 
-      // =============================================================
-      // 3) ENVIAR PAGO AL BACKEND
-      // =============================================================
+      print("🧾 [payWithToken] installmentsCount FINAL=$installmentsCount");
+      final parsedPlanId = int.tryParse(plan.id!.toString());
+      print("🧾 [payWithToken] planId parsed=$parsedPlanId");
+
+      // 2) Enviar pago
+      print("🚀 [payWithToken] calling backend /pay/token ...");
       ResponseApi payResp = await _cardProvider.payWithToken(
         token: card.token!,
         amount: plan.price!,
         taxPct: 15.0,
         description: plan.name!,
         installmentsCount: installmentsCount,
-        planId: int.tryParse(plan.id!.toString()), // <-- pasa plan.id
+        planId: parsedPlanId,
       );
 
+      print("📩 [payWithToken] payResp.success=${payResp.success} requiresConfirmation=${payResp.requiresConfirmation} txId=${payResp.transactionId} msg=${payResp.message}");
+      print("📩 [payWithToken] payResp.data=${payResp.data}");
 
-      // =============================
-      // 4) MANEJO OTP (igual que antes)
-      // =============================
+      // 3) Manejo OTP
       if (payResp.requiresConfirmation == true) {
         pd.close();
+        print("🔐 [OTP] requiresConfirmation=true");
+
         final otp = await _showOtpDialog();
+        print("🔐 [OTP] otp received? ${otp != null && otp.isNotEmpty} length=${otp?.length ?? 0}");
+
         if (otp == null || otp.isEmpty) {
           Get.snackbar(
             'Pago cancelado',
@@ -157,6 +169,8 @@ class UserPlanBuyResumeController extends GetxController {
         }
 
         final transactionId = payResp.transactionId ?? "";
+        print("🔐 [OTP] transactionId from payResp=$transactionId");
+
         if (transactionId.isEmpty) {
           Get.snackbar(
             'Error',
@@ -170,27 +184,32 @@ class UserPlanBuyResumeController extends GetxController {
 
         pd.show(msg: 'Verificando OTP...', barrierDismissible: false);
 
+        print("🚀 [confirmPayment] calling backend /pay/confirm ...");
         final confirmResp = await _cardProvider.confirmPayment(
           token: card.token!,
           transactionId: transactionId,
           confirmCode: otp,
-          planId: int.tryParse(plan.id!.toString()), // <-- pasa plan.id
+          planId: parsedPlanId,
         );
-
 
         pd.close();
 
+        print("📩 [confirmPayment] confirmResp.success=${confirmResp.success} txId=${confirmResp.transactionId} msg=${confirmResp.message}");
+        print("📩 [confirmPayment] confirmResp.data=${confirmResp.data}");
+
         if (confirmResp.success == true) {
+          print("✅ [confirmPayment] approved -> calling _onPaymentApprovedDirect($transactionId)");
           await _onPaymentApprovedDirect(transactionId);
         } else {
-          // Si el confirmResp indica que fue rechazado por diferido (en caso de reintentos)
           final msg = (confirmResp.message ?? '').toString().toLowerCase();
           final likelyDiffReject = msg.contains('difer') || msg.contains('diff') || msg.contains('install');
+          print("❌ [confirmPayment] rejected. likelyDiffReject=$likelyDiffReject installmentsCount=$installmentsCount");
+
           if (likelyDiffReject && installmentsCount > 1) {
-            // Ofrecer reintento en 1 cuota
             final retry = await _askRetrySingle();
+            print("🔁 [confirmPayment] retrySingle? $retry");
+
             if (retry == true) {
-              // Reintentar forzando 1 cuota (isRetrySingle = true evita volver a mostrar dialog de cuotas)
               await payWithToken(card, isRetrySingle: true);
               return;
             }
@@ -209,33 +228,28 @@ class UserPlanBuyResumeController extends GetxController {
         pd.close();
       }
 
-      // =============================
-      // 5) RESPUESTA DIRECTA
-      // =============================
+      // 4) Respuesta directa (sin OTP)
       if (payResp.success == true) {
         final transactionId = payResp.transactionId ?? "";
+        print("✅ [payWithToken] approved direct -> _onPaymentApprovedDirect($transactionId)");
         await _onPaymentApprovedDirect(transactionId);
       } else {
-        // =============================
-        // 6) MANEJO ESPECIAL: RECHAZO POR DIFERIDO (TARJETA DÉBITO)
-        // =============================
         final message = (payResp.message ?? '').toString().toLowerCase();
-
-        // heurística para detectar rechazo por diferido (mejorar con códigos reales si los tienes)
         final likelyDiffReject = message.contains('difer') ||
             message.contains('no permite pagos diferidos') ||
             message.contains('diff') ||
             message.contains('install');
 
+        print("❌ [payWithToken] not approved. likelyDiffReject=$likelyDiffReject installmentsCount=$installmentsCount msg=${payResp.message}");
+
         if (likelyDiffReject && installmentsCount > 1) {
-          // Mostrar mensaje y ofrecer reintentar en 1 cuota
           final retry = await _askRetrySingleCustomMessage(payResp.message);
+          print("🔁 [payWithToken] retrySingle? $retry");
+
           if (retry == true) {
-            // Reintentar en 1 cuota
             await payWithToken(card, isRetrySingle: true);
             return;
           } else {
-            // Usuario decidió no reintentar
             Get.snackbar(
               'Pago cancelado',
               'No se realizó el pago diferido',
@@ -247,7 +261,6 @@ class UserPlanBuyResumeController extends GetxController {
           }
         }
 
-        // Rechazo genérico (no es un rechazo por diferido)
         Get.snackbar(
           'Error en pago',
           payResp.message ?? 'Falló el pago',
@@ -256,8 +269,10 @@ class UserPlanBuyResumeController extends GetxController {
           colorText: Colors.white,
         );
       }
-    } catch (e) {
+    } catch (e, st) {
       pd.close();
+      print("💥 [payWithToken] EXCEPTION: $e");
+      print("💥 [payWithToken] STACK: $st");
       Get.snackbar(
         'Error inesperado',
         e.toString(),
@@ -265,24 +280,38 @@ class UserPlanBuyResumeController extends GetxController {
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
+    } finally {
+      print("==================== ✅ END FLOW payWithToken ====================\n");
     }
   }
 
   // =============================================================
-  // Confirmación plan y redirección — mantiene la lógica original
+  // Acreditación plan
   // =============================================================
   Future<void> _onPaymentApprovedDirect(String transactionId) async {
     final box = GetStorage();
     final user = User.fromJson(box.read('user') ?? {});
+    final token = user.session_token ?? '';
+
+    print("\n🟩 [_onPaymentApprovedDirect] START");
+    print("🟩 user.id=${user.id} email=${user.email} tokenLen=${token.length}");
+    print("🟩 plan.id=${plan.id} plan.name=${plan.name}");
+    print("🟩 transactionId=$transactionId");
+
     final userPlan = UserPlan(
       userId: user.id!,
       planId: plan.id!,
       transactionId: transactionId.isNotEmpty ? transactionId : null,
     );
+    print("📦 [_onPaymentApprovedDirect] userPlan.toJson=${userPlan.toJson()}");
 
     final planProvider = UserPlanProvider();
-    ResponseApi? planResp =
-    await planProvider.acquire(userPlan, user.session_token ?? '');
+    ResponseApi? planResp = await planProvider.acquire(userPlan, token);
+
+    print("📩 [_onPaymentApprovedDirect] acquire response:");
+    print("📩 success=${planResp?.success} message=${planResp?.message}");
+    print("📩 data=${planResp?.data}");
+    print("🟩 [_onPaymentApprovedDirect] END\n");
 
     if (planResp?.success == true) {
       Get.snackbar(
@@ -303,9 +332,6 @@ class UserPlanBuyResumeController extends GetxController {
     }
   }
 
-  // =============================================================
-  // DIALOGO OTP (igual que antes)
-  // =============================================================
   Future<String?> _showOtpDialog() {
     final codeCtrl = TextEditingController();
     return Get.defaultDialog<String?>(
@@ -338,9 +364,6 @@ class UserPlanBuyResumeController extends GetxController {
     );
   }
 
-  // =============================================================
-  // DIALOGO DINÁMICO DE CUOTAS (igual que antes)
-  // =============================================================
   Future<int?> _showInstallmentDialog(List<int> options) {
     final opts = options.toSet().toList()..sort();
     if (!opts.contains(1)) opts.insert(0, 1);
@@ -386,9 +409,6 @@ class UserPlanBuyResumeController extends GetxController {
     );
   }
 
-  // =============================================================
-  // DIALOGO: Preguntar si desea reintentar en 1 cuota (para rechazo por diferido)
-  // =============================================================
   Future<bool?> _askRetrySingle() {
     return Get.defaultDialog<bool?>(
       title: 'Reintentar en 1 cuota',
@@ -402,7 +422,6 @@ class UserPlanBuyResumeController extends GetxController {
     );
   }
 
-  // Variante que muestra mensaje del backend (si existe)
   Future<bool?> _askRetrySingleCustomMessage(String? backendMessage) {
     final display = backendMessage ?? 'La tarjeta no permite pagos diferidos.';
     return Get.defaultDialog<bool?>(
@@ -417,7 +436,9 @@ class UserPlanBuyResumeController extends GetxController {
   }
 
   Future<void> deleteCard(String token) async {
+    print("🗑️ [deleteCard] token=$token");
     final resp = await _cardProvider.deleteCard(token);
+    print("🗑️ [deleteCard] resp.success=${resp.success} msg=${resp.message}");
     if (resp.success == true) {
       await loadCards();
       Get.snackbar('Tarjeta eliminada', resp.message ?? '');
