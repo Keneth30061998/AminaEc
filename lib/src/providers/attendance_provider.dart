@@ -18,9 +18,8 @@ class AttendanceProvider extends GetConnect {
   }
 
   // ======================================================
-  // 🔵 REGISTER ATTENDANCE
+  // 🔵 REGISTER ATTENDANCE (UNITARIO)
   Future<ResponseApi> registerAttendance(Attendance attendance) async {
-
     _debugHeader("API: registerAttendance");
 
     print("➡️ POST: $url/record");
@@ -52,6 +51,51 @@ class AttendanceProvider extends GetConnect {
   }
 
   // ======================================================
+  // 🔵 REGISTER ATTENDANCE (BATCH POR GRUPO)
+  Future<ResponseApi> registerAttendanceGroup({
+    required String coachId,
+    required String classDate, // yyyy-MM-dd
+    required String classTime, // HH:mm o HH:mm:00
+    required List<Map<String, dynamic>> items,
+  }) async {
+    _debugHeader("API: registerAttendanceGroup");
+
+    final body = {
+      "coach_id": coachId,
+      "class_date": classDate,
+      "class_time": classTime,
+      "items": items,
+    };
+
+    print("➡️ POST: $url/record-group");
+    print("📦 Body: $body");
+    print("📨 Token: ${userSession.session_token}");
+
+    final response = await post(
+      '$url/record-group',
+      body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': userSession.session_token ?? '',
+      },
+    );
+
+    print("🌐 Status: ${response.statusCode}");
+    print("🌐 Raw: ${response.body}");
+
+    if (response.body == null) {
+      return ResponseApi(success: false, message: 'Sin respuesta del servidor');
+    }
+
+    dynamic respBody = response.body;
+    if (respBody is String) {
+      respBody = json.decode(respBody);
+    }
+
+    return ResponseApi.fromJson(respBody);
+  }
+
+  // ======================================================
   // 🔵 FIND BY FILTERS
   Future<List<AttendanceResult>> findByFilters({
     String? username,
@@ -61,28 +105,28 @@ class AttendanceProvider extends GetConnect {
     String? startHour,
     String? endHour,
   }) async {
-
     _debugHeader("API: findByFilters");
 
     final Map<String, String> queryParams = {};
 
-    if (username != null && username.trim().isNotEmpty)
+    if (username != null && username.trim().isNotEmpty) {
       queryParams['username'] = username.trim();
-
-    if (year != null && year.trim().isNotEmpty)
+    }
+    if (year != null && year.trim().isNotEmpty) {
       queryParams['class_year'] = year.trim();
-
-    if (month != null && month.trim().isNotEmpty)
+    }
+    if (month != null && month.trim().isNotEmpty) {
       queryParams['class_month'] = month.trim();
-
-    if (day != null && day.trim().isNotEmpty)
+    }
+    if (day != null && day.trim().isNotEmpty) {
       queryParams['class_day'] = day.trim();
-
-    if (startHour != null && startHour.trim().isNotEmpty)
+    }
+    if (startHour != null && startHour.trim().isNotEmpty) {
       queryParams['start_hour'] = startHour.trim();
-
-    if (endHour != null && endHour.trim().isNotEmpty)
+    }
+    if (endHour != null && endHour.trim().isNotEmpty) {
       queryParams['end_hour'] = endHour.trim();
+    }
 
     print("➡️ GET: $url/users");
     print("❓ QueryParams: $queryParams");
@@ -107,7 +151,6 @@ class AttendanceProvider extends GetConnect {
     }
 
     final List<dynamic> data = body['data'] ?? [];
-
     print("📥 Registros encontrados: ${data.length}");
 
     return data.map((e) => AttendanceResult.fromJson(e)).toList();

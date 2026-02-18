@@ -15,14 +15,13 @@ class AdminStartController extends GetxController {
   final coachProvider = CoachProvider();
   final classReservationProvider = ClassReservationProvider();
   final attendanceProvider = AttendanceProvider();
-  final RxInt completedRides = 0.obs;
 
   RxList<Coach> coaches = <Coach>[].obs;
   RxString selectedCoachId = ''.obs;
 
   Map<String, RxList<StudentInscription>> studentMap = {};
   Map<String, Rx<DateTime>> selectedDatePerCoach = {};
-  Map<String, RxBool> attendanceMap = {};
+  Map<String, RxBool> attendanceMap = {}; // key -> isPresent
 
   DateTime get today => DateTime.now();
   final int daysToShow = 15;
@@ -34,7 +33,6 @@ class AdminStartController extends GetxController {
     getCoaches();
     setupSockets();
   }
-
 
   Future<void> refreshAll() async {
     await getCoaches();
@@ -50,7 +48,7 @@ class AdminStartController extends GetxController {
 
     final result = await coachProvider.getAll();
 
-    // ✅ 1) Inicializar maps ANTES de asignar coaches (para que UI encuentre keys)
+    // Inicializar maps
     for (var coach in result) {
       final id = coach.id!;
       selectedDatePerCoach.putIfAbsent(
@@ -60,14 +58,12 @@ class AdminStartController extends GetxController {
       studentMap.putIfAbsent(id, () => <StudentInscription>[].obs);
     }
 
-    // ✅ 2) Ahora sí setear coaches
     coaches.value = result;
 
     if (result.isNotEmpty && selectedCoachId.value.isEmpty) {
       selectedCoachId.value = result.first.id!;
     }
 
-    // ✅ 3) Cargar estudiantes
     for (var coach in result) {
       await loadStudents(coach.id!);
       refreshAttendanceMapForCoachDate(
@@ -76,7 +72,6 @@ class AdminStartController extends GetxController {
       );
     }
   }
-
 
   // =====================================================
   // LOAD STUDENTS
@@ -93,19 +88,17 @@ class AdminStartController extends GetxController {
       print("  🧍 ${s.studentName} | Fecha: ${s.classDate} | Hora: ${s.classTime}");
     }
 
-    // ✅ NO reemplazar el RxList: mantener instancia y hacer assignAll
     final rxList = studentMap.putIfAbsent(coachId, () => <StudentInscription>[].obs);
     rxList.assignAll(list);
 
     for (var s in list) {
-      final key = getStudentKey(s);
+      final key = getStudentKey(s, coachId);
       attendanceMap.putIfAbsent(key, () => false.obs);
       print("  🔑 KEY generado: $key");
     }
 
     print("🔵 Fin de loadStudents()");
   }
-
 
   void selectCoach(String coachId) {
     print("🔄 [selectCoach] coachId seleccionado: $coachId");
@@ -115,8 +108,7 @@ class AdminStartController extends GetxController {
   void selectDateForCoach(String coachId, DateTime date) {
     print("📅 [selectDateForCoach] coachId=$coachId  | date=$date");
 
-    selectedDatePerCoach[coachId]?.value =
-        DateTime(date.year, date.month, date.day);
+    selectedDatePerCoach[coachId]?.value = DateTime(date.year, date.month, date.day);
 
     refreshAttendanceMapForCoachDate(
       coachId,
@@ -132,10 +124,7 @@ class AdminStartController extends GetxController {
   // =====================================================
   // FILTER STUDENTS BY DATE
   // =====================================================
-  List<StudentInscription> getStudentsByCoachAndDate(
-    String coachId,
-    DateTime date,
-  ) {
+  List<StudentInscription> getStudentsByCoachAndDate(String coachId, DateTime date) {
     final students = studentMap[coachId]?.toList() ?? <StudentInscription>[];
     final selectedDateStr = DateFormat('yyyy-MM-dd').format(date);
 
@@ -151,8 +140,7 @@ class AdminStartController extends GetxController {
         final classDateOnlyStr = DateFormat('yyyy-MM-dd').format(classDate);
         final match = classDateOnlyStr == selectedDateStr;
 
-        print(
-            "  ✔ Estudiante: ${s.studentName} | FechaClase: $classDateOnlyStr | Match: $match");
+        print("  ✔ Estudiante: ${s.studentName} | FechaClase: $classDateOnlyStr | Match: $match");
 
         return match;
       } catch (e) {
@@ -162,7 +150,6 @@ class AdminStartController extends GetxController {
     }).toList();
 
     filtered.sort((a, b) => a.classTime.compareTo(b.classTime));
-
     print("📌 Filtrados final: ${filtered.length} estudiantes\n");
 
     return filtered;
@@ -171,34 +158,28 @@ class AdminStartController extends GetxController {
   // =====================================================
   // GROUP BY TIME
   // =====================================================
-  Map<String, List<StudentInscription>> groupStudentsByTime(
-      String coachId, DateTime date) {
+  Map<String, List<StudentInscription>> groupStudentsByTime(String coachId, DateTime date) {
     final students = getStudentsByCoachAndDate(coachId, date);
-
     print("⏱ [groupStudentsByTime] Total estudiantes: ${students.length}");
 
     final Map<String, List<StudentInscription>> groups = {};
-
     for (var s in students) {
-      final timeKey =
-          s.classTime.length >= 5 ? s.classTime.substring(0, 5) : s.classTime;
-
+      final timeKey = s.classTime.length >= 5 ? s.classTime.substring(0, 5) : s.classTime;
       groups.putIfAbsent(timeKey, () => []);
       groups[timeKey]!.add(s);
-
       print("  ⏰ Grupo $timeKey → ${groups[timeKey]!.length} estudiantes");
     }
-
     return groups;
   }
 
-  String getStudentKey(StudentInscription s) {
+  // ✅ KEY robusta: incluye coachId para evitar colisiones entre pestañas
+  String getStudentKey(StudentInscription s, String coachId) {
     try {
       final date = DateTime.parse(s.classDate).toLocal();
       final dateStr = DateFormat('yyyy-MM-dd').format(date);
-      return '${s.studentId}_${dateStr}_${s.classTime}';
+      return '${coachId}_${s.studentId}_${dateStr}_${s.classTime}';
     } catch (e) {
-      return '${s.studentId}_${s.classDate}_${s.classTime}';
+      return '${coachId}_${s.studentId}_${s.classDate}_${s.classTime}';
     }
   }
 
@@ -207,16 +188,25 @@ class AdminStartController extends GetxController {
 
     final students = getStudentsByCoachAndDate(coachId, date);
 
+    // asegurar keys
     for (var s in students) {
-      final key = getStudentKey(s);
+      final key = getStudentKey(s, coachId);
       attendanceMap.putIfAbsent(key, () => false.obs);
       print("  🎯 KEY válido: $key");
     }
 
-    final validKeys = students.map((s) => getStudentKey(s)).toSet();
+    // limpiar SOLO keys de este coach+fecha que ya no existan
+    final validKeys = students.map((s) => getStudentKey(s, coachId)).toSet();
 
-    final keysToRemove =
-        attendanceMap.keys.where((k) => !validKeys.contains(k)).toList();
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+    final prefix = '${coachId}_';
+    final dateToken = '_${dateStr}_';
+
+    final keysToRemove = attendanceMap.keys.where((k) {
+      final sameCoach = k.startsWith(prefix);
+      final sameDate = k.contains(dateToken);
+      return sameCoach && sameDate && !validKeys.contains(k);
+    }).toList();
 
     for (var k in keysToRemove) {
       print("  🗑 Eliminando KEY inválido: $k");
@@ -225,12 +215,12 @@ class AdminStartController extends GetxController {
   }
 
   // =====================================================
-  // REGISTER ATTENDANCE  ✅ FIX A + 6A
+  // REGISTER ATTENDANCE (BATCH DEFINITIVO)
   // =====================================================
   Future<void> registerAttendanceForGroup({
     required String coachId,
     required DateTime date,
-    required String classTime,
+    required String classTime, // "HH:mm"
   }) async {
     print("\n=======================================");
     print("🟢 [registerAttendanceForGroup]");
@@ -245,54 +235,42 @@ class AdminStartController extends GetxController {
 
     print("📌 Total estudiantes en este grupo: ${students.length}");
 
-    // ✅ FIX A: Snapshot del estado ANTES de tocar UI / maps
+    // Snapshot
     final presenceSnapshot = <String, bool>{};
     for (final s in students) {
-      final key = getStudentKey(s);
+      final key = getStudentKey(s, coachId);
       presenceSnapshot[key] = attendanceMap[key]?.value ?? false;
     }
 
-    // ✅ Opción 6A: UI optimista, pero SIN borrar keys antes del loop
-    removeGroupLocally(
-      coachId: coachId,
-      date: date,
-      classTime: classTime,
-      removeAttendanceKeys: false, // 👈 clave para evitar el bug
-    );
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+    final classTimeFull = '$classTime:00'; // "HH:mm:00"
 
-    bool allOk = true;
-
-    for (var s in students) {
-      final key = getStudentKey(s);
-
-      // ✅ Usar snapshot (no depende del mapa que puede mutar)
+    final items = students.map((s) {
+      final key = getStudentKey(s, coachId);
       final isPresent = presenceSnapshot[key] ?? false;
 
-      print(
-          "  ↳ Enviando asistencia: ${s.studentName} | status=${isPresent ? 'present' : 'absent'}");
+      print("  ↳ Batch item: ${s.studentName} | ${isPresent ? 'present' : 'absent'}");
 
-      final attendance = Attendance(
-        userId: s.studentId,
+      return {
+        "user_id": s.studentId,
+        "bicycle": s.bicycle,
+        "status": isPresent ? "present" : "absent",
+      };
+    }).toList();
+
+    final res = await attendanceProvider.registerAttendanceGroup(
+      coachId: coachId,
+      classDate: dateStr,
+      classTime: classTimeFull,
+      items: items,
+    );
+
+    if (res.success == true) {
+      removeGroupLocally(
         coachId: coachId,
-        classDate: DateTime.parse(s.classDate).toLocal(),
-        classTime: s.classTime.split(".").first,
-        bicycle: s.bicycle,
-        status: isPresent ? 'present' : 'absent',
-      );
-
-      final res = await attendanceProvider.registerAttendance(attendance);
-      // No cambiamos la lógica de negocio, solo controlamos el resultado
-      if (res.success != true) {
-        allOk = false;
-        print("❌ Error registrando ${s.studentName}: ${res.message}");
-      }
-    }
-
-    if (allOk) {
-      // Limpieza final de keys del grupo (antes no se borraban para no romper el snapshot)
-      final dateStr = DateFormat('yyyy-MM-dd').format(date);
-      attendanceMap.removeWhere(
-        (key, _) => key.contains(classTime) && key.contains(dateStr),
+        date: date,
+        classTime: classTime,
+        removeAttendanceKeys: true,
       );
 
       Get.snackbar(
@@ -300,12 +278,10 @@ class AdminStartController extends GetxController {
         "Asistencia del grupo $classTime registrada correctamente",
       );
     } else {
-      // Si falló algo: re-sincronizar para no dejar UI “optimista” incorrecta
       Get.snackbar(
         "Error",
-        "No se pudo registrar toda la asistencia. Intenta nuevamente.",
+        res.message ?? "No se pudo registrar la asistencia del grupo.",
       );
-
       await loadStudents(coachId);
       refreshAttendanceMapForCoachDate(coachId, date);
     }
@@ -352,11 +328,10 @@ class AdminStartController extends GetxController {
     SocketService().on('attendance:group:registered', (data) {
       final coachId = data['coach_id'].toString();
       final date = DateTime.parse(data['class_date']);
-      final classTime = data['class_time'].substring(0, 5);
+      final classTime = data['class_time'].toString().substring(0, 5);
 
       print("📡 SOCKET → attendance:group:registered | $coachId $classTime");
 
-      // Por sockets mantenemos el comportamiento original (borra también keys)
       removeGroupLocally(
         coachId: coachId,
         date: date,
@@ -367,7 +342,7 @@ class AdminStartController extends GetxController {
   }
 
   // =====================================================
-  // REMOVE GROUP LOCALLY ✅ FIX B (parámetro)
+  // REMOVE GROUP LOCALLY
   // =====================================================
   void removeGroupLocally({
     required String coachId,
@@ -381,21 +356,24 @@ class AdminStartController extends GetxController {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
 
     list.removeWhere((s) {
-      final sDate = DateFormat('yyyy-MM-dd')
-          .format(DateTime.parse(s.classDate).toLocal());
-
+      final sDate = DateFormat('yyyy-MM-dd').format(DateTime.parse(s.classDate).toLocal());
       final sameDate = sDate == dateStr;
       final sameTime = s.classTime.substring(0, 5) == classTime;
-
       return sameDate && sameTime;
     });
 
     list.refresh();
 
     if (removeAttendanceKeys) {
-      attendanceMap.removeWhere(
-        (key, _) => key.contains(classTime) && key.contains(dateStr),
-      );
+      final prefix = '${coachId}_';
+      final dateToken = '_${dateStr}_';
+
+      attendanceMap.removeWhere((key, _) {
+        final sameCoach = key.startsWith(prefix);
+        final sameDate = key.contains(dateToken);
+        final sameTime = key.contains('_$classTime');
+        return sameCoach && sameDate && sameTime;
+      });
     }
   }
 }

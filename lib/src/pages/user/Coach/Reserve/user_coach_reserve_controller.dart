@@ -5,6 +5,8 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../components/Socket/socket_service.dart';
 import '../../../../models/user.dart';
@@ -30,6 +32,15 @@ class UserCoachReserveController extends GetxController {
   final ClassReservationProvider _provider = ClassReservationProvider();
   final Map<String, dynamic> _user = GetStorage().read('user');
 
+  // ✅ Link fijo App Store (solo iOS por ahora)
+  static const String _appStoreUrl =
+      'https://apps.apple.com/ec/app/amina/id6753769136?l=en-GB';
+  static const String _appAndroid =
+    'https://apiv1.pruebasinventario.com/public/amina-android.html';
+
+  // ✅ Guardamos la bici usada en la última reserva confirmada
+  int? _lastReservedBicycle;
+
   @override
   void onInit() {
     super.onInit();
@@ -54,8 +65,8 @@ class UserCoachReserveController extends GetxController {
   }
 
   void toggleEquipo(int equipo) {
-    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo))
-      return;
+    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo)) return;
+
     if (selectedEquipos.contains(equipo)) {
       selectedEquipos.remove(equipo);
     } else {
@@ -85,7 +96,7 @@ class UserCoachReserveController extends GetxController {
       return;
     }
 
-    int bicycle = selectedEquipos.first;
+    final int bicycle = selectedEquipos.first;
 
     // 2️⃣ Llamada a la API
     ResponseApi response = await _provider.scheduleClass(
@@ -101,7 +112,10 @@ class UserCoachReserveController extends GetxController {
         final reservationMap = response.data as Map<String, dynamic>;
         final reservation = ClassReservation.fromJson(reservationMap);
 
-        // 4️⃣ Mostrar diálogo de confirmación
+        // ✅ Guardamos bici confirmada para el invite
+        _lastReservedBicycle = bicycle;
+
+        // 4️⃣ Mostrar diálogo de confirmación (con invitación)
         showReservationDialog(Get.context!);
 
         // 5️⃣ Actualizar listado de clases si está registrado UserStartController
@@ -125,18 +139,78 @@ class UserCoachReserveController extends GetxController {
           if (Get.isOverlaysOpen) Get.back();
           Get.offAllNamed('/user/home');
         });
-
       } catch (e) {
         print('❌ Error convirtiendo respuesta a ClassReservation: $e');
         Get.snackbar('Error', 'No se pudo procesar la reserva correctamente');
       }
-
     } else {
       // 8️⃣ Manejo de error de API
       Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
     }
   }
 
+  // ✅ INVITACIÓN: arma mensaje con datos de la clase + link App Store y abre Share Sheet
+  Future<void> shareInvite(BuildContext context) async {
+    final msg = _buildInviteMessage();
+    final subject = 'Únete conmigo en AMINA';
+
+    try {
+      final box = context.findRenderObject() as RenderBox?;
+      if (box != null) {
+        await Share.share(
+          msg,
+          subject: subject,
+          sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
+        );
+      } else {
+        await Share.share(msg, subject: subject);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'No se pudo abrir el menú de compartir');
+    }
+  }
+
+  String _buildInviteMessage() {
+    final datePretty = _formatDateEs(classDate);
+    final timePretty = _formatTimeHHmm(classTime);
+    final bike = _lastReservedBicycle;
+
+    //final bikeLine = (bike != null) ? '🪑 Bici: #$bike\n' : '';
+
+    final iosSection = '📲 iOS (App Store)\n$_appStoreUrl';
+    final androidSection = (_appAndroid.trim().isNotEmpty)
+        ? '\n\n🤖 Android (Google Play)\n$_appAndroid'
+        : '';
+
+    return '🚴‍♂️ *AMINA* — Invitación a clase\n'
+        '──────────────\n'
+        '👤 Coach: $coachName\n'
+        '📅 Fecha: $datePretty\n'
+        '🕒 Hora: $timePretty\n'
+        '\n'
+        'Descarga la app aquí:\n\n'
+        '$iosSection'
+        '$androidSection';
+  }
+
+
+  String _formatTimeHHmm(String rawTime) {
+    final parts = rawTime.split(":");
+    if (parts.length < 2) return rawTime;
+    final hh = parts[0].padLeft(2, '0');
+    final mm = parts[1].padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
+  String _formatDateEs(String isoDate) {
+    try {
+      final dt = DateTime.parse(isoDate);
+      // Ej: "viernes 14 de febrero"
+      return DateFormat("EEEE d 'de' MMMM", 'es_ES').format(dt);
+    } catch (_) {
+      return isoDate;
+    }
+  }
 
   void showReservationDialog(BuildContext context) {
     showDialog(
@@ -159,8 +233,7 @@ class UserCoachReserveController extends GetxController {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 10),
-                  const Icon(Icons.check_circle_outline,
-                      color: Colors.green, size: 60),
+                  const Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
                   const SizedBox(height: 15),
                   const Text(
                     '¡Reserva confirmada!',
@@ -187,42 +260,70 @@ class UserCoachReserveController extends GetxController {
                     children: const [
                       _BulletPoint(
                         text:
-                            'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
+                        'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
                       ),
                       _BulletPoint(
                         text:
-                            'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
+                        'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
                       ),
                       _BulletPoint(text: 'Usa ropa cómoda.'),
                       _BulletPoint(
-                          text:
-                              'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.'),
+                        text:
+                        'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.',
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 25),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.back();
-                        Get.offAllNamed('/user/home');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black87,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 18),
+
+                  // ✅ Botones: Invitar + Aceptar
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => shareInvite(context),
+                          icon: const Icon(Icons.ios_share_rounded),
+                          label: const Text(
+                            'Invitar a un amigo',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: BorderSide(color: Colors.black.withOpacity(.12)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text(
-                        'Aceptar',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: whiteLight),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Get.back();
+                            Get.offAllNamed('/user/home');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: const Text(
+                            'Aceptar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: whiteLight,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  )
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -234,8 +335,7 @@ class UserCoachReserveController extends GetxController {
 
   void getTotalRides() async {
     if (user.session_token != null) {
-      int rides =
-          await userPlanProvider.getTotalActiveRides(user.session_token!);
+      int rides = await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
