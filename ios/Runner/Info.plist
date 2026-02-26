@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsUsageDescription</key>
+    <string>Necesitamos acceso al calendario para agendar tus clases.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Usamos la cámara para que puedas tomar o subir tu foto de perfil dentro de la app Amina Ec.</string>
 	<key>NSMicrophoneUsageDescription</key>
@@ -40,6 +42,12 @@
 	<string>Usamos esta información únicamente para mejorar tu experiencia dentro de la app y personalizar tu cuenta. No compartimos datos con terceros.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+    <string>Necesitamos acceso para crear eventos de tus clases en tu calendario.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Necesitamos acceso al calendario para ver y agendar tus clases.</string>
+    <key>GIDClientID</key>
+    <string>410208690638-cfv1jj42fhr2d39o1fu9do0bv36jq4ce.apps.googleusercontent.com</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -49,6 +57,8 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>GIDServerClientID</key>
+    <string>410208690638-vec9i3amq5vg2pf61nkm8hjran3s8men.apps.googleusercontent.com</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -62,5 +72,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+    <array>
+     <dict>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+       <string>com.googleusercontent.apps.410208690638-cfv1jj42fhr2d39o1fu9do0bv36jq4ce</string>
+      </array>
+     </dict>
+    </array>
 </dict>
 </plist>
