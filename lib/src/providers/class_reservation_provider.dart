@@ -427,4 +427,5 @@ class ClassReservationProvider {
     'Content-Type': 'application/json',
     'Authorization': (_user['session_token'] ?? '').toString(),
   };
+
 }

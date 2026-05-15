@@ -36,6 +36,7 @@ import 'package:get/get.dart';
 
 import '../pages/Admin/Reports/UserPlans/admin_user_plans_page.dart';
 import '../pages/Admin/Services/Plan/Update/admin_plan_update_page.dart';
+import '../pages/user/ClassRating/user_class_rating_page.dart';
 
 // ===========================
 //  Definición de rutas GetX
@@ -59,7 +60,7 @@ final List<GetPage> appRoutes = [
   GetPage(name: '/user/plan/buy/resume', page: () => UserPlanBuyResumePage()),
   GetPage(name: '/user/coach/reserve', page: () => UserCoachReservePage()),
   GetPage(name: '/user/plan', page: () => UserPlanListPage()),
-
+  GetPage(name: '/user/class-rating', page: () => const UserClassRatingPage()),
   // --- Coach ---
   GetPage(name: '/coach/home', page: () => CoachHomePage()),
 

@@ -132,8 +132,8 @@ class PlanProvider extends GetConnect {
   Future<http.Response> updateWithoutImage(Plan plan) async {
     //print('📌 [PlanProvider] → Iniciando updateWithoutImage()');
     //print('📤 Plan: ${plan.toJson()}');
-
-    Uri uri = Uri.parse('${Environment.API_URL_OLD}/api/plans/update');
+    // static const String API_URL = "https://apiv1.pruebasinventario.com/";
+    Uri uri = Uri.parse('${Environment.API_URL}api/plans/update');
     final res = await http.put(
       uri,
       headers: {

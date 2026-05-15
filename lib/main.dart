@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/providers/class_rating_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,23 +22,42 @@ import 'src/services/fcm_service.dart';
 import 'src/services/notifications_service.dart';
 import 'src/services/app_config_service.dart';
 import 'src/services/att_service.dart';
+import 'src/services/pending_navigation_service.dart';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+// Definir la función _firebaseMessagingBackgroundHandler fuera de cualquier clase
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print("Handling a background message: ${message.messageId}");
+
+  /*
+  if (message.data['type'] == 'CLASS_RATING_REQUEST' && message.data['attendance_id'] != null) {
+    final String attendanceId = message.data['attendance_id'].toString();
+
+    final args = {'attendanceId': attendanceId};
+
+    // Si la app está en primer plano, redirigimos directamente
+    if (Get.key.currentState != null) {
+      Get.toNamed('/user/class-rating', arguments: args);
+    } else {
+      // Si la app está en segundo plano, guardamos la ruta pendiente
+      PendingNavigationService.setPendingRoute(route: '/user/class-rating', arguments: args);
+    }
+  }
+   */
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   Get.put(CoachEvents());
 
-  // =====================================
   // 1️⃣ Inicializar Firebase
-  // =====================================
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // =====================================
-  // 2️⃣ Simular versión antigua: Delay antes de ATT
-  // Solo en iOS, ayuda a que el cuadro ATT aparezca
-  // =====================================
+  // 2️⃣ Simular versión antigua: Delay antes de ATT (solo en iOS)
   if (defaultTargetPlatform == TargetPlatform.iOS) {
     await Future.delayed(const Duration(seconds: 5));
   }
@@ -45,37 +65,31 @@ void main() async {
   // Solicitar permiso ATT
   await requestTrackingAuthorization();
 
-  // =====================================
   // 3️⃣ Inicializar notificaciones locales
-  // =====================================
   await initializeLocalNotifications();
 
-  // =====================================
   // 4️⃣ Inicializar FCM
-  // =====================================
   await setupFCM();
 
-  // =====================================
   // 5️⃣ Configuraciones generales
-  // =====================================
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await initializeDateFormatting('es_ES', null);
 
   // Conectar sockets solo si hay session_token
-  if (userSession.session_token != null &&
-      userSession.session_token!.isNotEmpty) {
+  if (userSession.session_token != null && userSession.session_token!.isNotEmpty) {
     SocketService().connect();
   }
 
-  // =====================================
   // 6️⃣ Consultar configuración remota (mantenimiento)
-  // =====================================
   final remoteCfg = await fetchRemoteAppConfig();
   final bool isMaintenance = remoteCfg['maintenance'] == true;
   final String maintenanceTitle = remoteCfg['title'] ?? 'Mantenimiento';
   final String maintenanceMessage =
       remoteCfg['message'] ?? 'La app está en mantenimiento.';
   final String maintenanceEstimated = remoteCfg['estimated_time'] ?? '';
+
+  // Registra el manejador de mensajes en segundo plano
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(MyAppBootstrap(
     isMaintenance: isMaintenance,
@@ -124,6 +138,36 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final ClassRatingProvider _rating = ClassRatingProvider();
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final pendingRoute = PendingNavigationService.consumePendingRoute();
+
+      final response = await _rating.checkPendingRating(userSession.id.toString());
+      if (response.success! && response.data != null) {
+        final pendingAttendanceId = response.data['attendanceId'];
+        if (pendingAttendanceId != null) {
+          // Si hay una clase pendiente, navegar a la página de calificación
+          Get.toNamed('/user/class-rating', arguments: {
+            'attendanceId': pendingAttendanceId,
+          });
+        }
+      }
+
+      if (pendingRoute != null) {
+        final String route = pendingRoute['route'];
+        final Map<String, dynamic> arguments =
+        Map<String, dynamic>.from(pendingRoute['arguments'] ?? {});
+
+        Get.toNamed(route, arguments: arguments);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(

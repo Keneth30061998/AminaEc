@@ -129,8 +129,15 @@ class CardProvider {
   // ============================================
   // 🔥 NUEVO: Obtiene si la tarjeta soporta diferido y opciones reales del backend
   // ============================================
-  Future<Map<String, dynamic>> getPaymentOptions(String token) async {
-    final uri = Uri.parse("$_baseUrl/cards/$token/payment-options");
+  Future<Map<String, dynamic>> getPaymentOptions(
+      String token, {
+        int? planId,
+      }) async {
+    final uri = Uri.parse("$_baseUrl/cards/$token/payment-options").replace(
+      queryParameters: {
+        if (planId != null) "plan_id": planId.toString(),
+      },
+    );
 
     try {
       final resp = await http.get(uri, headers: _headers);
@@ -151,25 +158,19 @@ class CardProvider {
             ...body,
           };
         }
-
-        return {
-          "success": false,
-          "supports_installments": false,
-          "installment_options": []
-        };
-      } else {
-        return {
-          "success": false,
-          "supports_installments": false,
-          "installment_options": []
-        };
       }
+
+      return {
+        "success": false,
+        "supports_installments": false,
+        "installment_options": [1]
+      };
     } catch (e) {
       print("❌ ERROR getPaymentOptions: $e");
       return {
         "success": false,
         "supports_installments": false,
-        "installment_options": []
+        "installment_options": [1]
       };
     }
   }

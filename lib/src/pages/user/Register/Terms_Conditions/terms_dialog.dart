@@ -50,104 +50,94 @@ void showTermsAndConditionsDialog({
 }
 
 const String _termsText = '''
-Mediante la inscripción a AMINA y/o asistiendo a clases, eventos, actividades y otros programas, 
-así como por el uso de las instalaciones y el equipo ("Clases” y/o “Instalaciones") de 
-MARIA VERONICA NAVAS FLORES con RUC 1722856745001, por la presente reconozco que existen ciertos 
-riesgos y peligros inherentes al uso y práctica de cualquier ejercicio físico y en específico 
-en este caso, a la práctica de fuerza, cardio y flexibilidad. 
+IMPORTANTE: Si soy menor de edad, este documento debe ser firmado por mi representante legal.
 
-Conozco la naturaleza de las clases impartidas por AMINA, así como las capacidades físicas 
-y experiencias con las que se me recomienda contar, manifestando que las mismas son idóneas 
-para participar en las “Clases” y/o “Instalaciones”. 
+DECLARACIÓN:
+Mediante mi inscripción a AMINA y/o al asistir a clases, eventos, actividades u otros programas, así como al usar sus instalaciones y equipos (las “Clases” y/o “Instalaciones”), reconozco que participo en actividades organizadas por MARIA VERÓNICA NAVAS FLORES (RUC 1722856745001).
 
-Debido a lo anterior, expresamente manifiesto que no cuento con un historial de enfermedades 
-ni lesiones, ni estoy usando actualmente ninguna substancia, medicina, droga o alcohol, 
-que pudiera limitar mis habilidades o perjudicar mi desempeño y/o salud al momento o después 
-de realizar ejercicio físico. 
+Reconozco que existen riesgos inherentes a la práctica de ejercicio físico, incluyendo actividades de fuerza, cardio y flexibilidad. Declaro que conozco la naturaleza de estas actividades y que cuento con la capacidad física necesaria para participar.
 
-También reconozco que los riesgos específicos varían de una actividad a otra, mismos que 
-podrían ser:  
-(a) lesiones menores como: 
-   (1) rasguños; 
-   (2) golpes y torceduras;  
-(b) lesiones mayores como: 
-   (1) lesiones en las articulaciones o la espalda; 
-   (2) ataques cardíacos; 
-   (3) contusiones;  
-(c) lesiones graves, incluyendo parálisis y muerte;  
+Asimismo, declaro que no tengo enfermedades, lesiones, ni me encuentro bajo el efecto de sustancias, medicamentos, drogas o alcohol que puedan afectar mi desempeño o poner en riesgo mi salud.
 
-Conjuntamente “Los Riesgos”, por lo que expresamente reconozco y acepto que dichos riesgos 
-no pueden ser eliminados por AMINA. 
+ACEPTACIÓN DE RIESGOS:
+Reconozco que los riesgos pueden incluir lesiones menores, lesiones mayores y lesiones graves. Acepto que estos riesgos pueden derivarse de mi participación, del uso de equipos, de la interacción con otros participantes o de factores externos.
 
----
+Reconozco que estos riesgos no pueden ser eliminados completamente, incluso con el debido cuidado por parte de AMINA.
 
-Los Riesgos pueden ser provocados por mi propia omisión, actividad o inactividad antes, durante 
-o posterior a cualquiera de las clases impartidas en las instalaciones de AMINA, así como también 
-por la omisión, actividad o inactividad de otros asistentes a las Clases y/o Instalaciones, 
-por el uso de los equipos o instalaciones sin la debida precaución o sin seguir las indicaciones impartidas. 
+RESPONSABILIDAD PERSONAL Y ESTADO DE SALUD:
+Asumo plena responsabilidad por mi estado de salud y por cualquier lesión, daño o enfermedad que pueda sufrir.
 
-Reconozco y acepto expresamente que dichos riesgos son inherentes a las actividades físicas 
-ofrecidas por AMINA y no pueden ser completamente eliminados, incluso cuando exista un nivel 
-razonable y adecuado de cuidado y diligencia por parte de AMINA. 
+Declaro que:
+1. No tengo impedimentos médicos para realizar ejercicio.
+2. No he sido instruido por un médico a evitar actividad física.
+3. Participo bajo mi propio riesgo.
 
-Pueden existir otros riesgos no conocidos por AMINA, o que aún no son previsibles, o que siendo previsibles 
-son de mi conocimiento, lo reconozco y asumo, o aquellos que se deriven por caso fortuito o fuerza mayor. 
+En caso de embarazo, recuperación médica o enfermedades crónicas, reconozco que mi participación implica un riesgo adicional y decido participar voluntariamente bajo mi responsabilidad.
 
----
+LIBERACIÓN DE RESPONSABILIDAD:
+Libero expresamente a AMINA, sus afiliados, representantes, empleados, instructores, agentes y terceros relacionados de cualquier responsabilidad por:
+1. Lesiones físicas o enfermedades.
+2. Daños directos o indirectos.
+3. Pérdidas económicas.
+4. Reclamos legales, civiles o penales.
 
-Las pérdidas económicas y/o daños directos o indirectos que puedan resultar de estos riesgos, 
-pueden ser severos y modificar permanentemente mi futuro. 
+Esto aplica en la máxima medida permitida por la ley, tanto en el presente como en el futuro.
 
-Al reservar y/o tomar una clase de AMINA, usted reconoce y acepta que:  
-1. Asume plena responsabilidad por su estado de salud, así como todas y cada una de las lesiones físicas, 
-   daños o cualquier enfermedad (viral o bacterial) que pueda sufrir o adquirir al tomar alguna Clase presencial, 
-   o al hacer uso de las instalaciones y/o productos de AMINA.  
-2. Libera de cualquier tipo de responsabilidad e indemnización a AMINA, sus entidades afiliadas y/o subsidiarias, 
-   y cada uno de sus respectivos representantes legales, directores, managers, miembros del staff, empleados, 
-   agentes incluyendo terceros prestadores de servicios y todos los demás aplicables, de cualquier demanda 
-   por daños y perjuicios, responsabilidad en otras materias incluyendo materia penal, procedimientos de arbitraje, 
-   costos, gastos, en la máxima medida permitida por la ley aplicable.  
-3. Acepta y manifiesta que ni usted ni cualquier tercero que tome una clase de AMINA bajo su reservación y/o 
-   invitación y/o utilice un producto de AMINA:  
-   (a) no tiene ninguna condición médica o física que le impida utilizar correctamente las Clases e Instalaciones,  
-   (b) no tiene una condición física o mental que lo ponga en peligro físico o médico a usted o a los demás,  
-   (c) no ha sido instruido o recomendado por un médico para no realizar ejercicio físico.  
+CUMPLIMIENTO DE NORMAS:
+Declaro que he leído y entiendo el reglamento interno de AMINA.
 
-Usted reconoce que, en caso de embarazo, recuperación postoperatoria, o padecimiento de enfermedades crónicas 
-o degenerativas (tales como hipertensión, afecciones cardíacas, diabetes, epilepsia, cáncer, entre otras), 
-la participación en las clases o el uso de las instalaciones de AMINA puede implicar un riesgo significativo.  
+Me comprometo a:
+1. Seguir todas las instrucciones del personal.
+2. Cumplir las normas del estudio.
+3. Actuar de manera responsable durante las clases.
 
-En consecuencia, declara haber evaluado dicha condición de manera consciente y voluntaria, asumiendo plena 
-responsabilidad y eximiendo expresamente a AMINA de cualquier consecuencia derivada de su decisión de participar.  
+Acepto que, si no sigo las instrucciones, asumo todas las consecuencias derivadas de mis acciones.
 
----
+ACCESO, SEGURIDAD Y DECISIONES DEL PERSONAL:
+Acepto que el personal de AMINA puede:
+1. Negarme el acceso a una clase.
+2. Retirarme de una actividad.
+3. Reagendar mi clase.
 
-He leído y entendido completamente el reglamento interno de AMINA que me fue proporcionado 
-de forma física por el personal y en los medios visibles en las instalaciones. 
+Esto en caso de que se considere que mi participación representa un riesgo. Reconozco que estas decisiones se toman para proteger mi seguridad y la de los demás.
 
-Me comprometo a llegar antes de que inicie la clase (tengo 1 canción de tolerancia para entrar).  
+PUNTUALIDAD:
+Me comprometo a llegar a tiempo a mis clases. Entiendo que tengo un margen de tolerancia limitado (1 canción), y que si llego tarde:
+1. Puedo perder mi cupo.
+2. No tengo derecho a reembolso ni reprogramación.
 
-Me comprometo a cumplir con todos los términos y condiciones, así como con las instrucciones 
-que el personal de AMINA proporcione.  
+VALORES Y BIENES PERSONALES:
+Reconozco que AMINA no es responsable por la pérdida, robo o daño de mis objetos personales, incluso si se encuentran en casilleros u otras áreas del establecimiento.
 
-En caso de no seguir las instrucciones emitidas por el personal, reconozco y acepto expresamente 
-que asumo las consecuencias, liberando de cualquier responsabilidad a AMINA, sus subsidiarias 
-y representantes.  
+DERECHO DE ADMISIÓN:
+Acepto que AMINA puede negarme el acceso si:
+1. Estoy bajo efectos de alcohol o sustancias.
+2. Tengo comportamientos inapropiados.
+3. Represento un riesgo para mí o para otros.
 
----
+Esto no genera derecho a reembolso.
 
-VALORES Y BIENES PERSONALES  
+POLÍTICA DE RESERVAS, PAGOS Y CANCELACIONES:
+Reconozco y acepto que:
+1. Todas las compras son finales y no reembolsables.
+2. Las clases y paquetes son personales, intransferibles y no compartibles.
+3. No puedo ceder, vender o transferir mi cupo.
+4. En caso de no asistir a una clase:
+   - La clase se considerará tomada.
+   - No aplica reembolso ni reprogramación, salvo decisión excepcional de AMINA.
 
-AMINA no se hará responsable por la pérdida, robo, o daños a cualquier objeto, incluyendo 
-artículos en casilleros, baños, estudios, o cualquier otro lugar en las instalaciones, 
-sin importar si estos estaban bajo llave o no.  
+USO DE IMAGEN:
+Autorizo de manera libre, expresa y voluntaria a AMINA a utilizar mi imagen, voz, fotografías y videos capturados durante clases o eventos para fines promocionales, publicitarios y de marketing, sin compensación económica.
 
-Se recomienda no guardar en los casilleros objetos de valor (documentos personales, electrónicos, 
-joyas o dinero en efectivo).  
+FUERZA MAYOR:
+Reconozco que AMINA no será responsable por cancelaciones o cambios debido a causas fuera de su control, incluyendo fallas técnicas, condiciones climáticas o disposiciones externas.
 
-AMINA se reserva el derecho de denegar el acceso a cualquier persona que considere esté actuando 
-de manera inadecuada, agresiva, riesgosa, bajo efectos de alcohol o sustancias prohibidas, 
-o que ponga en riesgo su salud o la de los clientes, sin que ello genere responsabilidad 
-ni obligación de reembolso.  
+ACEPTACIÓN FINAL:
+Declaro que:
+1. He leído completamente este documento.
+2. Entiendo su contenido.
+3. Lo acepto de manera libre y voluntaria.
+
+Reconozco que este acuerdo tiene vigencia indefinida mientras participe en actividades de AMINA.
 
 ''';

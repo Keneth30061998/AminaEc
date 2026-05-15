@@ -28,12 +28,12 @@ class AdminPlanUpdatePage extends StatelessWidget {
                 child: con.imageFile != null
                     ? Image.file(con.imageFile!, height: 150)
                     : con.plan.image != null
-                        ? Image.network(con.plan.image!, height: 150)
-                        : Container(
-                            height: 150,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image, size: 50),
-                          ),
+                    ? Image.network(con.plan.image!, height: 150)
+                    : Container(
+                  height: 150,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.image, size: 50),
+                ),
               ),
               const SizedBox(height: 16),
               _textFieldName(),
@@ -42,6 +42,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
               _textFieldRides(),
               _textFieldDurationDays(),
               _switchNewUserOnly(),
+              _switchDeferredPayment(),
               const SizedBox(height: 20),
               _buttonUpdate(context),
             ],
@@ -63,7 +64,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
 
   Widget _textFieldName() {
     return Container(
-      margin: EdgeInsets.only(top: 10, bottom: 5),
+      margin: const EdgeInsets.only(top: 10, bottom: 5),
       child: TextField(
         controller: con.nameController,
         keyboardType: TextInputType.name,
@@ -87,7 +88,7 @@ class AdminPlanUpdatePage extends StatelessWidget {
 
   Widget _textFieldDescription() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       child: TextField(
         controller: con.descriptionController,
         keyboardType: TextInputType.name,
@@ -112,12 +113,12 @@ class AdminPlanUpdatePage extends StatelessWidget {
 
   Widget _textFieldPrice() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       child: TextField(
         controller: con.priceController,
-        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d*\,?\d{0,2}')),
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}')),
         ],
         decoration: InputDecoration(
           floatingLabelStyle: TextStyle(color: darkGrey),
@@ -139,10 +140,13 @@ class AdminPlanUpdatePage extends StatelessWidget {
 
   Widget _textFieldRides() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       child: TextField(
         controller: con.ridesController,
         keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+        ],
         decoration: InputDecoration(
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Rides",
@@ -163,10 +167,13 @@ class AdminPlanUpdatePage extends StatelessWidget {
 
   Widget _textFieldDurationDays() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       child: TextField(
         controller: con.durationController,
         keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+        ],
         decoration: InputDecoration(
           floatingLabelStyle: TextStyle(color: darkGrey),
           labelText: "Duración en días",
@@ -186,21 +193,50 @@ class AdminPlanUpdatePage extends StatelessWidget {
   }
 
   Widget _switchNewUserOnly() {
-    return Obx(() => SwitchListTile(
-      title: Text(
-        "Solo para nuevos usuarios",
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+    return Obx(
+          () => SwitchListTile(
+        title: Text(
+          "Solo para nuevos usuarios",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          "Si está activo, solo usuarios sin historial de planes podrán comprarlo.",
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.black54,
+          ),
+        ),
+        activeColor: almostBlack,
+        value: con.isNewUserOnly.value,
+        onChanged: (value) => con.isNewUserOnly.value = value,
       ),
-      activeColor: almostBlack,
-      value: con.isNewUserOnly.value,
-      onChanged: (value) => con.isNewUserOnly.value = value,
-    ));
+    );
   }
 
+  Widget _switchDeferredPayment() {
+    return Obx(
+          () => SwitchListTile(
+        title: Text(
+          "Permite pago diferido",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          "Si está apagado, este plan solo podrá pagarse de contado.",
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.black54,
+          ),
+        ),
+        activeColor: almostBlack,
+        value: con.allowDeferredPayment.value,
+        onChanged: (value) => con.allowDeferredPayment.value = value,
+      ),
+    );
+  }
 
   Widget _buttonUpdate(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       width: double.infinity,
       height: 50,
       child: FloatingActionButton.extended(

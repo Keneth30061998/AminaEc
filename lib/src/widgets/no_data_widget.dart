@@ -18,7 +18,7 @@ class NoDataWidget extends StatelessWidget {
           ),
           Text(
             text,
-            style: GoogleFonts.robotoCondensed(color: whiteGrey),
+            style: GoogleFonts.roboto(color: whiteGrey),
           ),
         ],
       ),

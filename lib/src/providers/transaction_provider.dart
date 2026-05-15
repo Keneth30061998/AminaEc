@@ -7,44 +7,47 @@ import '../models/user.dart';
 
 class TransactionProvider extends GetConnect {
   final String url = '${Environment.API_URL}pay/report';
+
   User userSession = User.fromJson(GetStorage().read('user') ?? {});
 
   Future<List<TransactionReport>> getReport({
     String? month,
     String? year,
+    String? day,
+    String? status,
   }) async {
     final Map<String, String> query = {};
-    if (month != null) query['month'] = month;
-    if (year != null) query['year'] = year;
 
-    print('📡 [TransactionProvider] → Llamando API: $url');
-    print('🧭 Parámetros → month=$month, year=$year');
-    print('🔑 Token → ${userSession.session_token}');
+    if (month != null && month.isNotEmpty) query['month'] = month;
+    if (year != null && year.isNotEmpty) query['year'] = year;
+    if (day != null && day.isNotEmpty) query['day'] = day;
+    if (status != null && status.isNotEmpty) query['status'] = status;
 
     try {
       final response = await get(
         url,
         query: query,
-        headers: {'Authorization': userSession.session_token ?? ''},
+        headers: {
+          'Authorization': userSession.session_token ?? '',
+        },
       );
 
-      print('📥 Respuesta cruda: status=${response.statusCode}');
-      print('📦 Body: ${response.body}');
-
       if (response.statusCode == 200 && response.body != null) {
-        final List data = response.body is List
-            ? response.body
-            : json.decode(response.body);
+        dynamic body = response.body;
 
-        print('✅ Decodificado correctamente. Cantidad de registros: ${data.length}');
-        print('🔍 Primer registro (preview): ${data.isNotEmpty ? data.first : "vacío"}');
+        if (body is String) {
+          body = json.decode(body);
+        }
 
-        final result = data.map((e) => TransactionReport.fromJson(e)).toList();
+        final List data = body is List ? body : body['data'] ?? [];
 
-        print('🧾 Primer registro parseado: ${result.isNotEmpty ? result.first : "vacío"}');
-        return result;
-      } else {
-        print('❌ Error en respuesta del servidor: ${response.statusCode}');
+        return data
+            .map(
+              (e) => TransactionReport.fromJson(
+            Map<String, dynamic>.from(e),
+          ),
+        )
+            .toList();
       }
     } catch (e) {
       print('❌ Error TransactionProvider.getReport: $e');

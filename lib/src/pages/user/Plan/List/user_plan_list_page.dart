@@ -370,6 +370,19 @@ class UserPlanListPage extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 3),
+                  Expanded(
+                        child: Text(
+                          '* NO reembolsable o transferible',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                  ),
                   const Spacer(),
                   SizedBox(
                     width: double.infinity,

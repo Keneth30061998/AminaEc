@@ -11,17 +11,35 @@ import '../../../models/scheduled_class.dart';
 
 class UserStartPage extends StatelessWidget {
   final UserStartController con =
-      Get.put(UserStartController(), permanent: true);
+  Get.put(UserStartController(), permanent: true);
 
   UserStartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: whiteLight,
+      backgroundColor: const Color(0xffF6F7FB),
       appBar: AppBar(
-        title: _appBarTitle(),
-        actions: [_actionInfo(context)],
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: false,
+        titleSpacing: 24,
+        title: Text(
+          'Amina',
+          style: GoogleFonts.montserrat(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: almostBlack,
+            letterSpacing: -0.5,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 18),
+            child: _actionInfo(context),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         color: indigoAmina,
@@ -37,85 +55,61 @@ class UserStartPage extends StatelessWidget {
         child: SafeArea(
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _textGreeting(),
-                  const SizedBox(height: 15),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Obx(() => _boxBikesComplete()),
-                      Obx(() => _boxBikesPending()),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nuestros Coaches',
-                        style: GoogleFonts.roboto(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: darkGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 130,
-                        child: Obx(() {
-                          if (con.coaches.isEmpty) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: con.coaches.length,
-                            itemBuilder: (context, index) =>
-                                _cardCoach(con.coaches[index], context),
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    'Tus clases agendadas',
-                    style: GoogleFonts.roboto(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: darkGrey,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Obx(() {
-                    if (con.scheduledClasses.isEmpty) {
-                      return Container(
-                        padding: EdgeInsets.only(
-                            top: MediaQuery.of(context).size.height * 0.15),
-                        child: Center(
-                          child: Text(
-                            'No tienes clases agendadas.',
-                            style: GoogleFonts.roboto(
-                                fontSize: 16, color: Colors.grey[700]),
-                          ),
-                        ),
-                      );
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _heroHeader(),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(child: Obx(() => _boxBikesComplete())),
+                    const SizedBox(width: 14),
+                    Expanded(child: Obx(() => _boxBikesPending())),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _sectionTitle(
+                  title: 'Nuestros Coaches',
+                  subtitle: 'Conoce al equipo que te acompaña en cada ride',
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 168,
+                  child: Obx(() {
+                    if (con.coaches.isEmpty) {
+                      return _loadingCard();
                     }
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: con.scheduledClasses.length,
-                      itemBuilder: (context, index) => _scheduledClassCard(
-                          con.scheduledClasses[index], context),
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: con.coaches.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
+                      itemBuilder: (context, index) =>
+                          _cardCoach(con.coaches[index], context),
                     );
                   }),
-                  const SizedBox(height: 25),
-                ],
-              ),
+                ),
+                const SizedBox(height: 30),
+                _sectionTitle(
+                  title: 'Tus clases agendadas',
+                  subtitle: 'Administra tus próximas sesiones fácilmente',
+                ),
+                const SizedBox(height: 14),
+                Obx(() {
+                  if (con.scheduledClasses.isEmpty) {
+                    return _emptyScheduledState();
+                  }
+
+                  return ListView.separated(
+                    itemCount: con.scheduledClasses.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (context, index) =>
+                        _scheduledClassCard(con.scheduledClasses[index], context),
+                  );
+                }),
+              ],
             ),
           ),
         ),
@@ -123,113 +117,194 @@ class UserStartPage extends StatelessWidget {
     );
   }
 
-  Widget _appBarTitle() => Text(
-        'Amina',
+  Widget _heroHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        'Hola, ${con.user.name}',
         style: GoogleFonts.montserrat(
           fontSize: 26,
           fontWeight: FontWeight.w800,
           color: almostBlack,
+          letterSpacing: -0.4,
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _textGreeting() => Text(
-        'Hola, ${con.user.name}',
-        style: GoogleFonts.roboto(
-          fontSize: 20,
-          fontWeight: FontWeight.w900,
-          color: darkGrey,
+  Widget _sectionTitle({
+    required String title,
+    required String subtitle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.montserrat(
+            fontSize: 21,
+            fontWeight: FontWeight.w800,
+            color: almostBlack,
+            letterSpacing: -0.3,
+          ),
         ),
-      );
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
+  }
 
-  Widget _boxBikesComplete() => _boxTemplate(
-        title: 'Rides',
-        count: '${con.completedRides.value}',
-        subtitle: 'Completados',
-        color: Colors.blueGrey.shade50,
-      );
+  Widget _boxBikesComplete() => _modernStatCard(
+    title: 'Rides',
+    count: '${con.completedRides.value}',
+    subtitle: 'Completos',
+    icon: Icons.check_circle_rounded,
+    accent: const Color(0xff20C997),
+  );
 
   Widget _boxBikesPending() => GestureDetector(
-        onTap: () => con.showUserPlansInfo(),
-        child: _boxTemplate(
-          title: 'Rides',
-          count: '${con.totalRides.value}',
-          subtitle: 'Adquiridos',
-          color: Colors.blueGrey.shade50,
-        ),
-      );
+    onTap: () => con.showUserPlansInfo(),
+    child: _modernStatCard(
+      title: 'Rides',
+      count: '${con.totalRides.value}',
+      subtitle: 'Adquiridos',
+      icon: Icons.local_fire_department_rounded,
+      accent: const Color(0xff6C63FF),
+    ),
+  );
 
-  Widget _boxTemplate({
+  Widget _modernStatCard({
     required String title,
     required String count,
     required String subtitle,
-    required Color color,
+    required IconData icon,
+    required Color accent,
   }) {
     return Container(
-      height: 90,
-      width: 145,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(2, 3))
+          BoxShadow(
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          Text(title,
-              style: GoogleFonts.roboto(color: almostBlack, fontSize: 16)),
-          Text(count,
-              style: GoogleFonts.montserrat(
-                  color: darkGrey, fontSize: 26, fontWeight: FontWeight.w700)),
-          Text(subtitle,
-              style: GoogleFonts.kodchasan(color: almostBlack, fontSize: 15)),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: accent, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.roboto(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  count,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: almostBlack,
+                    letterSpacing: -0.8,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.roboto(
+                    fontSize: 13.5,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _cardCoach(Coach coach, BuildContext context) {
+    final hasPhoto = coach.user?.photo_url != null &&
+        coach.user!.photo_url!.trim().isNotEmpty;
+
     return GestureDetector(
-      onDoubleTap: () => showCoachBottomSheet(context, coach),
+      onTap: () => showCoachBottomSheet(context, coach),
       child: Container(
-        width: 95,
-        margin: const EdgeInsets.only(right: 15),
+        width: 124,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: whiteLight,
-          borderRadius: BorderRadius.circular(15),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.black.withOpacity(0.04)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black12, blurRadius: 4, offset: Offset(1, 2))
+              color: Colors.black.withOpacity(0.045),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
           ],
-          border: Border.all(color: colorBackgroundBox, width: 2),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(60),
-              child: coach.user?.photo_url != null
-                  ? Image.network(coach.user!.photo_url!,
-                      width: 70, height: 70, fit: BoxFit.cover)
-                  : Container(
-                      width: 70,
-                      height: 70,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.person,
-                          size: 30, color: Colors.white),
-                    ),
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: indigoAmina.withOpacity(0.14),
+                  width: 2,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 36,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage:
+                hasPhoto ? NetworkImage(coach.user!.photo_url!) : null,
+                child: !hasPhoto
+                    ? const Icon(Icons.person, color: Colors.white, size: 34)
+                    : null,
+              ),
             ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: Text(
-                coach.user?.name ?? 'Nombre no disponible',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.roboto(
-                    fontSize: 16, fontWeight: FontWeight.w900, color: darkGrey),
+            const SizedBox(height: 12),
+            Text(
+              coach.user?.name ?? 'Nombre no disponible',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.montserrat(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: almostBlack,
+                height: 1.3,
               ),
             ),
           ],
@@ -239,70 +314,93 @@ class UserStartPage extends StatelessWidget {
   }
 
   void showCoachBottomSheet(BuildContext context, Coach coach) {
+    final hasPhoto = coach.user?.photo_url != null &&
+        coach.user!.photo_url!.trim().isNotEmpty;
+
     showMaterialModalBottomSheet(
       context: context,
       expand: false,
-      backgroundColor: darkGrey,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
-      builder: (context) => SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 5,
-              width: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              margin: const EdgeInsets.only(bottom: 20),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xff12141A),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 24,
+              offset: const Offset(0, -6),
             ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(60),
-              child: coach.user?.photo_url != null
-                  ? Image.network(
-                      coach.user!.photo_url!,
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.broken_image, size: 50),
-                    )
-                  : Container(
-                      width: 120,
-                      height: 120,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.person,
-                          size: 60, color: Colors.white),
-                    ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              coach.user?.name ?? 'Nombre no disponible',
-              style: GoogleFonts.montserrat(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: limeGreen,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 14, 22, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.email, size: 18, color: Colors.grey[600]),
-                const SizedBox(width: 6),
+                Container(
+                  width: 52,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                CircleAvatar(
+                  radius: 52,
+                  backgroundColor: Colors.white.withOpacity(0.08),
+                  backgroundImage:
+                  hasPhoto ? NetworkImage(coach.user!.photo_url!) : null,
+                  child: !hasPhoto
+                      ? const Icon(Icons.person, size: 46, color: Colors.white70)
+                      : null,
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  coach.user?.email ?? 'Correo no disponible',
-                  style:
-                      GoogleFonts.roboto(fontSize: 15, color: Colors.grey[700]),
+                  coach.user?.name ?? 'Nombre no disponible',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.06),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.email_outlined,
+                          size: 18, color: Colors.white.withOpacity(0.75)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          coach.user?.email ?? 'Correo no disponible',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.roboto(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.84),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -310,14 +408,14 @@ class UserStartPage extends StatelessWidget {
 
   Widget _scheduledClassCard(ScheduledClass c, BuildContext context) {
     final formattedDate =
-        c.classDate.split('T').first.split('-').reversed.join('/');
+    c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
 
-    // Calcular diferencia en horas (mismo criterio para reagendar y cancelar)
     final dateString = c.classDate.split('T').first;
     final timeString = c.classTime.substring(0, 5);
     final partsDate = dateString.split('-').map(int.parse).toList();
     final partsTime = timeString.split(':').map(int.parse).toList();
+
     final classDateTime = DateTime(
       partsDate[0],
       partsDate[1],
@@ -328,101 +426,230 @@ class UserStartPage extends StatelessWidget {
 
     final now = DateTime.now();
     final canModify = classDateTime.difference(now).inHours >= 12;
+    final hasPhoto = c.photo_url.trim().isNotEmpty;
 
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [const BoxShadow(color: Colors.black12, blurRadius: 4)],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: c.photo_url.isNotEmpty
-                    ? Image.network(
-                        c.photo_url,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        width: 60,
-                        height: 60,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.person, color: Colors.white),
-                      ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: hasPhoto ? NetworkImage(c.photo_url) : null,
+            child: !hasPhoto
+                ? const Icon(Icons.person, color: Colors.white)
+                : null,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Text('$formattedDate · $formattedTime',
-                        style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: almostBlack)),
-                    Text('Coach: ${c.coachName}',
-                        style:
-                            GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
-                    Text('Bicicleta: ${c.bicycle}',
-                        style:
-                            GoogleFonts.roboto(fontSize: 15, color: darkGrey)),
+                    _infoChip(
+                      icon: Icons.calendar_today_rounded,
+                      text: formattedDate,
+                    ),
+                    _infoChip(
+                      icon: Icons.access_time_rounded,
+                      text: formattedTime,
+                    ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  c.coachName,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: almostBlack,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Bicicleta: ${c.bicycle}',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14.5,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        canModify
+                            ? 'Disponible para cancelar'
+                            : 'No se puede cancelar dentro de las 12 horas previas',
+                        style: GoogleFonts.roboto(
+                          fontSize: 13,
+                          color: canModify
+                              ? const Color(0xff1E9E67)
+                              : Colors.orange.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _deleteButton(canModify, () => con.onPressCancel(c, context)),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-
-        // BOTÓN CANCELAR
-        Positioned(
-          top: 20,
-          right: 20,
-          child: IconButton(
-            icon: Icon(Icons.delete,
-                color: canModify ? Colors.red : Colors.grey.shade400),
-            onPressed: canModify ? () => con.onPressCancel(c, context) : null,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _scheduledClassesScrollableSection(BuildContext context) {
-    if (con.scheduledClasses.isEmpty) {
-      return Container(
-        padding:
-            EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.15),
-        child: Center(
-          child: Text('No tienes clases agendadas.',
-              style: GoogleFonts.roboto(fontSize: 16, color: Colors.grey[700])),
+  Widget _infoChip({
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xffF4F6FA),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: indigoAmina),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: GoogleFonts.roboto(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: almostBlack,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _deleteButton(bool enabled, VoidCallback onPressed) {
+    return InkWell(
+      onTap: enabled ? onPressed : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: enabled
+              ? Colors.red.withOpacity(0.10)
+              : Colors.grey.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(14),
         ),
-      );
-    }
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: con.scheduledClasses.length,
-      itemBuilder: (context, index) =>
-          _scheduledClassCard(con.scheduledClasses[index], context),
+        child: Icon(
+          Icons.delete_outline_rounded,
+          color: enabled ? Colors.red : Colors.grey.shade400,
+          size: 22,
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyScheduledState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: darkGrey.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Icon(
+              Icons.event_busy_rounded,
+              color: almostBlack,
+              size: 34,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No tienes clases agendadas',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.montserrat(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: almostBlack,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cuando agendes una clase, aparecerá aquí para que puedas verla o cancelarla con anticipación.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loadingCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 
   Widget _actionInfo(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: FilledButton.tonalIcon(
-        onPressed: () => _showModalInfo(context),
-        icon: Icon(iconInfo, color: almostBlack),
-        label: Text('Info', style: TextStyle(color: darkGrey)),
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(colorBackgroundBox),
+    return FilledButton.tonalIcon(
+      onPressed: () => _showModalInfo(context),
+      icon: Icon(iconInfo, color: almostBlack, size: 18),
+      label: Text(
+        'Info',
+        style: GoogleFonts.roboto(
+          color: almostBlack,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: almostBlack,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: Colors.black.withOpacity(0.05),
+          ),
         ),
       ),
     );
@@ -433,16 +660,39 @@ class UserStartPage extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Rides',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w800)),
-          content:
-              Text(_ridesTerms, style: GoogleFonts.montserrat(color: darkGrey)),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
+          title: Text(
+            'Rides',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              color: almostBlack,
+            ),
+          ),
+          content: Text(
+            _ridesTerms,
+            style: GoogleFonts.roboto(
+              color: Colors.grey.shade700,
+              height: 1.55,
+              fontSize: 14.5,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: ButtonStyle(
-                  foregroundColor: MaterialStateProperty.all(indigoAmina)),
-              child: const Text('Cerrar'),
+              style: TextButton.styleFrom(
+                foregroundColor: indigoAmina,
+              ),
+              child: Text(
+                'Cerrar',
+                style: GoogleFonts.roboto(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         );

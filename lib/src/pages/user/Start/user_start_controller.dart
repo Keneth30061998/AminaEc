@@ -15,15 +15,16 @@ import '../../../providers/scheduled_class_provider.dart';
 import '../../../providers/user_plan_provider.dart';
 import '../../../providers/users_provider.dart';
 import '../../../utils/color.dart';
+import 'package:amina_ec/src/services/calendar_sync_service.dart';
 
 class UserStartController extends GetxController {
   User user = User.fromJson(GetStorage().read('user') ?? {});
 
   final CoachProvider coachProvider = CoachProvider();
   final UserPlanProvider userPlanProvider = UserPlanProvider();
-  final ScheduledClassProvider scheduledClassProvider =
-      ScheduledClassProvider();
+  final ScheduledClassProvider scheduledClassProvider = ScheduledClassProvider();
   final ClassReservationProvider classResProv = ClassReservationProvider();
+
   final RxList<UserPlan> acquiredPlans = <UserPlan>[].obs;
   var coaches = <Coach>[].obs;
   final RxInt totalRides = 0.obs;
@@ -38,50 +39,26 @@ class UserStartController extends GetxController {
     getTotalRides();
     getScheduledClasses();
     getAcquiredPlans();
-    //getAttendedClasses();
     getCompletedRides();
 
-    // ---- Socket listeners ----
     SocketService().updateUserSession(user);
 
-    SocketService().on('coach:new', (_) {
-      //print('📡 Socket -> coach:new');
-      getCoaches();
-    });
+    SocketService().on('coach:new', (_) => getCoaches());
+    SocketService().on('coach:delete', (_) => getCoaches());
+    SocketService().on('coach:update', (_) => getCoaches());
 
-    SocketService().on('coach:delete', (_) {
-      //print('📡 Socket -> coach:delete');
-      getCoaches();
-    });
-
-    SocketService().on('coach:update', (_) {
-      //print('📡 Socket -> coach:update');
-      getCoaches();
-    });
-
-    SocketService().on('rides:updated', (payload) {
-      //print('📡 Socket -> rides:updated');
-      refreshTotalRides();
-    });
+    SocketService().on('rides:updated', (_) => refreshTotalRides());
 
     SocketService().on('class:coach:reserved', (payload) {
-      //print('📡 Socket -> class:coach:reserved $payload');
       if (payload['user_id'].toString() == user.id.toString()) {
-        //print('✅ Refrescando clases reservadas (class:coach:reserved)');
         getScheduledClasses();
       }
     });
 
-    SocketService().on('class:reserved', (payload) {
-      //print('📡 Socket -> class:reserved $payload');
-      getScheduledClasses();
-    });
+    SocketService().on('class:reserved', (_) => getScheduledClasses());
 
-    // 🔑 Importante: escuchar re-agendamiento
     SocketService().on('class:coach:rescheduled', (payload) {
-      //print('📡 Socket -> class:coach:rescheduled $payload');
       if (payload['user_id'].toString() == user.id.toString()) {
-        //print('✅ Refrescando clases reservadas (class:coach:rescheduled)');
         getScheduledClasses();
       }
     });
@@ -101,19 +78,14 @@ class UserStartController extends GetxController {
   void getAttendedClasses() async {
     if (user.session_token == null || user.session_token!.isEmpty) return;
     try {
-      int count = await UserProvider()
-          .getAttendedClasses(user.session_token!, userId: user.id);
+      int count = await UserProvider().getAttendedClasses(user.session_token!, userId: user.id);
       attendedClasses.value = count;
-      //print('✅ attendedClasses cargadas: $count');
-    } catch (e) {
-      //print('❌ Error obteniendo attendedClasses: $e');
-    }
+    } catch (_) {}
   }
 
   void getAcquiredPlans() async {
     if (user.session_token != null) {
-      final result =
-          await userPlanProvider.getAllPlansWithRides(user.session_token!);
+      final result = await userPlanProvider.getAllPlansWithRides(user.session_token!);
       acquiredPlans.value = result;
     }
   }
@@ -125,8 +97,7 @@ class UserStartController extends GetxController {
 
   void getTotalRides() async {
     if (user.session_token != null) {
-      int rides =
-          await userPlanProvider.getTotalActiveRides(user.session_token!);
+      int rides = await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
@@ -137,10 +108,8 @@ class UserStartController extends GetxController {
   }
 
   void getScheduledClasses() async {
-    //print('🔄 Refrescando clases reservadas...');
     List<ScheduledClass> result = await scheduledClassProvider.getByUser();
     scheduledClasses.value = result;
-    //print('✅ Total clases cargadas: ${scheduledClasses.length}');
   }
 
   void onPressReschedule(ScheduledClass c, BuildContext context) {
@@ -151,7 +120,6 @@ class UserStartController extends GetxController {
         reservation: c,
         coaches: coaches,
         onSuccess: () {
-          //print('📌 RescheduleSheet -> éxito en reagendar, refrescando lista');
           getScheduledClasses();
         },
       ),
@@ -177,7 +145,6 @@ class UserStartController extends GetxController {
       final now = DateTime.now();
       final hoursDiff = classDateTime.difference(now).inHours;
 
-      // Validación UI/UX: solo permitir si hay >= 12 horas
       if (hoursDiff < 12) {
         Get.snackbar(
           'No es posible cancelar',
@@ -188,7 +155,6 @@ class UserStartController extends GetxController {
         return;
       }
 
-      // Confirmación
       final shouldCancel = await Get.dialog<bool>(
         AlertDialog(
           title: Text('Cancelar clase',
@@ -223,15 +189,20 @@ class UserStartController extends GetxController {
         ),
       );
 
-      // Si el usuario cerró el diálogo o dijo "No"
       if (shouldCancel != true) return;
 
-      // Llamada al provider
       final res = await classResProv.cancelClass(c.id);
 
-      // CORRECCIÓN: comparar explícitamente con true para evitar nullable error
       if (res != null && (res.success == true)) {
-        // actualizar lista local y rides
+        // ✅ PARTE B: borrar evento del calendario NATIVO del dispositivo
+        try {
+          await CalendarSyncService.instance.deleteEvent(
+            reservationId: c.id.toString(),
+          );
+        } catch (_) {
+          // no bloqueante
+        }
+
         scheduledClasses.removeWhere((sc) => sc.id == c.id);
         refreshTotalRides();
 
@@ -242,7 +213,6 @@ class UserStartController extends GetxController {
           colorText: Colors.white,
         );
       } else {
-        // si res es null o success != true
         final msg = (res != null && res.message != null)
             ? res.message!
             : 'No se pudo cancelar la clase.';
@@ -254,7 +224,6 @@ class UserStartController extends GetxController {
         );
       }
     } catch (e) {
-      // fallback genérico
       Get.snackbar(
         'Error',
         'Ocurrió un error al cancelar la clase: $e',
@@ -284,62 +253,62 @@ class UserStartController extends GetxController {
           width: Get.width * 0.8,
           child: plans.isEmpty
               ? Center(
-                  child: Text(
-                    "Este usuario no tiene planes activos.",
-                    style: GoogleFonts.poppins(color: Colors.grey),
-                  ),
-                )
+            child: Text(
+              "Este usuario no tiene planes activos.",
+              style: GoogleFonts.poppins(color: Colors.grey),
+            ),
+          )
               : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: plans.map((plan) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(14),
-                      width: Get.width * 0.8,
-                      decoration: BoxDecoration(
-                        color: colorBackgroundBox,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.black12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            plan["plan_name"] ?? "Plan sin nombre",
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: indigoAmina,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Rides restantes: ${plan["remaining_rides"]}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: almostBlack,
-                            ),
-                          ),
-                          Text(
-                            "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: almostBlack,
-                            ),
-                          ),
-                          Text(
-                            "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: almostBlack,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+            mainAxisSize: MainAxisSize.min,
+            children: plans.map((plan) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                width: Get.width * 0.8,
+                decoration: BoxDecoration(
+                  color: colorBackgroundBox,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.black12),
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plan["plan_name"] ?? "Plan sin nombre",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: indigoAmina,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Rides restantes: ${plan["remaining_rides"]}",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: almostBlack,
+                      ),
+                    ),
+                    Text(
+                      "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: almostBlack,
+                      ),
+                    ),
+                    Text(
+                      "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: almostBlack,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [

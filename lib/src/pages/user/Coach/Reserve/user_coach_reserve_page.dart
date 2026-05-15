@@ -33,62 +33,161 @@ class UserCoachReservePage extends StatelessWidget {
           ],
         ),
         body: Obx(() {
-          return SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  SingleChildScrollView(child: _containerCount()),
-                  const SizedBox(height: 30),
-                  _simbolIndicator(),
-                  const SizedBox(height: 30),
-                  _buildBigSeat(),
-                  const SizedBox(height: 20),
+          return Stack(
+            children: [
+              SafeArea(
+                child: AbsorbPointer(
+                  absorbing: con.isBusy,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 40),
+                        SingleChildScrollView(child: _containerCount()),
+                        const SizedBox(height: 30),
+                        _simbolIndicator(),
+                        const SizedBox(height: 30),
+                        _buildBigSeat(),
+                        const SizedBox(height: 20),
 
-                  //PRIMERA FILA DIVIDIDA CON SEPARACIÓN ENTRE CASILLA 5 Y 6
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: _buildSeatRow(context, 2, 4), // 2, 3, 4, 5
-                      ),
-                      const SizedBox(width: 24), // Espacio entre 5 y 6
-                      Expanded(
-                        child: _buildSeatRow(context, 6, 4), // 6, 7, 8, 9
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-                  _buildSeatRow(context, 10, 10), // Segunda fila: 10-19
-                  const SizedBox(height: 16),
-
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final con = Get.find<UserCoachReserveController>();
-                        con.reserveClass();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48),
-                        backgroundColor: almostBlack,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text(
-                        "Reservar",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: _buildSeatRow(context, 2, 4),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildSeatRow(context, 6, 4),
+                            ),
+                          ],
                         ),
+
+                        const SizedBox(height: 10),
+                        _buildSeatRow(context, 10, 10),
+                        const SizedBox(height: 16),
+
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Obx(() {
+                            final bool busy = con.isBusy;
+                            final bool reserving = con.isSubmittingReservation.value;
+
+                            String text = "Reservar";
+                            if (reserving) text = "Reservando...";
+
+                            return ElevatedButton(
+                              onPressed: busy ? null : () => con.reserveClass(),
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 52),
+                                backgroundColor: almostBlack,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: almostBlack.withOpacity(0.7),
+                                disabledForegroundColor: Colors.white,
+                              ),
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 250),
+                                child: busy
+                                    ? Row(
+                                  key: ValueKey(text),
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      text,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                    : const Text(
+                                  "Reservar",
+                                  key: ValueKey("Reservar"),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              Obx(() {
+                if (!con.isBusy) return const SizedBox.shrink();
+
+                return Container(
+                  color: Colors.black.withOpacity(0.12),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: almostBlack,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            con.loadingMessage.value.isEmpty
+                                ? 'Procesando...'
+                                : con.loadingMessage.value,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: almostBlack,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Espera un momento',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12,
+                              color: darkGrey,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                );
+              }),
+            ],
           );
-        }));
+        }),
+    );
   }
 
   Widget _containerCount() {
@@ -192,7 +291,7 @@ class UserCoachReservePage extends StatelessWidget {
         ),
         Text(
           ' Tu selección',
-          style: GoogleFonts.robotoCondensed(color: almostBlack),
+          style: GoogleFonts.roboto(color: almostBlack),
         ),
         SizedBox(
           width: 20,
@@ -203,7 +302,7 @@ class UserCoachReservePage extends StatelessWidget {
           color: Colors.black12,
         ),
         Text(' Disponible',
-            style: GoogleFonts.robotoCondensed(color: almostBlack)),
+            style: GoogleFonts.roboto(color: almostBlack)),
         SizedBox(
           width: 20,
         ),
@@ -213,7 +312,7 @@ class UserCoachReservePage extends StatelessWidget {
           color: indigoAmina,
         ),
         Text(' Ocupada',
-            style: GoogleFonts.robotoCondensed(color: almostBlack)),
+            style: GoogleFonts.roboto(color: almostBlack)),
       ],
     );
   }
@@ -277,11 +376,24 @@ class UserCoachReservePage extends StatelessWidget {
 
                   return GestureDetector(
                     onTap: () {
+                      if (con.isBusy) return;
+
                       if (isOccupied) {
-                        Get.snackbar('Máquina ocupada',
-                            'Esta bicicleta ya está reservada');
+                        Get.snackbar(
+                          'Máquina ocupada',
+                          'Esta bicicleta ya está reservada',
+                        );
                         return;
                       }
+
+                      if (con.blockedEquipos.contains(seatNumber)) {
+                        Get.snackbar(
+                          'Máquina bloqueada',
+                          'Esta bicicleta no está disponible para esta clase',
+                        );
+                        return;
+                      }
+
                       con.toggleEquipo(seatNumber);
                     },
                     child: Container(

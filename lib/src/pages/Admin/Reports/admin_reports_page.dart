@@ -2,6 +2,7 @@ import 'package:amina_ec/src/pages/Admin/Reports/AppUsers/admin_reports_app_user
 import 'package:amina_ec/src/pages/Admin/Reports/Attendance/admin_reports_classes_page.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Attendance/admin_reports_controller.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_page.dart';
+import 'package:amina_ec/src/pages/Admin/Reports/Ratings/admin_reports_class_ratings_page.dart';
 import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -22,7 +23,7 @@ class AdminReportsPage extends StatelessWidget {
     }
 
     return DefaultTabController(
-      length: 4, // Usuarios, Clases, Asistencia, Transacciones
+      length: 5, // Usuarios, Clases, Asistencia, Transacciones
       child: Scaffold(
         appBar: AppBar(
           title: _appBarTitle(),
@@ -34,6 +35,7 @@ class AdminReportsPage extends StatelessWidget {
               Tab(icon: Icon(iconRides), text: 'Clases'),
               Tab(icon: Icon(iconCheck), text: 'Asistencia'),
               Tab(icon: Icon(iconCard), text: 'Transacciones'),
+              Tab(icon: Icon(iconRating), text: 'Feedback'),
             ],
           ),
         ),
@@ -50,6 +52,9 @@ class AdminReportsPage extends StatelessWidget {
 
             // Tab 4: Transacciones
             AdminTransactionsPage(),
+
+            //Tab 5: Feendback de clases
+            AdminClassRatingsPage(),
           ],
         ),
       ),

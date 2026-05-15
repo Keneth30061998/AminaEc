@@ -87,50 +87,53 @@ class UserPlanBuyResumeController extends GetxController {
       int installmentsCount = 1;
 
       // 1) Selección de cuotas
+
       if (!isRetrySingle) {
-        try {
-          print("🟦 [payWithToken] consultando payment options para token=${card.token}");
-          final opts = await _cardProvider.getPaymentOptions(card.token!);
-          print("🟦 [payWithToken] paymentOptions raw: $opts");
+        if (!plan.allowsDeferredPayment) {
+          installmentsCount = 1;
+        } else {
+          try {
+            final opts = await _cardProvider.getPaymentOptions(
+              card.token!,
+              planId: int.tryParse(plan.id!.toString()),
+            );
 
-          final supports = opts["supports_installments"] == true;
-          print("🟦 [payWithToken] supports_installments=$supports");
+            final supports = opts["supports_installments"] == true;
 
-          List<int> options = [];
-          if (opts["installment_options"] is List) {
-            options = opts["installment_options"]
-                .map<int>((e) => int.tryParse(e.toString()) ?? 1)
-                .toList();
-          }
-          print("🟦 [payWithToken] installment_options parsed=$options");
-
-          if (supports && options.isNotEmpty) {
-            final chosen = await _showInstallmentDialog(options);
-            print("🟦 [payWithToken] user chosen installments=$chosen");
-
-            if (chosen == null) {
-              pd.close();
-              Get.snackbar(
-                'Pago cancelado',
-                'No seleccionaste cuotas',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.orange,
-                colorText: Colors.white,
-              );
-              return;
+            List<int> options = [];
+            if (opts["installment_options"] is List) {
+              options = opts["installment_options"]
+                  .map<int>((e) => int.tryParse(e.toString()) ?? 1)
+                  .toList();
             }
-            installmentsCount = chosen;
-          } else {
+
+            if (supports && options.isNotEmpty) {
+              final chosen = await _showInstallmentDialog(options);
+
+              if (chosen == null) {
+                pd.close();
+                Get.snackbar(
+                  'Pago cancelado',
+                  'No seleccionaste cuotas',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.orange,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+
+              installmentsCount = chosen;
+            } else {
+              installmentsCount = 1;
+            }
+          } catch (err) {
+            print("⚠️ [payWithToken] getPaymentOptions ERROR: $err");
             installmentsCount = 1;
           }
-        } catch (err) {
-          print("⚠️ [payWithToken] getPaymentOptions ERROR: $err");
-          installmentsCount = 1;
         }
       } else {
         installmentsCount = 1;
       }
-
       print("🧾 [payWithToken] installmentsCount FINAL=$installmentsCount");
       final parsedPlanId = int.tryParse(plan.id!.toString());
       print("🧾 [payWithToken] planId parsed=$parsedPlanId");

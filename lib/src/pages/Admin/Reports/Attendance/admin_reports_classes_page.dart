@@ -16,6 +16,29 @@ class AdminClassesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Text(
+          'Reporte de Asistencias',
+          style: GoogleFonts.montserrat(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: almostBlack,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, color: darkGrey),
+            onPressed: () => con.exportPDF(context),
+            tooltip: 'Exportar PDF',
+          ),
+          IconButton(
+            icon: const Icon(Icons.grid_on, color: darkGrey),
+            onPressed: () => con.exportExcel(context),
+            tooltip: 'Exportar Excel',
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Column(
@@ -38,94 +61,81 @@ class AdminClassesTab extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
         child: Column(
           children: [
-            // Nombre
-            /*
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: TextField(
-                onChanged: (value) => con.name.value = value,
-                decoration: InputDecoration(
-                  icon: const Icon(iconProfile, color: darkGrey),
-                  border: InputBorder.none,
-                  labelText: 'Nombre del Estudiante',
-                  labelStyle: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey[600]),
-                ),
-                style: GoogleFonts.montserrat(color: almostBlack, fontWeight: FontWeight.w600, fontSize: 12),
-              ),
-            ), */
             const SizedBox(height: 10),
 
-            // Año y mes
             Row(
               children: [
                 Expanded(
                   child: _modernSelector(
-                      label: "Año",
-                      value: con.selectedYear,
-                      icon: Icons.calendar_today_outlined,
-                      items: con.years),
+                    label: "Año",
+                    value: con.selectedYear,
+                    icon: Icons.calendar_today_outlined,
+                    items: con.years,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _modernSelector(
-                      label: "Mes",
-                      value: con.selectedMonth,
-                      icon: Icons.event_note_outlined,
-                      items: con.months),
+                    label: "Mes",
+                    value: con.selectedMonth,
+                    icon: Icons.event_note_outlined,
+                    items: con.months,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
 
-            // Día y horas
             Row(
               children: [
                 Expanded(
                   child: _modernSelector(
-                      label: "Día",
-                      value: con.selectedDay,
-                      icon: Icons.date_range,
-                      items: con.days),
+                    label: "Día",
+                    value: con.selectedDay,
+                    icon: Icons.date_range,
+                    items: con.days,
+                  ),
                 ),
                 const SizedBox(width: 5),
                 Expanded(
                   child: _modernSelector(
-                      label: "Desde",
-                      value: con.startHour,
-                      icon: Icons.access_time,
-                      items: con.hours),
+                    label: "Desde",
+                    value: con.startHour,
+                    icon: Icons.access_time,
+                    items: con.hours,
+                  ),
                 ),
                 const SizedBox(width: 5),
                 Expanded(
                   child: _modernSelector(
-                      label: "Hasta",
-                      value: con.endHour,
-                      icon: Icons.access_time,
-                      items: con.hours),
+                    label: "Hasta",
+                    value: con.endHour,
+                    icon: Icons.access_time,
+                    items: con.hours,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 15),
 
-            // Botón buscar
             SizedBox(
               width: 300,
               child: ElevatedButton.icon(
                 onPressed: con.buscar,
                 icon: Icon(iconSearch, color: whiteLight),
-                label: Text('Buscar',
-                    style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.w600, color: Colors.white)),
+                label: Text(
+                  'Buscar',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: almostBlack,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
@@ -135,17 +145,21 @@ class AdminClassesTab extends StatelessWidget {
     );
   }
 
-  Widget _modernSelector(
-      {required String label,
-      required RxString value,
-      required IconData icon,
-      required List<String> items}) {
+  Widget _modernSelector({
+    required String label,
+    required RxString value,
+    required IconData icon,
+    required List<String> items,
+  }) {
     return InkWell(
       onTap: () async {
         final selected = await showDialog<String>(
           context: Get.context!,
           builder: (_) => _simpleListDialog(
-              title: "Seleccionar $label", items: items, selected: value.value),
+            title: "Seleccionar $label",
+            items: items,
+            selected: value.value,
+          ),
         );
         if (selected != null) value.value = selected;
       },
@@ -165,17 +179,24 @@ class AdminClassesTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: GoogleFonts.montserrat(
-                          color: Colors.grey[600],
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500)),
-                  Obx(() => Text(
+                  Text(
+                    label,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[600],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Obx(
+                        () => Text(
                       value.value.isEmpty ? "Seleccionar" : value.value,
                       style: GoogleFonts.poppins(
-                          color: almostBlack,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600))),
+                        color: almostBlack,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -186,45 +207,56 @@ class AdminClassesTab extends StatelessWidget {
     );
   }
 
-  Widget _simpleListDialog(
-      {required String title,
-      required List<String> items,
-      required String selected}) {
+  Widget _simpleListDialog({
+    required String title,
+    required List<String> items,
+    required String selected,
+  }) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(title,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
               style: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: almostBlack)),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 300,
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (_, i) {
-                final item = items[i];
-                final isSelected = item == selected;
-                return ListTile(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  title: Text(item,
-                      style: GoogleFonts.montserrat(
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? almostBlack : Colors.grey[800])),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_circle, color: almostBlack)
-                      : null,
-                  onTap: () => Get.back(result: item),
-                );
-              },
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: almostBlack,
+              ),
             ),
-          ),
-        ]),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 300,
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (_, i) {
+                  final item = items[i];
+                  final isSelected = item == selected;
+                  return ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    title: Text(
+                      item,
+                      style: GoogleFonts.montserrat(
+                        fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? almostBlack : Colors.grey[800],
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: almostBlack)
+                        : null,
+                    onTap: () => Get.back(result: item),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -236,13 +268,18 @@ class AdminClassesTab extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Obx(() {
-          if (con.attendanceResults.isEmpty)
+          if (con.attendanceResults.isEmpty) {
             return Center(
-                child: Text('No hay resultados',
-                    style: GoogleFonts.montserrat(
-                        color: Colors.grey[700],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500)));
+              child: Text(
+                'No hay resultados',
+                style: GoogleFonts.montserrat(
+                  color: Colors.grey[700],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }
 
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -253,9 +290,13 @@ class AdminClassesTab extends StatelessWidget {
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(almostBlack),
                   headingTextStyle: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold, color: Colors.white),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                   dataTextStyle: GoogleFonts.montserrat(
-                      color: Colors.black87, fontSize: 12),
+                    color: Colors.black87,
+                    fontSize: 12,
+                  ),
                   columnSpacing: 14,
                   columns: const [
                     DataColumn(label: Text('Fecha')),
@@ -265,15 +306,26 @@ class AdminClassesTab extends StatelessWidget {
                     DataColumn(label: Text('Estado')),
                   ],
                   rows: con.attendanceResults.map((r) {
-                    return DataRow(cells: [
-                      DataCell(Text(DateFormat('dd/MM/yyyy')
-                          .format(DateTime.parse(r.classDate)))),
-                      DataCell(Text(r.userName)),
-                      DataCell(Text(r.coachName)),
-                      DataCell(Text(r.bicycle.toString())),
-                      DataCell(Text(
-                          r.status == 'present' ? '✅ Presente' : '❌ Ausente')),
-                    ]);
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Text(
+                            DateFormat('dd/MM/yyyy')
+                                .format(DateTime.parse(r.classDate)),
+                          ),
+                        ),
+                        DataCell(Text(r.userName)),
+                        DataCell(Text(r.coachName)),
+                        DataCell(Text(r.bicycle.toString())),
+                        DataCell(
+                          Text(
+                            r.status == 'present'
+                                ? '✅ Presente'
+                                : '❌ Ausente',
+                          ),
+                        ),
+                      ],
+                    );
                   }).toList(),
                 ),
               ),

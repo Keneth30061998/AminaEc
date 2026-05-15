@@ -79,6 +79,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
                 _textFieldPrice(),
                 _textFieldDurationDays(),
                 _switchNewUserOnly(),
+                _switchDeferredPayment(),
                 const SizedBox(
                   height: 10,
                 ),
@@ -307,5 +308,21 @@ class AdminPlanRegisterPage extends StatelessWidget {
         backgroundColor: almostBlack,
       ),
     );
+  }
+
+  Widget _switchDeferredPayment() {
+    return Obx(() => SwitchListTile(
+      title: Text(
+        "Permite pago diferido",
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        "Si está apagado, el plan solo podrá pagarse de contado.",
+        style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+      ),
+      activeThumbColor: almostBlack,
+      value: con.allowDeferredPayment.value,
+      onChanged: (value) => con.allowDeferredPayment.value = value,
+    ));
   }
 }

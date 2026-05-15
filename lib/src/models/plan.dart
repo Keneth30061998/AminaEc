@@ -13,6 +13,7 @@ class Plan {
   double? price;
   int? duration_days;
   int? is_new_user_only;
+  int? allow_deferred_payment;
 
   Plan({
     this.id,
@@ -23,6 +24,7 @@ class Plan {
     this.price,
     this.duration_days,
     this.is_new_user_only,
+    this.allow_deferred_payment,
   });
   factory Plan.fromJson(Map<String, dynamic> json) => Plan(
         id: json['id'],
@@ -35,6 +37,7 @@ class Plan {
             : double.tryParse(json["price"]?.toString() ?? "0.0") ?? 0.0,
         duration_days: json['duration_days'],
         is_new_user_only: json['is_new_user_only'] ?? 0,
+        allow_deferred_payment: json['allow_deferred_payment'] ?? 0,
       );
 
   //Se requiere para listar el plan que llega como json
@@ -56,5 +59,7 @@ class Plan {
         "price": price,
         "duration_days": duration_days,
         "is_new_user_only": is_new_user_only,
+        "allow_deferred_payment": allow_deferred_payment,
       };
+  bool get allowsDeferredPayment => allow_deferred_payment == 1;
 }

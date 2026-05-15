@@ -213,7 +213,7 @@ class AdminCoachBlockPage extends StatelessWidget {
         Container(width: 15, height: 15, color: color),
         Text(
           ' $text',
-          style: GoogleFonts.robotoCondensed(color: almostBlack),
+          style: GoogleFonts.roboto(color: almostBlack),
         ),
       ],
     );

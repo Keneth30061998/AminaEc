@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -14,114 +15,298 @@ import '../../../../providers/transaction_provider.dart';
 class AdminTransactionsController extends GetxController {
   final selectedYear = ''.obs;
   final selectedMonth = ''.obs;
-  final selectedDay = ''.obs; // ✅ Nuevo filtro: día del mes
+  final selectedDay = ''.obs;
+  final selectedStatus = 'Todos'.obs;
 
   final List<String> years = List.generate(6, (i) => (2025 + i).toString());
+
   final List<String> months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
+
+  final List<String> days = List.generate(31, (i) => (i + 1).toString());
+
+  final List<String> statuses = [
+    'Todos',
+    'Aprobado',
+    'Rechazado',
   ];
 
   final transactions = <TransactionReport>[].obs;
-  final totalAmount = 0.0.obs;
+
+  final totalApprovedAmount = 0.0.obs;
+  final totalTransactions = 0.obs;
+  final approvedCount = 0.obs;
+  final rejectedCount = 0.obs;
+  final directCount = 0.obs;
+  final deferredCount = 0.obs;
 
   final TransactionProvider _provider = TransactionProvider();
 
-  /// 🔍 Buscar transacciones
-  void buscar() async {
-    print('==============================');
-    print('🚀 Iniciando búsqueda de transacciones...');
+  String? _monthParam() {
+    if (selectedMonth.value.isEmpty) return null;
 
-    String? monthParam;
-    if (selectedMonth.value.isNotEmpty) {
-      final idx = months.indexOf(selectedMonth.value);
-      if (idx >= 0) monthParam = (idx + 1).toString();
-    }
+    final idx = months.indexOf(selectedMonth.value);
 
-    String? yearParam = selectedYear.value.isNotEmpty ? selectedYear.value : null;
-    String? dayParam = selectedDay.value.isNotEmpty ? selectedDay.value : null;
+    if (idx < 0) return null;
 
-    print('📆 Filtros: Año=$yearParam | Mes=$monthParam | Día=$dayParam');
-
-    final results = await _provider.getReport(month: monthParam, year: yearParam);
-
-    print('📊 Transacciones obtenidas del servidor: ${results.length}');
-
-    // 🔹 Filtro adicional por día (solo si se selecciona un día)
-    List<TransactionReport> filtered = results;
-    if (dayParam != null && dayParam.isNotEmpty) {
-      try {
-        final int dayInt = int.parse(dayParam);
-        filtered = results.where((tx) => tx.fecha.day == dayInt).toList();
-        print('📅 Filtradas por día $dayInt → ${filtered.length} resultados');
-      } catch (e) {
-        print('⚠️ Error al filtrar por día: $e');
-      }
-    }
-
-    for (var i = 0; i < filtered.length; i++) {
-      final tx = filtered[i];
-      print(
-          '🧾 [$i] ${tx.name} ${tx.lastname} | CI: ${tx.ci} | Fecha: ${tx.fecha} | Total: ${tx.total}');
-    }
-
-    transactions.assignAll(filtered);
-    totalAmount.value = filtered.fold(0.0, (sum, item) => sum + item.total);
-
-    print('💰 Total calculado: ${totalAmount.value}');
-    print('==============================');
+    return (idx + 1).toString();
   }
 
-  /// ✅ Generar PDF
+  String? _statusParam() {
+    switch (selectedStatus.value) {
+      case 'Aprobado':
+        return 'approved';
+      case 'Rechazado':
+        return 'rejected';
+      default:
+        return null;
+    }
+  }
+
+  void buscar() async {
+    final results = await _provider.getReport(
+      month: _monthParam(),
+      year: selectedYear.value.isNotEmpty ? selectedYear.value : null,
+      day: selectedDay.value.isNotEmpty ? selectedDay.value : null,
+      status: _statusParam(),
+    );
+
+    transactions.assignAll(results);
+    _calculateSummary();
+  }
+
+  void _calculateSummary() {
+    totalTransactions.value = transactions.length;
+
+    approvedCount.value = transactions.where((tx) => tx.isApproved).length;
+    rejectedCount.value = transactions.where((tx) => tx.isRejected).length;
+
+    directCount.value =
+        transactions.where((tx) => tx.tipoPago == 'directo').length;
+
+    deferredCount.value =
+        transactions.where((tx) => tx.tipoPago == 'diferido').length;
+
+    totalApprovedAmount.value = transactions
+        .where((tx) => tx.isApproved)
+        .fold(0.0, (sum, item) => sum + item.total);
+  }
+
+  String get filterResume {
+    final parts = <String>[];
+
+    if (selectedYear.value.isNotEmpty) {
+      parts.add('Año: ${selectedYear.value}');
+    }
+
+    if (selectedMonth.value.isNotEmpty) {
+      parts.add('Mes: ${selectedMonth.value}');
+    }
+
+    if (selectedDay.value.isNotEmpty) {
+      parts.add('Día: ${selectedDay.value}');
+    }
+
+    if (selectedStatus.value != 'Todos') {
+      parts.add('Estado: ${selectedStatus.value}');
+    }
+
+    return parts.isEmpty ? 'Sin filtros aplicados' : parts.join(' | ');
+  }
+
+  Future<Directory> _getExportDirectory() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.manageExternalStorage.request();
+
+      return status.isGranted
+          ? Directory('/storage/emulated/0/Download')
+          : await getApplicationDocumentsDirectory();
+    }
+
+    return await getApplicationDocumentsDirectory();
+  }
+
   Future<File> generatePDF() async {
-    print('📄 Generando PDF...');
     final pdf = pw.Document();
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     pdf.addPage(
-      pw.Page(
-        build: (context) {
-          return pw.TableHelper.fromTextArray(
-            headers: [
-              'Fecha', 'Estudiante', 'Cédula', 'Email', 'Subtotal', 'IVA', 'Total'
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(18),
+        header: (context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'Reporte de Transacciones',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                filterResume,
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+              pw.SizedBox(height: 8),
             ],
-            data: transactions.map((tx) {
-              return [
-                DateFormat('dd/MM/yyyy').format(tx.fecha),
-                '${tx.name} ${tx.lastname}',
-                tx.ci,
-                tx.email,
-                tx.subtotal.toStringAsFixed(2),
-                tx.iva.toStringAsFixed(2),
-                tx.total.toStringAsFixed(2),
-              ];
-            }).toList(),
           );
+        },
+        footer: (context) {
+          return pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Text(
+              'Página ${context.pageNumber} de ${context.pagesCount}',
+              style: const pw.TextStyle(fontSize: 8),
+            ),
+          );
+        },
+        build: (context) {
+          return [
+            pw.Container(
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey400),
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  _pdfSummaryItem(
+                    'Total aprobado',
+                    '\$${totalApprovedAmount.value.toStringAsFixed(2)}',
+                  ),
+                  _pdfSummaryItem(
+                    'Transacciones',
+                    totalTransactions.value.toString(),
+                  ),
+                  _pdfSummaryItem(
+                    'Aprobadas',
+                    approvedCount.value.toString(),
+                  ),
+                  _pdfSummaryItem(
+                    'Rechazadas',
+                    rejectedCount.value.toString(),
+                  ),
+                  _pdfSummaryItem(
+                    'Directos',
+                    directCount.value.toString(),
+                  ),
+                  _pdfSummaryItem(
+                    'Diferidos',
+                    deferredCount.value.toString(),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            pw.TableHelper.fromTextArray(
+              headers: [
+                'Fecha',
+                'Usuario',
+                'Cédula',
+                'Email',
+                'Plan',
+                'Pago',
+                'Cuotas',
+                'Estado',
+                'Referencia',
+                'Banco',
+                'Tarjeta',
+                'Subtotal',
+                'IVA',
+                'Total',
+              ],
+              data: transactions.map((tx) {
+                return [
+                  dateFormat.format(tx.fecha),
+                  tx.nombreCompleto,
+                  tx.ci,
+                  tx.email,
+                  tx.planComprado,
+                  tx.tipoPagoLabel,
+                  tx.cuotasSolicitadas > 1
+                      ? '${tx.cuotasSolicitadas} meses'
+                      : 'Directo',
+                  tx.estadoLabel,
+                  tx.referenciaOrden,
+                  tx.banco.isEmpty ? 'No identificado' : tx.banco,
+                  tx.tipoTarjetaLabel,
+                  tx.subtotal.toStringAsFixed(2),
+                  tx.iva.toStringAsFixed(2),
+                  tx.total.toStringAsFixed(2),
+                ];
+              }).toList(),
+              headerStyle: pw.TextStyle(
+                color: PdfColors.white,
+                fontSize: 7,
+                fontWeight: pw.FontWeight.bold,
+              ),
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColors.grey800,
+              ),
+              cellStyle: const pw.TextStyle(fontSize: 6),
+              cellPadding: const pw.EdgeInsets.all(3),
+              border: pw.TableBorder.all(
+                color: PdfColors.grey300,
+                width: 0.3,
+              ),
+            ),
+          ];
         },
       ),
     );
 
-    Directory dir;
-    if (Platform.isAndroid) {
-      final status = await Permission.manageExternalStorage.request();
-      dir = status.isGranted
-          ? Directory('/storage/emulated/0/Download')
-          : await getApplicationDocumentsDirectory();
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
+    final dir = await _getExportDirectory();
     final file = File('${dir.path}/reporte_transacciones.pdf');
+
     await file.writeAsBytes(await pdf.save(), flush: true);
-    print('✅ PDF generado en: ${file.path}');
+
     return file;
   }
 
-  /// 📤 Exportar PDF
+  pw.Widget _pdfSummaryItem(String label, String value) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          label,
+          style: const pw.TextStyle(
+            fontSize: 7,
+            color: PdfColors.grey700,
+          ),
+        ),
+        pw.SizedBox(height: 2),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 10,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> exportPDF(BuildContext context) async {
-    print('📤 Exportando PDF...');
     final box = context.findRenderObject() as RenderBox?;
     final shareRect =
     box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+
     final file = await generatePDF();
 
     final params = ShareParams(
@@ -132,65 +317,79 @@ class AdminTransactionsController extends GetxController {
 
     try {
       await SharePlus.instance.share(params);
-      print('📨 PDF compartido correctamente.');
     } catch (e) {
-      print('⚠️ Error compartiendo PDF: $e');
-      Get.snackbar('Exportación', 'Archivo guardado en: ${file.path}');
+      Get.snackbar(
+        'PDF generado',
+        'Archivo guardado en: ${file.path}',
+      );
     }
   }
 
-  /// ✅ Generar Excel
   Future<void> exportExcel(BuildContext context) async {
-    print('📊 Generando Excel...');
     final excel = Excel.createExcel();
     final sheet = excel['Reporte'];
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     sheet.appendRow([
-      TextCellValue('Fecha'),
-      TextCellValue('Estudiante'),
+      TextCellValue('Fecha y hora'),
+      TextCellValue('Usuario'),
       TextCellValue('Cédula'),
       TextCellValue('Email'),
+      TextCellValue('Plan comprado'),
       TextCellValue('Subtotal'),
       TextCellValue('IVA'),
       TextCellValue('Total'),
+      TextCellValue('Tipo de pago'),
+      TextCellValue('Cuotas solicitadas'),
+      TextCellValue('Estado'),
+      TextCellValue('Referencia orden'),
+      TextCellValue('Banco'),
+      TextCellValue('Tipo tarjeta'),
+      TextCellValue('Marca tarjeta'),
+      TextCellValue('Últimos 4 dígitos'),
     ]);
 
     for (var tx in transactions) {
       sheet.appendRow([
-        TextCellValue(DateFormat('dd/MM/yyyy').format(tx.fecha)),
-        TextCellValue('${tx.name} ${tx.lastname}'),
+        TextCellValue(dateFormat.format(tx.fecha)),
+        TextCellValue(tx.nombreCompleto),
         TextCellValue(tx.ci),
         TextCellValue(tx.email),
+        TextCellValue(tx.planComprado),
         DoubleCellValue(tx.subtotal),
         DoubleCellValue(tx.iva),
         DoubleCellValue(tx.total),
+        TextCellValue(tx.tipoPagoLabel),
+        IntCellValue(tx.cuotasSolicitadas),
+        TextCellValue(tx.estadoLabel),
+        TextCellValue(tx.referenciaOrden),
+        TextCellValue(tx.banco.isEmpty ? 'No identificado' : tx.banco),
+        TextCellValue(tx.tipoTarjetaLabel),
+        TextCellValue(tx.marcaTarjeta),
+        TextCellValue(tx.tarjetaLast4),
       ]);
     }
 
     final bytes = excel.encode();
+
     if (bytes == null) {
-      print('❌ Error: bytes nulos en exportación Excel.');
+      Get.snackbar(
+        'Error',
+        'No se pudo generar el archivo Excel',
+      );
       return;
     }
 
-    Directory dir;
-    if (Platform.isAndroid) {
-      final status = await Permission.manageExternalStorage.request();
-      dir = status.isGranted
-          ? Directory('/storage/emulated/0/Download')
-          : await getApplicationDocumentsDirectory();
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
+    final dir = await _getExportDirectory();
     final file = File('${dir.path}/reporte_transacciones.xlsx');
+
     await file.writeAsBytes(bytes, flush: true);
-    print('✅ Excel generado en: ${file.path}');
 
     if (Platform.isIOS) {
       final box = context.findRenderObject() as RenderBox?;
       final shareRect =
       box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
+
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
@@ -199,7 +398,10 @@ class AdminTransactionsController extends GetxController {
         ),
       );
     } else {
-      Get.snackbar('Excel generado', 'Archivo guardado en: ${file.path}');
+      Get.snackbar(
+        'Excel generado',
+        'Archivo guardado en: ${file.path}',
+      );
     }
   }
 }

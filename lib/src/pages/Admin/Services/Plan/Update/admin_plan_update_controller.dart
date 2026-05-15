@@ -9,10 +9,14 @@ import 'package:image_picker/image_picker.dart';
 class AdminPlanUpdateController extends GetxController {
   final PlanProvider planProvider = PlanProvider();
 
-  //variable para activar/desactivar plan de usuario nuevo
+  // Variable para activar/desactivar plan exclusivo para usuario nuevo
   RxBool isNewUserOnly = false.obs;
 
+  // Variable para activar/desactivar pago diferido
+  RxBool allowDeferredPayment = false.obs;
+
   Plan plan = Get.arguments['plan'];
+
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final priceController = TextEditingController();
@@ -24,30 +28,44 @@ class AdminPlanUpdateController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
     nameController.text = plan.name ?? '';
     descriptionController.text = plan.description ?? '';
     priceController.text =
         plan.price?.toStringAsFixed(2).replaceAll('.', ',') ?? '';
     ridesController.text = plan.rides?.toString() ?? '';
     durationController.text = plan.duration_days?.toString() ?? '';
+
     isNewUserOnly.value = plan.is_new_user_only == 1;
+    allowDeferredPayment.value = plan.allow_deferred_payment == 1;
+  }
+
+  @override
+  void onClose() {
+    nameController.dispose();
+    descriptionController.dispose();
+    priceController.dispose();
+    ridesController.dispose();
+    durationController.dispose();
+    super.onClose();
   }
 
   Future<void> pickImage() async {
     final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    await ImagePicker().pickImage(source: ImageSource.gallery);
+
     if (pickedFile != null) {
       imageFile = File(pickedFile.path);
       update(); // Para refrescar la imagen en la vista
     }
   }
 
-  void updatePlan() async {
-    String name = nameController.text.trim();
-    String description = descriptionController.text.trim();
-    String priceText = priceController.text.trim();
-    String ridesText = ridesController.text.trim();
-    String durationText = durationController.text.trim();
+  Future<void> updatePlan() async {
+    final String name = nameController.text.trim();
+    final String description = descriptionController.text.trim();
+    final String priceText = priceController.text.trim();
+    final String ridesText = ridesController.text.trim();
+    final String durationText = durationController.text.trim();
 
     // Validaciones
     if (name.isEmpty ||
@@ -59,19 +77,21 @@ class AdminPlanUpdateController extends GetxController {
       return;
     }
 
-    double? price = double.tryParse(priceText.replaceAll(',', '.'));
-    int? rides = int.tryParse(ridesText);
-    int? duration = int.tryParse(durationText);
+    final double? price = double.tryParse(priceText.replaceAll(',', '.'));
+    final int? rides = int.tryParse(ridesText);
+    final int? duration = int.tryParse(durationText);
 
-    if (price == null) {
+    if (price == null || price <= 0) {
       Get.snackbar('Error', 'Precio inválido');
       return;
     }
-    if (rides == null) {
+
+    if (rides == null || rides <= 0) {
       Get.snackbar('Error', 'Rides inválido');
       return;
     }
-    if (duration == null) {
+
+    if (duration == null || duration <= 0) {
       Get.snackbar('Error', 'Duración inválida');
       return;
     }
@@ -82,22 +102,33 @@ class AdminPlanUpdateController extends GetxController {
     plan.rides = rides;
     plan.duration_days = duration;
     plan.is_new_user_only = isNewUserOnly.value ? 1 : 0;
+    plan.allow_deferred_payment = allowDeferredPayment.value ? 1 : 0;
 
+    try {
+      if (imageFile != null) {
+        final stream = await planProvider.updateWithImage(plan, imageFile!);
 
-    if (imageFile != null) {
-      final stream = await planProvider.updateWithImage(plan, imageFile!);
-      stream.listen((res) {
-        Get.snackbar('Éxito', 'Plan actualizado con imagen');
-        Get.offAllNamed('/admin/home');
-      });
-    } else {
-      final res = await planProvider.updateWithoutImage(plan);
-      if (res.statusCode == 201) {
-        Get.snackbar('Éxito', 'Plan actualizado');
-        Get.offAllNamed('/admin/home');
+        stream.listen(
+              (res) {
+            Get.snackbar('Éxito', 'Plan actualizado con imagen');
+            Get.offAllNamed('/admin/home');
+          },
+          onError: (error) {
+            Get.snackbar('Error', 'No se pudo actualizar el plan: $error');
+          },
+        );
       } else {
-        Get.snackbar('Error', 'No se pudo actualizar');
+        final res = await planProvider.updateWithoutImage(plan);
+
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          Get.snackbar('Éxito', 'Plan actualizado');
+          Get.offAllNamed('/admin/home');
+        } else {
+          Get.snackbar('Error', 'No se pudo actualizar: ${res.body}');
+        }
       }
+    } catch (e) {
+      Get.snackbar('Error', 'Ocurrió un error al actualizar: $e');
     }
   }
 }
