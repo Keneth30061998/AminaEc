@@ -267,7 +267,7 @@ class UserPlanBuyResumePage extends StatelessWidget {
 
               // Si viene true, recarga la lista
               if (added == true) {
-                con.loadCards();
+                await con.loadCards();
               }
             },
             icon: const Icon(iconAdd),
