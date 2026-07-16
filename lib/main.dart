@@ -140,32 +140,93 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final ClassRatingProvider _rating = ClassRatingProvider();
 
+  bool _hasAlreadyCheckedRating = false;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final pendingRoute = PendingNavigationService.consumePendingRoute();
+      await _handleInitialNavigation();
+    });
+  }
 
-      final response = await _rating.checkPendingRating(userSession.id.toString());
-      if (response.success! && response.data != null) {
-        final pendingAttendanceId = response.data['attendanceId'];
-        if (pendingAttendanceId != null) {
-          // Si hay una clase pendiente, navegar a la página de calificación
-          Get.toNamed('/user/class-rating', arguments: {
-            'attendanceId': pendingAttendanceId,
-          });
-        }
-      }
+  Future<void> _handleInitialNavigation() async {
+    if (_hasAlreadyCheckedRating) return;
+    _hasAlreadyCheckedRating = true;
 
-      if (pendingRoute != null) {
-        final String route = pendingRoute['route'];
-        final Map<String, dynamic> arguments =
-        Map<String, dynamic>.from(pendingRoute['arguments'] ?? {});
+    // 1. Si no hay sesión, no consultar calificaciones.
+    if (userSession.id == null) {
+      return;
+    }
 
+    // 2. Si hay ruta pendiente por notificación, se procesa primero.
+    final pendingRoute = PendingNavigationService.consumePendingRoute();
+
+    if (pendingRoute != null) {
+      final String route = pendingRoute['route'];
+      final Map<String, dynamic> arguments =
+      Map<String, dynamic>.from(pendingRoute['arguments'] ?? {});
+
+      if (route.isNotEmpty && Get.currentRoute != route) {
         Get.toNamed(route, arguments: arguments);
       }
-    });
+
+      return;
+    }
+
+    // 3. Evitar consultar calificación si el usuario tiene más de un rol
+    // y todavía está en pantalla de selección de roles.
+    if (userSession.roles != null && userSession.roles!.length > 1) {
+      return;
+    }
+
+    // 4. Evitar consultar calificación para coach.
+    // Según tu lógica actual, rol id = 3 corresponde a coach.
+    final String? roleId = userSession.roles != null &&
+        userSession.roles!.isNotEmpty
+        ? userSession.roles!.first.id?.toString()
+        : null;
+
+    if (roleId == '3') {
+      return;
+    }
+
+    await _checkAndOpenPendingRating();
+  }
+
+  Future<void> _checkAndOpenPendingRating() async {
+    try {
+      final response =
+      await _rating.checkPendingRating(userSession.id.toString());
+
+      if (response.success != true) {
+        return;
+      }
+
+      final Map<String, dynamic> data =
+      response.data is Map<String, dynamic>
+          ? response.data as Map<String, dynamic>
+          : {};
+
+      final bool hasPendingRating = data['hasPendingRating'] == true;
+      final dynamic pendingAttendanceId = data['attendanceId'];
+
+      if (!hasPendingRating || pendingAttendanceId == null) {
+        return;
+      }
+
+      if (Get.currentRoute != '/user/class-rating') {
+        Get.toNamed(
+          '/user/class-rating',
+          arguments: {
+            'attendanceId': pendingAttendanceId.toString(),
+          },
+        );
+      }
+    } catch (e) {
+      print('Error verificando calificación pendiente: $e');
+    }
   }
 
   @override
@@ -183,7 +244,9 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.fromSeed(seedColor: whiteLight),
         useMaterial3: true,
         scaffoldBackgroundColor: whiteLight,
-        textTheme: const TextTheme(bodyMedium: TextStyle(color: Colors.white)),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white),
+        ),
       ),
       debugShowCheckedModeBanner: false,
       initialRoute: userSession.id != null

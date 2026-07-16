@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:amina_ec/src/environment/environment.dart';
 import 'package:amina_ec/src/models/class_rating.dart';
 import 'package:amina_ec/src/models/response_api.dart';
@@ -7,28 +8,37 @@ import 'package:http/http.dart' as http;
 
 class ClassRatingProvider {
   final String _baseUrl = Environment.API_URL;
+
   Map<String, dynamic> get _user => GetStorage().read('user') ?? {};
 
-  void _debugPrintHeader(String title) {
-    print("\n====================================================");
-    print("🔍 $title");
-    print("====================================================");
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'Authorization': (_user['session_token'] ?? '').toString(),
+  };
+
+  ResponseApi _parseResponse(http.Response res) {
+    try {
+      final data = json.decode(res.body);
+      return ResponseApi.fromJson(data);
+    } catch (e) {
+      return ResponseApi(
+        success: false,
+        message: 'Respuesta inválida del servidor',
+      );
+    }
   }
 
-  // providers/class_rating_provider.dart
   Future<ResponseApi> submitRating(ClassRating classRating) async {
     final url = '${_baseUrl}api/class-ratings';
-    final body = classRating.toJson();
 
     try {
       final res = await http.post(
         Uri.parse(url),
         headers: _headers,
-        body: json.encode(body),
+        body: json.encode(classRating.toJson()),
       );
 
-      final data = json.decode(res.body);
-      return ResponseApi.fromJson(data);
+      return _parseResponse(res);
     } catch (e) {
       return ResponseApi(
         success: false,
@@ -55,8 +65,7 @@ class ClassRatingProvider {
         body: json.encode(body),
       );
 
-      final data = json.decode(res.body);
-      return ResponseApi.fromJson(data);
+      return _parseResponse(res);
     } catch (e) {
       return ResponseApi(
         success: false,
@@ -65,9 +74,8 @@ class ClassRatingProvider {
     }
   }
 
-  // providers/class_rating_provider.dart
   Future<ResponseApi> checkPendingRating(String userId) async {
-    final url = '${_baseUrl}api/check-pending-rating'; // URL para verificar clase pendiente
+    final url = '${_baseUrl}api/check-pending-rating';
 
     final body = {
       'userId': userId,
@@ -80,12 +88,38 @@ class ClassRatingProvider {
         body: json.encode(body),
       );
 
-      final data = json.decode(res.body);
-      return ResponseApi.fromJson(data);
+      return _parseResponse(res);
     } catch (e) {
       return ResponseApi(
         success: false,
         message: 'Error al verificar clases pendientes: $e',
+      );
+    }
+  }
+
+  Future<ResponseApi> checkAttendanceRatingStatus({
+    required String userId,
+    required String attendanceId,
+  }) async {
+    final url = '${_baseUrl}api/class-ratings/check-attendance';
+
+    final body = {
+      'userId': userId,
+      'attendanceId': attendanceId,
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse(url),
+        headers: _headers,
+        body: json.encode(body),
+      );
+
+      return _parseResponse(res);
+    } catch (e) {
+      return ResponseApi(
+        success: false,
+        message: 'Error verificando la valoración pendiente: $e',
       );
     }
   }
@@ -99,7 +133,7 @@ class ClassRatingProvider {
     String? startHour,
     String? endHour,
     String? rating,
-    String? hasComment, // "true" | "false" | null
+    String? hasComment,
   }) async {
     final queryParams = <String, String>{};
 
@@ -124,8 +158,7 @@ class ClassRatingProvider {
 
     try {
       final res = await http.get(uri, headers: _headers);
-      final data = json.decode(res.body);
-      return ResponseApi.fromJson(data);
+      return _parseResponse(res);
     } catch (e) {
       return ResponseApi(
         success: false,
@@ -133,9 +166,4 @@ class ClassRatingProvider {
       );
     }
   }
-
-  Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Authorization': (_user['session_token'] ?? '').toString(),
-  };
 }

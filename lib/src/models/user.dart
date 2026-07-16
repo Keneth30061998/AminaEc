@@ -6,6 +6,21 @@ User userFromJson(String str) => User.fromJson(json.decode(str));
 
 String userToJson(User data) => json.encode(data.toJson());
 
+//funcion de converison de valores - string a int
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+
+  if (value is int) {
+    return value;
+  }
+
+  if (value is num) {
+    return value.toInt();
+  }
+
+  return int.tryParse(value.toString());
+}
+
 class User {
   String? id;
   String? email;
@@ -51,7 +66,13 @@ class User {
             ? []
             : List<Rol>.from(json["roles"].map((model) => Rol.fromJson(model))),
         totalRides: json['total_rides'],
-        ridesCompleted: json['rides_completed'],
+        //aplicamos el parseo
+        ridesCompleted: _parseInt(
+              json["completed_rides"] ??
+                  json["rides_completed"] ??
+                  json["completedRides"],
+            ) ??
+            0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -67,6 +88,10 @@ class User {
         "birth_date": birthDate,
         "roles": roles,
         "total_rides": totalRides,
+        // Nombre oficial utilizado por el backend.
+        "completed_rides": ridesCompleted,
+
+        // Compatibilidad con posibles datos guardados anteriormente.
         "rides_completed": ridesCompleted,
       };
 }

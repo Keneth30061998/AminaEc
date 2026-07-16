@@ -96,4 +96,62 @@ class AdminUsersProvider {
       return [];
     }
   }
+
+  Future<ResponseApi> editCompletedRides({
+    required String userId,
+    required int completedRides,
+    required String token,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '$_baseUrl$_api/$userId/completed-rides',
+      );
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+        body: jsonEncode({
+          'completed_rides': completedRides,
+        }),
+      );
+
+      if (response.body.isEmpty) {
+        return ResponseApi(
+          success: false,
+          message: 'El servidor no devolvió una respuesta.',
+        );
+      }
+
+      final dynamic decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        return ResponseApi(
+          success: false,
+          message: 'Respuesta inesperada del servidor.',
+        );
+      }
+
+      final result = ResponseApi.fromJson(
+        Map<String, dynamic>.from(decoded),
+      );
+
+      // Por seguridad, una respuesta HTTP de error no debe
+      // considerarse exitosa aunque el cuerpo sea inesperado.
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        result.success = false;
+      }
+
+      return result;
+    } catch (e) {
+      print('❌ Exception editCompletedRides: $e');
+
+      return ResponseApi(
+        success: false,
+        message: 'No se pudieron editar los rides completos.',
+      );
+    }
+  }
 }
