@@ -8,6 +8,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import '../../../models/coach.dart';
 import '../../../models/scheduled_class.dart';
+import '../../../models/app_banner.dart';
 
 class UserStartPage extends StatelessWidget {
   final UserStartController con =
@@ -50,7 +51,12 @@ class UserStartPage extends StatelessWidget {
           con.getAcquiredPlans();
           con.getCoaches();
           con.getCompletedRides();
-          await Future.delayed(const Duration(seconds: 1));
+
+          await con.getAppBanner();
+
+          await Future.delayed(
+            const Duration(milliseconds: 500),
+          );
         },
         child: SafeArea(
           child: SingleChildScrollView(
@@ -60,7 +66,31 @@ class UserStartPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _heroHeader(),
-                const SizedBox(height: 18),
+
+                Obx(() {
+                  final banner = con.activeBanner.value;
+
+                  if (banner == null) {
+                    return const SizedBox(height: 18);
+                  }
+
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: Column(
+                      key: ValueKey(
+                        '${banner.id}_${banner.updatedAt}_${banner.isActive}',
+                      ),
+                      children: [
+                        const SizedBox(height: 12),
+                        _homeNotificationBanner(banner),
+                        const SizedBox(height: 18),
+                      ],
+                    ),
+                  );
+                }),
+
                 Row(
                   children: [
                     Expanded(child: Obx(() => _boxBikesComplete())),
@@ -651,6 +681,112 @@ class UserStartPage extends StatelessWidget {
             color: Colors.black.withOpacity(0.05),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _homeNotificationBanner(AppBanner banner) {
+    final bool hasLink = banner.hasLink;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+        14,
+        14,
+        14,
+        13,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.black.withOpacity(0.045),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: indigoAmina.withOpacity(0.09),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              color: indigoAmina,
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  banner.title,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: almostBlack,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  banner.message,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.roboto(
+                    fontSize: 13.5,
+                    height: 1.42,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                if (hasLink) ...[
+                  const SizedBox(height: 7),
+                  InkWell(
+                    onTap: () => con.openBannerLink(banner),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 3,
+                        horizontal: 1,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            banner.linkText ?? 'Ver más',
+                            style: GoogleFonts.roboto(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: indigoAmina,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.open_in_new_rounded,
+                            size: 15,
+                            color: indigoAmina,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

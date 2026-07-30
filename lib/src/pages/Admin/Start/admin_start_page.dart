@@ -57,6 +57,22 @@ class AdminStartPage extends StatelessWidget {
             title: _appBarTitle(),
             actions: [
               Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: IconButton.filledTonal(
+                  tooltip: 'Banner del inicio',
+                  onPressed: () =>
+                      _openBannerManager(context),
+                  icon: const Icon(
+                    Icons.campaign_outlined,
+                    size: 21,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorBackgroundBox,
+                    foregroundColor: almostBlack,
+                  ),
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: FilledButton.tonalIcon(
                   onPressed: () => _openGlobalNotificationDialog(context),
@@ -276,6 +292,348 @@ class AdminStartPage extends StatelessWidget {
     });
   }
 
+  Future<void> _openBannerManager(
+      BuildContext context,
+      ) async {
+    await con.loadAppBanner(showError: true);
+
+    if (!context.mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (
+              modalContext,
+              setModalState,
+              ) {
+            void refreshPreview() {
+              setModalState(() {});
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(modalContext)
+                    .viewInsets
+                    .bottom,
+              ),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight:
+                  MediaQuery.of(modalContext)
+                      .size
+                      .height *
+                      0.92,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:
+                  BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    20,
+                    14,
+                    20,
+                    28,
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius:
+                            BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      Text(
+                        'Banner del inicio',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: almostBlack,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+
+                      Text(
+                        'Configura el aviso fijo que aparecerá en el Home de los usuarios.',
+                        style: GoogleFonts.roboto(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      Obx(
+                            () => Container(
+                          decoration: BoxDecoration(
+                            color: colorBackgroundBox,
+                            borderRadius:
+                            BorderRadius.circular(16),
+                          ),
+                          child: SwitchListTile.adaptive(
+                            value:
+                            con.bannerActive.value,
+                            activeColor: almostBlack,
+                            title: Text(
+                              con.bannerActive.value
+                                  ? 'Banner activo'
+                                  : 'Banner desactivado',
+                              style:
+                              GoogleFonts.poppins(
+                                fontWeight:
+                                FontWeight.w700,
+                                color: almostBlack,
+                              ),
+                            ),
+                            subtitle: Text(
+                              con.bannerActive.value
+                                  ? 'Los usuarios pueden verlo en su pantalla de inicio.'
+                                  : 'El contenido queda guardado, pero no se muestra.',
+                              style:
+                              GoogleFonts.roboto(
+                                fontSize: 12.5,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              con.bannerActive.value =
+                                  value;
+
+                              refreshPreview();
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      TextField(
+                        controller:
+                        con.bannerTitleController,
+                        maxLength: 120,
+                        onChanged: (_) =>
+                            refreshPreview(),
+                        style: GoogleFonts.poppins(),
+                        decoration:
+                        _bannerInputDecoration(
+                          label: 'Título',
+                          hint:
+                          'Ej. Información importante',
+                          icon:
+                          Icons.title_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      TextField(
+                        controller:
+                        con.bannerMessageController,
+                        maxLength: 500,
+                        minLines: 3,
+                        maxLines: 5,
+                        onChanged: (_) =>
+                            refreshPreview(),
+                        style: GoogleFonts.poppins(),
+                        decoration:
+                        _bannerInputDecoration(
+                          label: 'Mensaje',
+                          hint:
+                          'Escribe el contenido que verá el usuario.',
+                          icon: Icons
+                              .subject_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      TextField(
+                        controller:
+                        con.bannerLinkTextController,
+                        maxLength: 60,
+                        onChanged: (_) =>
+                            refreshPreview(),
+                        style: GoogleFonts.poppins(),
+                        decoration:
+                        _bannerInputDecoration(
+                          label:
+                          'Texto del enlace (opcional)',
+                          hint:
+                          'Ej. Conoce más',
+                          icon: Icons
+                              .short_text_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      TextField(
+                        controller:
+                        con.bannerLinkUrlController,
+                        keyboardType:
+                        TextInputType.url,
+                        autocorrect: false,
+                        onChanged: (_) =>
+                            refreshPreview(),
+                        style: GoogleFonts.poppins(),
+                        decoration:
+                        _bannerInputDecoration(
+                          label:
+                          'Enlace web (opcional)',
+                          hint:
+                          'https://ejemplo.com',
+                          icon:
+                          Icons.link_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      Text(
+                        'Vista previa',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight:
+                          FontWeight.w700,
+                          color: almostBlack,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      _adminBannerPreview(),
+                      const SizedBox(height: 24),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.of(
+                                  sheetContext,
+                                ).pop();
+                              },
+                              style:
+                              OutlinedButton.styleFrom(
+                                foregroundColor:
+                                almostBlack,
+                                side: const BorderSide(
+                                  color:
+                                  Colors.black12,
+                                ),
+                                padding:
+                                const EdgeInsets
+                                    .symmetric(
+                                  vertical: 15,
+                                ),
+                                shape:
+                                RoundedRectangleBorder(
+                                  borderRadius:
+                                  BorderRadius
+                                      .circular(15),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancelar',
+                                style:
+                                GoogleFonts.poppins(
+                                  fontWeight:
+                                  FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Obx(
+                                  () => FilledButton(
+                                onPressed: con
+                                    .isBannerSaving
+                                    .value
+                                    ? null
+                                    : () async {
+                                  final saved =
+                                  await con
+                                      .saveAppBanner();
+
+                                  if (saved &&
+                                      sheetContext
+                                          .mounted) {
+                                    Navigator.of(
+                                      sheetContext,
+                                    ).pop();
+                                  }
+                                },
+                                style:
+                                FilledButton.styleFrom(
+                                  backgroundColor:
+                                  almostBlack,
+                                  foregroundColor:
+                                  Colors.white,
+                                  disabledBackgroundColor:
+                                  Colors.black26,
+                                  padding:
+                                  const EdgeInsets
+                                      .symmetric(
+                                    vertical: 15,
+                                  ),
+                                  shape:
+                                  RoundedRectangleBorder(
+                                    borderRadius:
+                                    BorderRadius
+                                        .circular(15),
+                                  ),
+                                ),
+                                child: con
+                                    .isBannerSaving
+                                    .value
+                                    ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                  CircularProgressIndicator(
+                                    strokeWidth:
+                                    2.5,
+                                    color:
+                                    Colors.white,
+                                  ),
+                                )
+                                    : Text(
+                                  'Guardar',
+                                  style:
+                                  GoogleFonts
+                                      .poppins(
+                                    fontWeight:
+                                    FontWeight
+                                        .w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _openGlobalNotificationDialog(BuildContext context) {
     final TextEditingController titleController = TextEditingController();
     final TextEditingController messageController = TextEditingController();
@@ -468,6 +826,171 @@ class AdminStartPage extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  InputDecoration _bannerInputDecoration({
+    required String label,
+    required String hint,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(
+        icon,
+        color: almostBlack,
+      ),
+      filled: true,
+      fillColor: colorBackgroundBox,
+      counterStyle: GoogleFonts.roboto(
+        fontSize: 11,
+        color: Colors.black45,
+      ),
+      labelStyle: GoogleFonts.poppins(
+        color: Colors.black54,
+      ),
+      hintStyle: GoogleFonts.roboto(
+        color: Colors.black38,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(
+          color: almostBlack,
+          width: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _adminBannerPreview() {
+    final title =
+    con.bannerTitleController.text.trim();
+
+    final message =
+    con.bannerMessageController.text.trim();
+
+    final linkText =
+    con.bannerLinkTextController.text.trim();
+
+    final linkUrl =
+    con.bannerLinkUrlController.text.trim();
+
+    final hasLink = linkUrl.isNotEmpty;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 180),
+      opacity:
+      con.bannerActive.value ? 1 : 0.55,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.black.withOpacity(0.06),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color:
+              Colors.black.withOpacity(0.035),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color:
+                indigoAmina.withOpacity(0.09),
+                borderRadius:
+                BorderRadius.circular(13),
+              ),
+              child: Icon(
+                Icons.notifications_none_rounded,
+                color: indigoAmina,
+                size: 21,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title.isEmpty
+                        ? 'Título del banner'
+                        : title,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14.5,
+                      fontWeight:
+                      FontWeight.w700,
+                      color: almostBlack,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    message.isEmpty
+                        ? 'Aquí se mostrará el mensaje para los usuarios.'
+                        : message,
+                    maxLines: 4,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: GoogleFonts.roboto(
+                      fontSize: 13.5,
+                      height: 1.42,
+                      color:
+                      Colors.grey.shade700,
+                    ),
+                  ),
+                  if (hasLink) ...[
+                    const SizedBox(height: 7),
+                    Row(
+                      mainAxisSize:
+                      MainAxisSize.min,
+                      children: [
+                        Text(
+                          linkText.isEmpty
+                              ? 'Ver más'
+                              : linkText,
+                          style: GoogleFonts.roboto(
+                            fontSize: 13,
+                            fontWeight:
+                            FontWeight.w700,
+                            color: indigoAmina,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.open_in_new_rounded,
+                          size: 15,
+                          color: indigoAmina,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

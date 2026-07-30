@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../components/Socket/socket_service.dart';
 import '../../../models/attendance.dart';
+import '../../../models/app_banner.dart';
+import '../../../providers/app_banner_provider.dart';
 import '../../../models/coach.dart';
 import '../../../models/student_inscription.dart';
 import '../../../providers/attendance_provider.dart';
@@ -16,8 +18,27 @@ class AdminStartController extends GetxController {
   final classReservationProvider = ClassReservationProvider();
   final attendanceProvider = AttendanceProvider();
 
+  final AppBannerProvider appBannerProvider =
+  AppBannerProvider();
+
+  final TextEditingController bannerTitleController =
+  TextEditingController();
+
+  final TextEditingController bannerMessageController =
+  TextEditingController();
+
+  final TextEditingController bannerLinkTextController =
+  TextEditingController();
+
+  final TextEditingController bannerLinkUrlController =
+  TextEditingController();
+
   RxList<Coach> coaches = <Coach>[].obs;
   RxString selectedCoachId = ''.obs;
+  final Rxn<AppBanner> currentBanner = Rxn<AppBanner>();
+  final RxBool bannerActive = false.obs;
+  final RxBool isBannerLoading = false.obs;
+  final RxBool isBannerSaving = false.obs;
 
   Map<String, RxList<StudentInscription>> studentMap = {};
   Map<String, Rx<DateTime>> selectedDatePerCoach = {};
@@ -32,6 +53,17 @@ class AdminStartController extends GetxController {
     SocketService().join('admin');
     getCoaches();
     setupSockets();
+    loadAppBanner();
+  }
+
+  @override
+  void onClose() {
+    bannerTitleController.dispose();
+    bannerMessageController.dispose();
+    bannerLinkTextController.dispose();
+    bannerLinkUrlController.dispose();
+
+    super.onClose();
   }
 
   Future<void> refreshAll() async {
@@ -98,6 +130,219 @@ class AdminStartController extends GetxController {
     }
 
     print("🔵 Fin de loadStudents()");
+  }
+
+  //Para el banner
+  Future<void> loadAppBanner({
+    bool showError = false,
+  }) async {
+    isBannerLoading.value = true;
+
+    try {
+      final banner =
+      await appBannerProvider.getCurrentAdmin();
+
+      currentBanner.value = banner;
+
+      bannerTitleController.text =
+          banner?.title ?? '';
+
+      bannerMessageController.text =
+          banner?.message ?? '';
+
+      bannerLinkTextController.text =
+          banner?.linkText ?? '';
+
+      bannerLinkUrlController.text =
+          banner?.linkUrl ?? '';
+
+      bannerActive.value =
+          banner?.isActive ?? false;
+    } catch (error) {
+      debugPrint(
+        '❌ Error cargando banner administrativo: $error',
+      );
+
+      if (showError) {
+        Get.snackbar(
+          'No se pudo cargar',
+          error.toString().replaceFirst(
+            'Exception: ',
+            '',
+          ),
+          backgroundColor: Colors.white,
+          colorText: Colors.redAccent,
+        );
+      }
+    } finally {
+      isBannerLoading.value = false;
+    }
+  }
+
+  //guardar, activar o desactivar banner
+  Future<bool> saveAppBanner() async {
+    if (isBannerSaving.value) {
+      return false;
+    }
+
+    final title =
+    bannerTitleController.text.trim();
+
+    final message =
+    bannerMessageController.text.trim();
+
+    final rawLinkText =
+    bannerLinkTextController.text.trim();
+
+    final rawLinkUrl =
+    bannerLinkUrlController.text.trim();
+
+    /*
+   * Se exige contenido solamente cuando se intenta activar.
+   */
+    if (bannerActive.value && title.isEmpty) {
+      Get.snackbar(
+        'Título requerido',
+        'Ingresa un título antes de activar el banner.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+
+      return false;
+    }
+
+    if (bannerActive.value && message.isEmpty) {
+      Get.snackbar(
+        'Mensaje requerido',
+        'Ingresa un mensaje antes de activar el banner.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+
+      return false;
+    }
+
+    if (title.length > 120) {
+      Get.snackbar(
+        'Título demasiado largo',
+        'El título no puede superar los 120 caracteres.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+
+      return false;
+    }
+
+    if (message.length > 500) {
+      Get.snackbar(
+        'Mensaje demasiado largo',
+        'El mensaje no puede superar los 500 caracteres.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+
+      return false;
+    }
+
+    if (rawLinkText.length > 60) {
+      Get.snackbar(
+        'Texto demasiado largo',
+        'El texto del enlace no puede superar los 60 caracteres.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+
+      return false;
+    }
+
+    String? linkUrl;
+    String? linkText;
+
+    if (rawLinkUrl.isNotEmpty) {
+      if (!_isValidHttpUrl(rawLinkUrl)) {
+        Get.snackbar(
+          'Enlace incorrecto',
+          'El enlace debe comenzar con http:// o https://.',
+          backgroundColor: Colors.white,
+          colorText: Colors.redAccent,
+        );
+
+        return false;
+      }
+
+      linkUrl = rawLinkUrl;
+      linkText = rawLinkText.isEmpty
+          ? 'Ver más'
+          : rawLinkText;
+    }
+
+    final banner = AppBanner(
+      id: currentBanner.value?.id ?? '1',
+      title: title,
+      message: message,
+      linkText: linkText,
+      linkUrl: linkUrl,
+      isActive: bannerActive.value,
+    );
+
+    isBannerSaving.value = true;
+
+    try {
+      final updated =
+      await appBannerProvider.updateBanner(banner);
+
+      currentBanner.value = updated;
+
+      bannerTitleController.text =
+          updated.title;
+
+      bannerMessageController.text =
+          updated.message;
+
+      bannerLinkTextController.text =
+          updated.linkText ?? '';
+
+      bannerLinkUrlController.text =
+          updated.linkUrl ?? '';
+
+      bannerActive.value =
+          updated.isActive;
+
+      Get.snackbar(
+        'Cambios guardados',
+        updated.isActive
+            ? 'El banner está visible para los usuarios.'
+            : 'El banner está desactivado.',
+        backgroundColor: Colors.white,
+        colorText: Colors.green.shade700,
+      );
+
+      return true;
+    } catch (error) {
+      Get.snackbar(
+        'No se pudo guardar',
+        error.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+
+      return false;
+    } finally {
+      isBannerSaving.value = false;
+    }
+  }
+
+  bool _isValidHttpUrl(String value) {
+    final uri = Uri.tryParse(value);
+
+    return uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == 'http' ||
+            uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
   }
 
   void selectCoach(String coachId) {

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:amina_ec/src/models/app_banner.dart';
+import 'package:amina_ec/src/providers/app_banner_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/Socket/socket_service.dart';
 import '../../../models/coach.dart';
@@ -17,11 +20,12 @@ import '../../../providers/users_provider.dart';
 import '../../../utils/color.dart';
 import 'package:amina_ec/src/services/calendar_sync_service.dart';
 
-class UserStartController extends GetxController {
+class UserStartController extends GetxController with WidgetsBindingObserver{
   User user = User.fromJson(GetStorage().read('user') ?? {});
 
   final CoachProvider coachProvider = CoachProvider();
   final UserPlanProvider userPlanProvider = UserPlanProvider();
+  final AppBannerProvider appBannerProvider = AppBannerProvider();
   final ScheduledClassProvider scheduledClassProvider = ScheduledClassProvider();
   final ClassReservationProvider classResProv = ClassReservationProvider();
 
@@ -31,37 +35,105 @@ class UserStartController extends GetxController {
   final RxList<ScheduledClass> scheduledClasses = <ScheduledClass>[].obs;
   final RxInt attendedClasses = 0.obs;
   final RxInt completedRides = 0.obs;
+  final Rxn<AppBanner> activeBanner = Rxn<AppBanner>();
+  final RxBool isBannerLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    /*
+   * Primero se reconstruye el socket con el token actual.
+   * Después se registran los listeners sobre la nueva instancia.
+   */
+    SocketService().updateUserSession(user);
+
+    _setupSocketListeners();
+
     getCoaches();
     getTotalRides();
     getScheduledClasses();
     getAcquiredPlans();
     getCompletedRides();
+    getAppBanner();
+  }
 
-    SocketService().updateUserSession(user);
+  @override
+  void didChangeAppLifecycleState(
+      AppLifecycleState state,
+      ) {
+    if (state == AppLifecycleState.resumed) {
+      getAppBanner();
+    }
+  }
 
-    SocketService().on('coach:new', (_) => getCoaches());
-    SocketService().on('coach:delete', (_) => getCoaches());
-    SocketService().on('coach:update', (_) => getCoaches());
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
 
-    SocketService().on('rides:updated', (_) => refreshTotalRides());
+    SocketService().off('app-banner:changed');
 
-    SocketService().on('class:coach:reserved', (payload) {
-      if (payload['user_id'].toString() == user.id.toString()) {
-        getScheduledClasses();
-      }
-    });
+    super.onClose();
+  }
 
-    SocketService().on('class:reserved', (_) => getScheduledClasses());
+  void _setupSocketListeners() {
+    SocketService().on(
+      'coach:new',
+          (_) => getCoaches(),
+    );
 
-    SocketService().on('class:coach:rescheduled', (payload) {
-      if (payload['user_id'].toString() == user.id.toString()) {
-        getScheduledClasses();
-      }
-    });
+    SocketService().on(
+      'coach:delete',
+          (_) => getCoaches(),
+    );
+
+    SocketService().on(
+      'coach:update',
+          (_) => getCoaches(),
+    );
+
+    SocketService().on(
+      'rides:updated',
+          (_) => refreshTotalRides(),
+    );
+
+    SocketService().on(
+      'class:coach:reserved',
+          (payload) {
+        if (payload['user_id'].toString() ==
+            user.id.toString()) {
+          getScheduledClasses();
+        }
+      },
+    );
+
+    SocketService().on(
+      'class:reserved',
+          (_) => getScheduledClasses(),
+    );
+
+    SocketService().on(
+      'class:coach:rescheduled',
+          (payload) {
+        if (payload['user_id'].toString() ==
+            user.id.toString()) {
+          getScheduledClasses();
+        }
+      },
+    );
+
+    /*
+   * Este evento es exclusivo del banner.
+   * Se elimina primero para evitar listeners duplicados.
+   */
+    SocketService().off('app-banner:changed');
+
+    SocketService().on(
+      'app-banner:changed',
+      _handleBannerSocketEvent,
+    );
   }
 
   void getCompletedRides() async {
@@ -324,5 +396,125 @@ class UserStartController extends GetxController {
         ],
       ),
     );
+  }
+
+  void _handleBannerSocketEvent(dynamic rawData) {
+    try {
+      if (rawData == null) {
+        activeBanner.value = null;
+        return;
+      }
+
+      Map<String, dynamic> payload;
+
+      if (rawData is Map<String, dynamic>) {
+        payload = rawData;
+      } else if (rawData is Map) {
+        payload = Map<String, dynamic>.from(rawData);
+      } else {
+        /*
+       * Si el evento tiene un formato inesperado,
+       * se recupera el estado oficial por REST.
+       */
+        getAppBanner();
+        return;
+      }
+
+      /*
+     * Compatibilidad si posteriormente el backend envía:
+     * { data: {...} }
+     */
+      final dynamic nestedData = payload['data'];
+
+      if (nestedData is Map) {
+        payload = Map<String, dynamic>.from(nestedData);
+      }
+
+      final banner = AppBanner.fromJson(payload);
+
+      if (banner.isActive) {
+        activeBanner.value = banner;
+      } else {
+        /*
+       * El componente desaparece inmediatamente cuando
+       * el administrador lo desactiva.
+       */
+        activeBanner.value = null;
+      }
+    } catch (error) {
+      debugPrint(
+        '❌ Error procesando socket del banner: $error',
+      );
+
+      getAppBanner();
+    }
+  }
+
+  Future<void> getAppBanner() async {
+    isBannerLoading.value = true;
+
+    try {
+      final banner = await appBannerProvider.getActive();
+
+      /*
+     * El provider retorna null cuando el banner está inactivo.
+     */
+      activeBanner.value = banner;
+    } catch (error) {
+      /*
+     * No eliminamos un banner visible por un error temporal de red.
+     * En la primera carga simplemente permanecerá vacío.
+     */
+      debugPrint(
+        '❌ Error obteniendo app banner: $error',
+      );
+    } finally {
+      isBannerLoading.value = false;
+    }
+  }
+
+  Future<void> openBannerLink(AppBanner banner) async {
+    final rawUrl = banner.linkUrl?.trim() ?? '';
+
+    if (rawUrl.isEmpty) return;
+
+    final uri = Uri.tryParse(rawUrl);
+
+    if (uri == null ||
+        !uri.hasScheme ||
+        (uri.scheme != 'http' &&
+            uri.scheme != 'https') ||
+        uri.host.isEmpty) {
+      Get.snackbar(
+        'Enlace no válido',
+        'No se pudo abrir el enlace del banner.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+      return;
+    }
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched) {
+        Get.snackbar(
+          'No se pudo abrir',
+          'El navegador no pudo abrir este enlace.',
+          backgroundColor: Colors.white,
+          colorText: Colors.redAccent,
+        );
+      }
+    } catch (error) {
+      Get.snackbar(
+        'No se pudo abrir',
+        'Ocurrió un error al abrir el enlace.',
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:amina_ec/src/pages/Admin/Reports/Class/Block/admin_edit_class_page.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Class/Reassign/admin_change_coach_page.dart';
+import 'package:amina_ec/src/pages/Admin/Reports/Class/Reschedule/admin_reschedule_user_page.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -122,6 +123,8 @@ class AdminCoachSchedulePage extends StatelessWidget {
                       });
                     },
                   ),
+
+
                   ListTile(
                     leading: const Icon(Icons.swap_horiz),
                     title: const Text('Cambiar coach'),
