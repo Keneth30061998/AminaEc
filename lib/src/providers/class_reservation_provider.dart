@@ -1,159 +1,219 @@
 import 'dart:convert';
+
 import 'package:amina_ec/src/environment/environment.dart';
 import 'package:amina_ec/src/models/class_reservation.dart';
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/student_inscription.dart';
 
 class ClassReservationProvider {
   final String _baseUrl = Environment.API_URL;
+
+  /// Usuario autenticado guardado en GetStorage.
   Map<String, dynamic> get _user => GetStorage().read('user') ?? {};
 
   // ============================================================
-  // 🔵 DEBUG FUNCTION → Imprime cabecera completa
+  // DEBUG
+  // ============================================================
+
   void _debugPrintHeader(String title) {
-    print("\n====================================================");
-    print("🔍 $title");
-    print("====================================================");
+    print('\n====================================================');
+    print('🔍 $title');
+    print('====================================================');
   }
 
   // ============================================================
-  // 🔵 SCHEDULE CLASS
+  // AGENDAR CLASE
+  // ============================================================
+
+  /// Agenda una clase utilizando el mismo endpoint para usuario y admin.
+  ///
+  /// Usuario normal:
+  /// - No envía [targetUserId].
+  /// - Se utiliza automáticamente el usuario autenticado.
+  ///
+  /// Administrador:
+  /// - Envía el ID del usuario seleccionado en [targetUserId].
+  /// - El backend valida que quien agenda para otra persona sea admin.
   Future<ResponseApi> scheduleClass({
     required String coachId,
     required int bicycle,
     required String classDate,
     required String classTime,
+    String? targetUserId,
   }) async {
-
-    _debugPrintHeader("API: scheduleClass");
+    _debugPrintHeader('API: scheduleClass');
 
     final headers = _headers;
     final url = '${_baseUrl}api/class-reservations/schedule';
+
+    final selectedUserId =
+    targetUserId != null && targetUserId.trim().isNotEmpty
+        ? targetUserId.trim()
+        : (_user['id'] ?? '').toString();
+
     final body = {
-      'user_id': _user['id'],
+      'user_id': selectedUserId,
       'coach_id': coachId,
       'bicycle': bicycle,
       'class_date': classDate,
-      'class_time': classTime,
+      'class_time': _normalizeTime(classTime),
     };
 
-    print("➡️ POST: $url");
-    print("📦 Body enviado: $body");
-    print("📨 Headers: $headers");
+    print('➡️ POST: $url');
+    print('📦 Body enviado: $body');
+    print('📨 Headers: $headers');
 
     try {
-      final res = await http.post(Uri.parse(url),
-          headers: headers, body: json.encode(body));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: json.encode(body),
+      );
 
-      print("🌐 StatusCode: ${res.statusCode}");
-      print("🌐 Raw response: ${res.body}");
+      print('🌐 StatusCode: ${response.statusCode}');
+      print('🌐 Raw response: ${response.body}');
 
-      final data = json.decode(res.body);
+      return _responseApiFromHttp(
+        response,
+        emptyMessage: 'El servidor no devolvió información al agendar.',
+      );
+    } catch (error) {
+      print('❌ ERROR scheduleClass: $error');
 
-      return ResponseApi.fromJson(data);
-
-    } catch (e) {
-      print("❌ ERROR scheduleClass: $e");
-      return ResponseApi(success: false, message: 'Error: $e');
+      return ResponseApi(
+        success: false,
+        message: 'Error al agendar la clase: $error',
+      );
     }
   }
 
   // ============================================================
-  // 🔵 GET RESERVATIONS FOR SLOT
+  // RESERVACIONES POR HORARIO
+  // ============================================================
+
+  /// Obtiene las bicicletas ocupadas y bloqueadas de una clase.
+  ///
+  /// Si el token pertenece a un administrador, el backend también devuelve
+  /// nombre, correo, foto, user_id y plan_id del usuario asignado.
   Future<List<ClassReservation>> getReservationsForSlot({
     required String classDate,
     required String classTime,
   }) async {
-
-    _debugPrintHeader("API: getReservationsForSlot");
+    _debugPrintHeader('API: getReservationsForSlot');
 
     final headers = _headers;
     final url = '${_baseUrl}api/class-reservations/by-slot';
-    final body = {'class_date': classDate, 'class_time': classTime};
+    final body = {
+      'class_date': classDate,
+      'class_time': _normalizeTime(classTime),
+    };
 
-    print("➡️ POST: $url");
-    print("📦 Body enviado: $body");
+    print('➡️ POST: $url');
+    print('📦 Body enviado: $body');
 
     try {
-      final res = await http.post(Uri.parse(url),
-          headers: headers, body: json.encode(body));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: json.encode(body),
+      );
 
-      print("🌐 StatusCode: ${res.statusCode}");
-      print("🌐 Respuesta: ${res.body}");
+      print('🌐 StatusCode: ${response.statusCode}');
+      print('🌐 Respuesta: ${response.body}');
 
-      final data = json.decode(res.body);
-
-      if (data['success'] == true && data['data'] != null) {
-        return List<ClassReservation>.from(
-            data['data'].map((r) => ClassReservation.fromJson(r)));
+      if (response.body.isEmpty) {
+        print('⚠️ Body vacío');
+        return [];
       }
 
-    } catch (e) {
-      print("❌ ERROR getReservationsForSlot: $e");
+      final dynamic decoded = json.decode(response.body);
+
+      if (decoded is! Map<String, dynamic>) {
+        print('⚠️ Respuesta inesperada');
+        return [];
+      }
+
+      if (decoded['success'] == true && decoded['data'] is List) {
+        return (decoded['data'] as List)
+            .whereType<Map>()
+            .map(
+              (item) => ClassReservation.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
+            .toList();
+      }
+    } catch (error) {
+      print('❌ ERROR getReservationsForSlot: $error');
     }
 
-    print("⚠️ Retornando lista vacía");
+    print('⚠️ Retornando lista vacía');
     return [];
   }
 
   // ============================================================
-  // 🔥🔥 GET STUDENTS BY COACH — PRINCIPAL PARA DEBUG 🔥🔥
-  Future<List<StudentInscription>> getStudentsByCoach(String coachId) async {
+  // ESTUDIANTES POR COACH
+  // ============================================================
 
-    _debugPrintHeader("API: getStudentsByCoach");
+  Future<List<StudentInscription>> getStudentsByCoach(
+      String coachId,
+      ) async {
+    _debugPrintHeader('API: getStudentsByCoach');
 
     final headers = _headers;
     final url = '${_baseUrl}api/class-reservations/coach/$coachId';
 
-    print("➡️ GET: $url");
-    print("📨 Headers: $headers");
+    print('➡️ GET: $url');
+    print('📨 Headers: $headers');
 
     try {
-      final res = await http.get(Uri.parse(url), headers: headers);
-
-      print("🌐 StatusCode: ${res.statusCode}");
-      print("🌐 Body RAW: ${res.body}");
-
-      if (res.body.isEmpty) {
-        print("❌ ERROR: Body vacío");
-        return [];
-      }
-
-      dynamic data;
-
-      try {
-        data = json.decode(res.body);
-      } catch (e) {
-        print("❌ ERROR decodificando JSON: $e");
-        return [];
-      }
-
-      print("📌 Parsed JSON: $data");
-
-      if (data['success'] != true) {
-        print("⚠️ success=false → devolviendo vacío");
-        return [];
-      }
-
-      print("📥 Cantidad de estudiantes recibidos: ${data['data'].length}");
-
-      return List<StudentInscription>.from(
-        data['data'].map((e) {
-          print("  ➕ Parseando estudiante: $e");
-          return StudentInscription.fromJson(e);
-        }),
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
       );
 
-    } catch (e) {
-      print("❌ ERROR getStudentsByCoach: $e");
+      print('🌐 StatusCode: ${response.statusCode}');
+      print('🌐 Body RAW: ${response.body}');
+
+      if (response.body.isEmpty) {
+        print('❌ ERROR: Body vacío');
+        return [];
+      }
+
+      final dynamic decoded = json.decode(response.body);
+
+      if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+        print('⚠️ success=false o respuesta inesperada');
+        return [];
+      }
+
+      final data = decoded['data'];
+
+      if (data is! List) {
+        return [];
+      }
+
+      return data
+          .whereType<Map>()
+          .map(
+            (item) => StudentInscription.fromJson(
+          Map<String, dynamic>.from(item),
+        ),
+      )
+          .toList();
+    } catch (error) {
+      print('❌ ERROR getStudentsByCoach: $error');
       return [];
     }
   }
 
   // ============================================================
-  // 🔵 RESCHEDULE CLASS
+  // REAGENDAR CLASE
+  // ============================================================
+
   Future<ResponseApi> rescheduleClass({
     required String reservationId,
     required String newDate,
@@ -161,228 +221,320 @@ class ClassReservationProvider {
     required String newCoachId,
     required int newBicycle,
   }) async {
-
-    _debugPrintHeader("API: rescheduleClass");
+    _debugPrintHeader('API: rescheduleClass');
 
     final url =
         '${_baseUrl}api/class-reservations/$reservationId/reschedule';
-    final headers = _headers;
+
     final body = {
       'new_date': newDate,
-      'new_time': newTime,
+      'new_time': _normalizeTime(newTime),
       'new_coach_id': newCoachId,
       'new_bicycle': newBicycle,
     };
 
-    print("➡️ PUT: $url");
-    print("📦 Body: $body");
+    print('➡️ PUT: $url');
+    print('📦 Body: $body');
 
     try {
-      final res = await http.put(Uri.parse(url),
-          headers: headers, body: json.encode(body));
+      final response = await http.put(
+        Uri.parse(url),
+        headers: _headers,
+        body: json.encode(body),
+      );
 
-      print("🌐 Respuesta: ${res.body}");
+      print('🌐 Respuesta: ${response.body}');
 
-      return ResponseApi.fromJson(json.decode(res.body));
+      return _responseApiFromHttp(
+        response,
+        emptyMessage: 'El servidor no devolvió información al reagendar.',
+      );
+    } catch (error) {
+      print('❌ ERROR rescheduleClass: $error');
 
-    } catch (e) {
-      print("❌ ERROR rescheduleClass: $e");
-      return ResponseApi(success: false, message: 'Error al reagendar clase');
+      return ResponseApi(
+        success: false,
+        message: 'Error al reagendar clase: $error',
+      );
     }
   }
 
   // ============================================================
-  // 🔵 AVAILABLE DATES
-  Future<List<String>> getAvailableDates({required String coachId}) async {
+  // DISPONIBILIDAD: FECHAS
+  // ============================================================
 
-    _debugPrintHeader("API: getAvailableDates");
+  Future<List<String>> getAvailableDates({
+    required String coachId,
+  }) async {
+    _debugPrintHeader('API: getAvailableDates');
 
     final url =
         '${_baseUrl}api/class-reservations/availability/dates/$coachId';
-    final headers = _headers;
 
-    print("➡️ GET: $url");
+    print('➡️ GET: $url');
 
     try {
-      final res = await http.get(Uri.parse(url), headers: headers);
-      print("🌐 Response: ${res.body}");
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      );
 
-      if (res.statusCode != 200) return [];
+      print('🌐 Response: ${response.body}');
 
-      final body = json.decode(res.body);
+      if (response.statusCode != 200 || response.body.isEmpty) {
+        return [];
+      }
 
-      return List<String>.from(body['data'] ?? []);
+      final dynamic decoded = json.decode(response.body);
 
-    } catch (e) {
-      print("❌ ERROR getAvailableDates: $e");
-      return [];
+      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+        return List<String>.from(decoded['data']);
+      }
+    } catch (error) {
+      print('❌ ERROR getAvailableDates: $error');
     }
+
+    return [];
   }
 
   // ============================================================
-  // 🔵 AVAILABLE TIMES
+  // DISPONIBILIDAD: HORAS
+  // ============================================================
+
   Future<List<String>> getAvailableTimes({
     required String coachId,
     required String date,
   }) async {
-
-    _debugPrintHeader("API: getAvailableTimes");
+    _debugPrintHeader('API: getAvailableTimes');
 
     final url =
         '${_baseUrl}api/class-reservations/availability/times/$coachId/$date';
-    final headers = _headers;
 
-    print("➡️ GET: $url");
+    print('➡️ GET: $url');
 
     try {
-      final res = await http.get(Uri.parse(url), headers: headers);
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      );
 
-      print("🌐 Response: ${res.body}");
+      print('🌐 Response: ${response.body}');
 
-      if (res.statusCode != 200) return [];
+      if (response.statusCode != 200 || response.body.isEmpty) {
+        return [];
+      }
 
-      final body = json.decode(res.body);
+      final dynamic decoded = json.decode(response.body);
 
-      return List<String>.from(body['data'] ?? []);
-
-    } catch (e) {
-      print("❌ ERROR getAvailableTimes: $e");
-      return [];
+      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+        return List<String>.from(decoded['data']);
+      }
+    } catch (error) {
+      print('❌ ERROR getAvailableTimes: $error');
     }
+
+    return [];
   }
 
   // ============================================================
-  // 🔵 AVAILABLE BIKES
+  // DISPONIBILIDAD: BICICLETAS
+  // ============================================================
+
   Future<List<int>> getAvailableBikes({
     required String coachId,
     required String date,
     required String time,
   }) async {
+    _debugPrintHeader('API: getAvailableBikes');
 
-    _debugPrintHeader("API: getAvailableBikes");
-
+    final cleanedTime = _normalizeTime(time);
     final url =
-        '${_baseUrl}api/class-reservations/availability/bikes/$coachId/$date/$time';
-    final headers = _headers;
+        '${_baseUrl}api/class-reservations/availability/bikes/'
+        '$coachId/$date/$cleanedTime';
 
-    print("➡️ GET: $url");
+    print('➡️ GET: $url');
 
     try {
-      final res = await http.get(Uri.parse(url), headers: headers);
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      );
 
-      print("🌐 Response: ${res.body}");
+      print('🌐 Response: ${response.body}');
 
-      if (res.statusCode != 200) return [];
+      if (response.statusCode != 200 || response.body.isEmpty) {
+        return [];
+      }
 
-      final body = json.decode(res.body);
+      final dynamic decoded = json.decode(response.body);
 
-      return List<int>.from(body['data'] ?? []);
-
-    } catch (e) {
-      print("❌ ERROR getAvailableBikes: $e");
-      return [];
+      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+        return (decoded['data'] as List)
+            .map((item) => int.tryParse(item.toString()))
+            .whereType<int>()
+            .toList();
+      }
+    } catch (error) {
+      print('❌ ERROR getAvailableBikes: $error');
     }
+
+    return [];
   }
 
   // ============================================================
-  // 🔵 CANCEL CLASS
-  Future<ResponseApi> cancelClass(String reservationId) async {
+  // CANCELAR O REMOVER RESERVA
+  // ============================================================
 
-    _debugPrintHeader("API: cancelClass");
+  /// Cancela una reserva utilizando el endpoint existente.
+  ///
+  /// Usuario normal:
+  /// - No envía [returnRide].
+  /// - El backend devuelve el ride automáticamente y aplica la regla de 12 h.
+  ///
+  /// Administrador:
+  /// - Envía [returnRide] en true o false.
+  /// - El backend omite la regla de 12 h y aplica la decisión indicada.
+  Future<ResponseApi> cancelClass(
+      String reservationId, {
+        bool? returnRide,
+      }) async {
+    _debugPrintHeader('API: cancelClass');
 
     final url =
         '${_baseUrl}api/class-reservations/$reservationId/cancel';
-    final headers = _headers;
 
-    print("➡️ DELETE: $url");
+    final Map<String, dynamic> body = {};
+
+    if (returnRide != null) {
+      body['return_ride'] = returnRide;
+    }
+
+    print('➡️ DELETE: $url');
+    print('📦 Body: $body');
 
     try {
-      final res = await http.delete(Uri.parse(url), headers: headers);
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: _headers,
+        body: json.encode(body),
+      );
 
-      print("🌐 Response: ${res.body}");
+      print('🌐 StatusCode: ${response.statusCode}');
+      print('🌐 Response: ${response.body}');
 
-      return ResponseApi.fromJson(json.decode(res.body));
+      return _responseApiFromHttp(
+        response,
+        emptyMessage: 'El servidor no devolvió información al cancelar.',
+      );
+    } catch (error) {
+      print('❌ ERROR cancelClass: $error');
 
-    } catch (e) {
-      print("❌ ERROR cancelClass: $e");
-      return ResponseApi(success: false, message: 'Error cancelando clase');
+      return ResponseApi(
+        success: false,
+        message: 'Error cancelando clase: $error',
+      );
     }
   }
 
   // ============================================================
-  // 🔵 BLOCK BIKE
+  // BLOQUEAR BICICLETA
+  // ============================================================
+
   Future<ResponseApi> blockBike({
     required String coachId,
     required int bicycle,
     required String classDate,
     required String classTime,
   }) async {
+    _debugPrintHeader('API: blockBike');
 
-    _debugPrintHeader("API: blockBike");
+    final url = Uri.parse(
+      '${_baseUrl}api/admin/class-reservations/block',
+    );
 
-    final url =
-    Uri.parse('${_baseUrl}api/admin/class-reservations/block');
-    final headers = _headers;
     final body = {
       'coach_id': coachId,
-      'bicycle': bicycle.toString(),
+      'bicycle': bicycle,
       'class_date': classDate,
-      'class_time': classTime,
+      'class_time': _normalizeTime(classTime),
     };
 
-    print("➡️ POST: $url");
-    print("📦 Body: $body");
+    print('➡️ POST: $url');
+    print('📦 Body: $body');
 
     try {
-      final res = await http.post(url,
-          headers: headers, body: json.encode(body));
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: json.encode(body),
+      );
 
-      print("🌐 Response: ${res.body}");
+      print('🌐 Response: ${response.body}');
 
-      return ResponseApi.fromJson(json.decode(res.body));
+      return _responseApiFromHttp(
+        response,
+        emptyMessage: 'El servidor no devolvió información al bloquear.',
+      );
+    } catch (error) {
+      print('❌ ERROR blockBike: $error');
 
-    } catch (e) {
-      print("❌ ERROR blockBike: $e");
-      return ResponseApi(success: false, message: 'Error al bloquear bicicleta: $e');
+      return ResponseApi(
+        success: false,
+        message: 'Error al bloquear bicicleta: $error',
+      );
     }
   }
 
   // ============================================================
-  // 🔵 UNBLOCK BIKE
+  // DESBLOQUEAR BICICLETA
+  // ============================================================
+
   Future<ResponseApi> unblockBike({
     required String coachId,
     required int bicycle,
     required String classDate,
     required String classTime,
   }) async {
+    _debugPrintHeader('API: unblockBike');
 
-    _debugPrintHeader("API: unblockBike");
-
-    final cleanedTime = classTime.split(".")[0];
+    final cleanedTime = _normalizeTime(classTime);
 
     final url = Uri.parse(
       '${_baseUrl}api/admin/class-reservations/block'
-          '?coach_id=$coachId&bicycle=$bicycle&class_date=$classDate&class_time=$cleanedTime',
+          '?coach_id=$coachId'
+          '&bicycle=$bicycle'
+          '&class_date=$classDate'
+          '&class_time=$cleanedTime',
     );
-    final headers = _headers;
 
-    print("➡️ DELETE: $url");
+    print('➡️ DELETE: $url');
 
     try {
-      final res = await http.delete(url, headers: headers);
+      final response = await http.delete(
+        url,
+        headers: _headers,
+      );
 
-      print("🌐 Response: ${res.body}");
+      print('🌐 Response: ${response.body}');
 
-      return ResponseApi.fromJson(json.decode(res.body));
+      return _responseApiFromHttp(
+        response,
+        emptyMessage: 'El servidor no devolvió información al desbloquear.',
+      );
+    } catch (error) {
+      print('❌ ERROR unblockBike: $error');
 
-    } catch (e) {
-      print("❌ ERROR unblockBike: $e");
-      return ResponseApi(success: false, message: 'Error al desbloquear bicicleta: $e');
+      return ResponseApi(
+        success: false,
+        message: 'Error al desbloquear bicicleta: $error',
+      );
     }
   }
 
   // ============================================================
-  // 🔵 REASSIGN COACH
+  // REASIGNAR COACH
+  // ============================================================
+
   Future<ResponseApi> reassignCoach({
     required String oldCoachId,
     required String newCoachId,
@@ -390,42 +542,85 @@ class ClassReservationProvider {
     required String startTime,
     required String endTime,
   }) async {
-
-    _debugPrintHeader("API: reassignCoach");
+    _debugPrintHeader('API: reassignCoach');
 
     final url =
         '${_baseUrl}api/admin/class-reservations/reassign-coach';
-    final headers = _headers;
+
     final body = {
       'old_coach_id': oldCoachId,
       'new_coach_id': newCoachId,
       'date': date,
-      'start_time': startTime,
-      'end_time': endTime,
+      'start_time': _normalizeTime(startTime),
+      'end_time': _normalizeTime(endTime),
     };
 
-    print("➡️ POST: $url");
-    print("📦 Body: $body");
+    print('➡️ POST: $url');
+    print('📦 Body: $body');
 
     try {
-      final res = await http.post(Uri.parse(url),
-          headers: headers, body: json.encode(body));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _headers,
+        body: json.encode(body),
+      );
 
-      print("🌐 Response: ${res.body}");
+      print('🌐 Response: ${response.body}');
 
-      return ResponseApi.fromJson(json.decode(res.body));
+      return _responseApiFromHttp(
+        response,
+        emptyMessage: 'El servidor no devolvió información al reasignar.',
+      );
+    } catch (error) {
+      print('❌ ERROR reassignCoach: $error');
 
-    } catch (e) {
-      print("❌ ERROR reassignCoach: $e");
-      return ResponseApi(success: false, message: 'Error al reasignar coach: $e');
+      return ResponseApi(
+        success: false,
+        message: 'Error al reasignar coach: $error',
+      );
     }
   }
 
   // ============================================================
-  // 🔵 Headers helper
+  // HELPERS
+  // ============================================================
+
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'Authorization': (_user['session_token'] ?? '').toString(),
   };
 
+  String _normalizeTime(String value) {
+    return value.split('.').first;
+  }
+
+  ResponseApi _responseApiFromHttp(
+      http.Response response, {
+        required String emptyMessage,
+      }) {
+    if (response.body.isEmpty) {
+      return ResponseApi(
+        success: false,
+        message: emptyMessage,
+      );
+    }
+
+    try {
+      final dynamic decoded = json.decode(response.body);
+
+      if (decoded is Map<String, dynamic>) {
+        return ResponseApi.fromJson(decoded);
+      }
+
+      return ResponseApi(
+        success: false,
+        message: 'Respuesta inesperada del servidor.',
+      );
+    } catch (error) {
+      return ResponseApi(
+        success: false,
+        message: 'No se pudo interpretar la respuesta del servidor: $error',
+      );
+    }
+  }
 }

@@ -16,7 +16,7 @@ class AdminCoachBlockPage extends StatelessWidget {
         backgroundColor: whiteLight,
         foregroundColor: almostBlack,
         title: Text(
-          "Bloquear Bicicletas",
+          "Gestion de Bicicletas",
           style: GoogleFonts.montserrat(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -26,8 +26,14 @@ class AdminCoachBlockPage extends StatelessWidget {
       body: Obx(() {
         // ✅ FIX GetX: este Obx ahora SÍ depende de variables Rx
         // (no cambia UI, solo evita el "improper use of Obx")
+
         final selectedCount = con.selectedEquipos.length;
 
+        if (con.isLoading.value) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
         return SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -70,7 +76,8 @@ class AdminCoachBlockPage extends StatelessWidget {
                   child: Column(
                     children: [
                       ElevatedButton(
-                        onPressed: con.applyBlock,
+                        onPressed:
+                            con.isProcessing.value ? null : con.applyBlock,
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
                           backgroundColor: almostBlack,
@@ -86,7 +93,8 @@ class AdminCoachBlockPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: con.applyUnblock,
+                        onPressed:
+                            con.isProcessing.value ? null : con.applyUnblock,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
                           foregroundColor: almostBlack,
@@ -284,15 +292,7 @@ class AdminCoachBlockPage extends StatelessWidget {
 
                   return GestureDetector(
                     onTap: () {
-                      if (isOccupied) {
-                        // Admin: igual que tu lógica, ocupadas no se tocan
-                        Get.snackbar(
-                          'Máquina ocupada',
-                          'Esta bicicleta ya está reservada',
-                        );
-                        return;
-                      }
-                      con.toggleSeat(seatNumber);
+                      con.onBikePressed(seatNumber);
                     },
                     child: Container(
                       width: seatWidth,

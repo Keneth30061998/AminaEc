@@ -563,27 +563,129 @@ class AdminStartController extends GetxController {
     );
   }
 
+  // =====================================================
+  // ACTUALIZACIÓN EN TIEMPO REAL
+  // =====================================================
+
+  /// Recarga únicamente los estudiantes de todos los coaches que ya están
+  /// visibles en el panel.
+  ///
+  /// Se actualizan todos y no solo el coach incluido en el socket porque una
+  /// clase dual puede pertenecer a dos coaches. De esta manera una reserva,
+  /// cancelación o reagendamiento se refleja correctamente en ambas pestañas.
+  Future<void> _reloadStudentsForAllCoaches() async {
+    if (coaches.isEmpty) {
+      return;
+    }
+
+    final coachIds = coaches
+        .map((coach) => coach.id)
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    await Future.wait(
+      coachIds.map(loadStudents),
+    );
+
+    for (final coachId in coachIds) {
+      final selectedDate = selectedDatePerCoach[coachId]?.value;
+
+      if (selectedDate != null) {
+        refreshAttendanceMapForCoachDate(
+          coachId,
+          selectedDate,
+        );
+      }
+    }
+  }
+
+  /// Registra los sockets utilizados por el backend actual.
+  ///
+  /// Eventos cubiertos:
+  /// - reserva normal o asignación administrativa;
+  /// - cancelación normal o remoción administrativa;
+  /// - reagendamiento del usuario;
+  /// - cambio completo de coach;
+  /// - registro de asistencia del grupo.
   void setupSockets() {
-    SocketService().on('class:reserved', (data) {
-      final coachId = data['coach_id'].toString();
-      print("📡 SOCKET EVENT → class:reserved | coachId=$coachId");
-      loadStudents(coachId);
-    });
-
-    SocketService().on('attendance:group:registered', (data) {
-      final coachId = data['coach_id'].toString();
-      final date = DateTime.parse(data['class_date']);
-      final classTime = data['class_time'].toString().substring(0, 5);
-
-      print("📡 SOCKET → attendance:group:registered | $coachId $classTime");
-
-      removeGroupLocally(
-        coachId: coachId,
-        date: date,
-        classTime: classTime,
-        removeAttendanceKeys: true,
+    Future<void> refreshReservations(dynamic data) async {
+      print(
+        '📡 SOCKET → cambio en reservaciones | data=$data',
       );
-    });
+
+      await _reloadStudentsForAllCoaches();
+    }
+
+    // Nombre utilizado actualmente por schedule() en el backend.
+    SocketService().on(
+      'class:coach:reserved',
+      refreshReservations,
+    );
+
+    // Se conserva como compatibilidad con emisiones antiguas del proyecto.
+    SocketService().on(
+      'class:reserved',
+      refreshReservations,
+    );
+
+    // Lo emiten tanto la cancelación del usuario como la remoción del admin.
+    SocketService().on(
+      'class:coach:canceled',
+      refreshReservations,
+    );
+
+    // Lo emite el endpoint de reagendamiento corregido.
+    SocketService().on(
+      'class:coach:rescheduled',
+      refreshReservations,
+    );
+
+    // Cambiar el coach de una clase también modifica la lista de horarios,
+    // por lo que se recargan coaches y estudiantes en conjunto.
+    SocketService().on(
+      'class:coach:changed',
+          (data) async {
+        print(
+          '📡 SOCKET → class:coach:changed | data=$data',
+        );
+
+        await getCoaches();
+      },
+    );
+
+    SocketService().on(
+      'attendance:group:registered',
+          (data) {
+        try {
+          final coachId = data['coach_id'].toString();
+          final date = DateTime.parse(
+            data['class_date'].toString(),
+          );
+
+          final rawTime = data['class_time'].toString();
+          final classTime = rawTime.length >= 5
+              ? rawTime.substring(0, 5)
+              : rawTime;
+
+          print(
+            '📡 SOCKET → attendance:group:registered '
+                '| $coachId $classTime',
+          );
+
+          removeGroupLocally(
+            coachId: coachId,
+            date: date,
+            classTime: classTime,
+            removeAttendanceKeys: true,
+          );
+        } catch (error) {
+          print(
+            '❌ Error procesando attendance:group:registered: $error',
+          );
+        }
+      },
+    );
   }
 
   // =====================================================

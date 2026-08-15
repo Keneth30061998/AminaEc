@@ -664,7 +664,8 @@ class UserCoachReserveController extends GetxController {
   }
 
   Future<void> fetchOccupiedEquiposInicial() async {
-    final reservations = await _provider.getReservationsForSlot(
+    final reservations =
+    await _provider.getReservationsForSlot(
       classDate: classDate,
       classTime: classTime,
     );
@@ -672,11 +673,23 @@ class UserCoachReserveController extends GetxController {
     occupiedEquipos.clear();
     blockedEquipos.clear();
 
-    for (var r in reservations) {
-      if (r.status == 'blocked') {
-        blockedEquipos.add(r.bicycle);
-      } else {
-        occupiedEquipos.add(r.bicycle);
+    for (final reservation in reservations) {
+      /*
+     * bicycle es nullable en el modelo.
+     * Primero comprobamos que exista y luego Dart
+     * reconoce la variable local como int.
+     */
+      final bicycle = reservation.bicycle;
+
+      if (bicycle == null) {
+        continue;
+      }
+
+      if (reservation.status == 'blocked') {
+        blockedEquipos.add(bicycle);
+      } else if (
+      reservation.status == 'scheduled') {
+        occupiedEquipos.add(bicycle);
       }
     }
   }

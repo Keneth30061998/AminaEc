@@ -111,8 +111,8 @@ class AdminCoachSchedulePage extends StatelessWidget {
               Wrap(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.lock_outline),
-                    title: const Text('Bloquear bicicletas'),
+                    leading: const Icon(Icons.directions_bike),
+                    title: const Text('Gestion bicicletas'),
                     onTap: () {
                       Get.back();
                       Get.to(() => AdminCoachBlockPage(), arguments: {
