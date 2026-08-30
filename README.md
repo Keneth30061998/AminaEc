@@ -1,13 +1,22 @@
-<<<<<<< HEAD
 # amina_ec
 
 AminaEc cycling indoor
 
-## Getting Started
+## App de agendamiento de clases 
 
-This project is a starting point for a Flutter application.
+Este proyecto es pertencia de Amina. 
+Desarrollado por el ingeniero en software Keneth Alfonso Escobar Parra
 
-A few resources to get you started if this is your first Flutter project:
+# Roles
+
+El aplicativo cuenta con tres roles de usuario: 
+- Cliente
+- Coach
+- Administrador
+
+# Modulos
+El proyecto presenta distintos módulos acorde a su rol de usuario
+## Cliente
 
 - [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
