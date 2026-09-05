@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// Componente visual único del banner.
 /// Se reutiliza en el Home del usuario y en el preview del administrador.
 class AppBannerVisual extends StatelessWidget {
+  final bool useAspectRatio;
   final AppBanner banner;
   final File? localImage;
   final VoidCallback? onTap;
@@ -18,32 +19,43 @@ class AppBannerVisual extends StatelessWidget {
     this.localImage,
     this.onTap,
     this.borderRadius = 24,
+    this.useAspectRatio = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final content = AspectRatio(
-      aspectRatio: 1.75,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _image(),
-            _readabilityGradient(),
-            _content(),
-          ],
-        ),
+    final bannerContent = ClipRRect(
+      borderRadius: BorderRadius.circular(
+        borderRadius,
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _image(),
+          _readabilityGradient(),
+          _content(),
+        ],
       ),
     );
 
-    if (onTap == null) return content;
+    final content = useAspectRatio
+        ? AspectRatio(
+      aspectRatio: 1.75,
+      child: bannerContent,
+    )
+        : bannerContent;
+
+    if (onTap == null) {
+      return content;
+    }
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: BorderRadius.circular(
+          borderRadius,
+        ),
         child: content,
       ),
     );

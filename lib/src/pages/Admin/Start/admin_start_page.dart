@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../providers/notifications_provider.dart';
-import '../../../widgets/app_banner_editor_sheet.dart';
+import '../../../widgets/app_banner_manager_sheet.dart';
 import '../../../widgets/no_data_widget.dart';
 import 'admin_start_controller.dart';
 import '../../../widgets/student_attendance_card.dart';
@@ -61,8 +61,7 @@ class AdminStartPage extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 6),
                 child: IconButton.filledTonal(
                   tooltip: 'Banner del inicio',
-                  onPressed: () =>
-                      _openBannerManager(context),
+                  onPressed: () => _openBannerManager(context),
                   icon: const Icon(
                     Icons.campaign_outlined,
                     size: 21,
@@ -87,7 +86,7 @@ class AdminStartPage extends StatelessWidget {
                   ),
                   style: ButtonStyle(
                     backgroundColor:
-                    MaterialStateProperty.all(colorBackgroundBox),
+                        MaterialStateProperty.all(colorBackgroundBox),
                     shape: MaterialStateProperty.all(
                       RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -114,17 +113,16 @@ class AdminStartPage extends StatelessWidget {
                   indicatorPadding: const EdgeInsets.symmetric(vertical: 8),
                   labelColor: almostBlack,
                   unselectedLabelColor: Colors.black54,
-                  labelStyle:
-                  GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                  labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700),
                   unselectedLabelStyle:
-                  GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                      GoogleFonts.poppins(fontWeight: FontWeight.w500),
                   onTap: (index) {
                     final id = con.coaches[index].id;
                     if (id != null) con.selectCoach(id);
                   },
                   tabs: List.generate(
                     con.coaches.length,
-                        (index) => Tab(
+                    (index) => Tab(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(con.coaches[index].user?.name ?? ''),
@@ -203,11 +201,12 @@ class AdminStartPage extends StatelessWidget {
     final dates = con.generateDateRange();
 
     return Obx(() {
-      final selectedDate = con.selectedDatePerCoach[coachId]?.value ?? con.today;
+      final selectedDate =
+          con.selectedDatePerCoach[coachId]?.value ?? con.today;
 
       bool sameDay(DateTime a, DateTime b) =>
           DateFormat('yyyy-MM-dd').format(a) ==
-              DateFormat('yyyy-MM-dd').format(b);
+          DateFormat('yyyy-MM-dd').format(b);
 
       return SizedBox(
         height: 78,
@@ -222,7 +221,7 @@ class AdminStartPage extends StatelessWidget {
             final isToday = sameDay(date, con.today);
 
             final dayName =
-            DateFormat.E('es_ES').format(date).toUpperCase(); // LUN
+                DateFormat.E('es_ES').format(date).toUpperCase(); // LUN
             final dayNum = date.day.toString();
 
             return InkWell(
@@ -233,7 +232,7 @@ class AdminStartPage extends StatelessWidget {
                 curve: Curves.easeOut,
                 width: 62,
                 padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected ? almostBlack : colorBackgroundBox,
                   borderRadius: BorderRadius.circular(14),
@@ -294,16 +293,14 @@ class AdminStartPage extends StatelessWidget {
   }
 
   Future<void> _openBannerManager(
-      BuildContext context,
-      ) async {
+    BuildContext context,
+  ) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) {
-        return const AppBannerEditorSheet();
-      },
+      builder: (_) => const AppBannerManagerSheet(),
     );
   }
 
@@ -324,7 +321,7 @@ class AdminStartPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,9 +352,9 @@ class AdminStartPage extends StatelessWidget {
                             decoration: InputDecoration(
                               labelText: "Título",
                               labelStyle:
-                              GoogleFonts.poppins(color: Colors.black54),
+                                  GoogleFonts.poppins(color: Colors.black54),
                               prefixIcon:
-                              const Icon(Icons.title, color: almostBlack),
+                                  const Icon(Icons.title, color: almostBlack),
                               filled: true,
                               fillColor: colorBackgroundBox,
                               border: OutlineInputBorder(
@@ -373,7 +370,8 @@ class AdminStartPage extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         DropdownButton<String>(
-                          value: selectedEmoji.isNotEmpty ? selectedEmoji : null,
+                          value:
+                              selectedEmoji.isNotEmpty ? selectedEmoji : null,
                           hint: const Text("Emoji"),
                           underline: const SizedBox.shrink(),
                           items: [
@@ -390,8 +388,7 @@ class AdminStartPage extends StatelessWidget {
                             return DropdownMenuItem(
                               value: e,
                               child: Text(e,
-                                  style:
-                                  GoogleFonts.poppins(fontSize: 24)),
+                                  style: GoogleFonts.poppins(fontSize: 24)),
                             );
                           }).toList(),
                           onChanged: (value) =>
@@ -486,8 +483,7 @@ class AdminStartPage extends StatelessWidget {
                           child: Text(
                             "Enviar",
                             style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700),
+                                fontSize: 15, fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
@@ -502,168 +498,7 @@ class AdminStartPage extends StatelessWidget {
     );
   }
 
-  InputDecoration _bannerInputDecoration({
-    required String label,
-    required String hint,
-    required IconData icon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      prefixIcon: Icon(
-        icon,
-        color: almostBlack,
-      ),
-      filled: true,
-      fillColor: colorBackgroundBox,
-      counterStyle: GoogleFonts.roboto(
-        fontSize: 11,
-        color: Colors.black45,
-      ),
-      labelStyle: GoogleFonts.poppins(
-        color: Colors.black54,
-      ),
-      hintStyle: GoogleFonts.roboto(
-        color: Colors.black38,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide(
-          color: almostBlack,
-          width: 1.2,
-        ),
-      ),
-    );
-  }
 
-  Widget _adminBannerPreview() {
-    final title =
-    con.bannerTitleController.text.trim();
 
-    final message =
-    con.bannerMessageController.text.trim();
 
-    final linkText =
-    con.bannerLinkTextController.text.trim();
-
-    final linkUrl =
-    con.bannerLinkUrlController.text.trim();
-
-    final hasLink = linkUrl.isNotEmpty;
-
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity:
-      con.bannerActive.value ? 1 : 0.55,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Colors.black.withOpacity(0.06),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color:
-              Colors.black.withOpacity(0.035),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color:
-                indigoAmina.withOpacity(0.09),
-                borderRadius:
-                BorderRadius.circular(13),
-              ),
-              child: Icon(
-                Icons.notifications_none_rounded,
-                color: indigoAmina,
-                size: 21,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title.isEmpty
-                        ? 'Título del banner'
-                        : title,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14.5,
-                      fontWeight:
-                      FontWeight.w700,
-                      color: almostBlack,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    message.isEmpty
-                        ? 'Aquí se mostrará el mensaje para los usuarios.'
-                        : message,
-                    maxLines: 4,
-                    overflow:
-                    TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
-                      fontSize: 13.5,
-                      height: 1.42,
-                      color:
-                      Colors.grey.shade700,
-                    ),
-                  ),
-                  if (hasLink) ...[
-                    const SizedBox(height: 7),
-                    Row(
-                      mainAxisSize:
-                      MainAxisSize.min,
-                      children: [
-                        Text(
-                          linkText.isEmpty
-                              ? 'Ver más'
-                              : linkText,
-                          style: GoogleFonts.roboto(
-                            fontSize: 13,
-                            fontWeight:
-                            FontWeight.w700,
-                            color: indigoAmina,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.open_in_new_rounded,
-                          size: 15,
-                          color: indigoAmina,
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

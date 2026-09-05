@@ -21,48 +21,51 @@ class AdminStartController extends GetxController {
   final AppBannerProvider appBannerProvider =
   AppBannerProvider();
 
-  final TextEditingController bannerTitleController =
-  TextEditingController();
+  // =====================================================
+  // BANNERS
+  // =====================================================
 
-  final TextEditingController bannerMessageController =
-  TextEditingController();
+  final RxList<AppBanner> banners =
+      <AppBanner>[].obs;
 
-  final TextEditingController bannerLinkTextController =
-  TextEditingController();
+  final RxBool isBannerLoading =
+      false.obs;
 
-  final TextEditingController bannerLinkUrlController =
-  TextEditingController();
+  // =====================================================
+  // COACHES
+  // =====================================================
 
-  RxList<Coach> coaches = <Coach>[].obs;
-  RxString selectedCoachId = ''.obs;
-  final Rxn<AppBanner> currentBanner = Rxn<AppBanner>();
-  final RxBool bannerActive = false.obs;
-  final RxBool isBannerLoading = false.obs;
-  final RxBool isBannerSaving = false.obs;
+  RxList<Coach> coaches =
+      <Coach>[].obs;
+
+  RxString selectedCoachId =
+      ''.obs;
 
   Map<String, RxList<StudentInscription>> studentMap = {};
+
   Map<String, Rx<DateTime>> selectedDatePerCoach = {};
-  Map<String, RxBool> attendanceMap = {}; // key -> isPresent
+
+  Map<String, RxBool> attendanceMap = {};
 
   DateTime get today => DateTime.now();
+
   final int daysToShow = 15;
 
   @override
   void onInit() {
     super.onInit();
+
     SocketService().join('admin');
+
     getCoaches();
+
     setupSockets();
-    loadAppBanner();
+
+    loadAppBanners();
   }
 
   @override
   void onClose() {
-    bannerTitleController.dispose();
-    bannerMessageController.dispose();
-    bannerLinkTextController.dispose();
-    bannerLinkUrlController.dispose();
-
     super.onClose();
   }
 
@@ -132,40 +135,32 @@ class AdminStartController extends GetxController {
     print("🔵 Fin de loadStudents()");
   }
 
-  //Para el banner
-  Future<void> loadAppBanner({
+  // =====================================================
+// LOAD BANNERS
+// =====================================================
+
+  Future<void> loadAppBanners({
     bool showError = false,
   }) async {
     isBannerLoading.value = true;
 
     try {
-      final banner =
-      await appBannerProvider.getCurrentAdmin();
+      final result =
+      await appBannerProvider.getAllAdmin();
 
-      currentBanner.value = banner;
+      banners.assignAll(result);
 
-      bannerTitleController.text =
-          banner?.title ?? '';
-
-      bannerMessageController.text =
-          banner?.message ?? '';
-
-      bannerLinkTextController.text =
-          banner?.linkText ?? '';
-
-      bannerLinkUrlController.text =
-          banner?.linkUrl ?? '';
-
-      bannerActive.value =
-          banner?.isActive ?? false;
+      debugPrint(
+        '✅ Banners administrativos cargados: ${banners.length}',
+      );
     } catch (error) {
       debugPrint(
-        '❌ Error cargando banner administrativo: $error',
+        '❌ Error cargando banners administrativos: $error',
       );
 
       if (showError) {
         Get.snackbar(
-          'No se pudo cargar',
+          'No se pudieron cargar',
           error.toString().replaceFirst(
             'Exception: ',
             '',
@@ -179,148 +174,25 @@ class AdminStartController extends GetxController {
     }
   }
 
-  //guardar, activar o desactivar banner
-  Future<bool> saveAppBanner() async {
-    if (isBannerSaving.value) {
-      return false;
-    }
-
-    final title =
-    bannerTitleController.text.trim();
-
-    final message =
-    bannerMessageController.text.trim();
-
-    final rawLinkText =
-    bannerLinkTextController.text.trim();
-
-    final rawLinkUrl =
-    bannerLinkUrlController.text.trim();
-
-    /*
-   * Se exige contenido solamente cuando se intenta activar.
-   */
-    if (bannerActive.value && title.isEmpty) {
-      Get.snackbar(
-        'Título requerido',
-        'Ingresa un título antes de activar el banner.',
-        backgroundColor: Colors.white,
-        colorText: Colors.redAccent,
-      );
-
-      return false;
-    }
-
-    if (bannerActive.value && message.isEmpty) {
-      Get.snackbar(
-        'Mensaje requerido',
-        'Ingresa un mensaje antes de activar el banner.',
-        backgroundColor: Colors.white,
-        colorText: Colors.redAccent,
-      );
-
-      return false;
-    }
-
-    if (title.length > 120) {
-      Get.snackbar(
-        'Título demasiado largo',
-        'El título no puede superar los 120 caracteres.',
-        backgroundColor: Colors.white,
-        colorText: Colors.redAccent,
-      );
-
-      return false;
-    }
-
-    if (message.length > 500) {
-      Get.snackbar(
-        'Mensaje demasiado largo',
-        'El mensaje no puede superar los 500 caracteres.',
-        backgroundColor: Colors.white,
-        colorText: Colors.redAccent,
-      );
-
-      return false;
-    }
-
-    if (rawLinkText.length > 60) {
-      Get.snackbar(
-        'Texto demasiado largo',
-        'El texto del enlace no puede superar los 60 caracteres.',
-        backgroundColor: Colors.white,
-        colorText: Colors.redAccent,
-      );
-
-      return false;
-    }
-
-    String? linkUrl;
-    String? linkText;
-
-    if (rawLinkUrl.isNotEmpty) {
-      if (!_isValidHttpUrl(rawLinkUrl)) {
-        Get.snackbar(
-          'Enlace incorrecto',
-          'El enlace debe comenzar con http:// o https://.',
-          backgroundColor: Colors.white,
-          colorText: Colors.redAccent,
-        );
-
-        return false;
-      }
-
-      linkUrl = rawLinkUrl;
-      linkText = rawLinkText.isEmpty
-          ? 'Ver más'
-          : rawLinkText;
-    }
-
-    final banner = AppBanner(
-      id: currentBanner.value?.id ?? '1',
-      title: title,
-      message: message,
-      linkText: linkText,
-      linkUrl: linkUrl,
-      isActive: bannerActive.value,
-    );
-
-    isBannerSaving.value = true;
-
+  Future<void> deleteBannerFromList(
+      String id,
+      ) async {
     try {
-      final updated =
-      await appBannerProvider.updateBanner(banner);
+      await appBannerProvider.deleteBanner(id);
 
-      currentBanner.value = updated;
-
-      bannerTitleController.text =
-          updated.title;
-
-      bannerMessageController.text =
-          updated.message;
-
-      bannerLinkTextController.text =
-          updated.linkText ?? '';
-
-      bannerLinkUrlController.text =
-          updated.linkUrl ?? '';
-
-      bannerActive.value =
-          updated.isActive;
+      banners.removeWhere(
+            (banner) => banner.id == id,
+      );
 
       Get.snackbar(
-        'Cambios guardados',
-        updated.isActive
-            ? 'El banner está visible para los usuarios.'
-            : 'El banner está desactivado.',
+        'Banner eliminado',
+        'El banner fue eliminado correctamente.',
         backgroundColor: Colors.white,
         colorText: Colors.green.shade700,
       );
-
-      return true;
     } catch (error) {
       Get.snackbar(
-        'No se pudo guardar',
+        'No se pudo eliminar',
         error.toString().replaceFirst(
           'Exception: ',
           '',
@@ -328,10 +200,37 @@ class AdminStartController extends GetxController {
         backgroundColor: Colors.white,
         colorText: Colors.redAccent,
       );
+    }
+  }
 
-      return false;
-    } finally {
-      isBannerSaving.value = false;
+  Future<void> updateBannerPosition(
+      String id,
+      int position,
+      ) async {
+    try {
+      final updated =
+      await appBannerProvider.updatePosition(
+        id,
+        position,
+      );
+
+      updateBannerInList(updated);
+
+      banners.sort(
+            (a, b) => a.position.compareTo(b.position),
+      );
+
+      banners.refresh();
+    } catch (error) {
+      Get.snackbar(
+        'No se pudo cambiar la posición',
+        error.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+        backgroundColor: Colors.white,
+        colorText: Colors.redAccent,
+      );
     }
   }
 
@@ -722,5 +621,19 @@ class AdminStartController extends GetxController {
         return sameCoach && sameDate && sameTime;
       });
     }
+  }
+
+  void updateBannerInList(AppBanner updatedBanner) {
+    final index = banners.indexWhere(
+          (banner) => banner.id == updatedBanner.id,
+    );
+
+    if (index == -1) {
+      banners.add(updatedBanner);
+      return;
+    }
+
+    banners[index] = updatedBanner;
+    banners.refresh();
   }
 }

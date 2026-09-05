@@ -2,79 +2,173 @@ import 'dart:convert';
 
 AppBanner appBannerFromJson(String source) {
   return AppBanner.fromJson(
-    Map<String, dynamic>.from(json.decode(source)),
+    Map<String, dynamic>.from(
+      json.decode(source),
+    ),
   );
 }
 
 String appBannerToJson(AppBanner banner) {
-  return json.encode(banner.toJson());
+  return json.encode(
+    banner.toJson(),
+  );
 }
 
 bool _parseBool(dynamic value) {
-  if (value == true || value == 1) return true;
-  if (value == false || value == 0) return false;
+  if (value == true || value == 1) {
+    return true;
+  }
+
+  if (value == false || value == 0) {
+    return false;
+  }
+
   final normalized = value?.toString().trim().toLowerCase();
+
   return normalized == '1' || normalized == 'true';
 }
 
 String? _nullableString(dynamic value) {
-  if (value == null) return null;
+  if (value == null) {
+    return null;
+  }
+
   final text = value.toString().trim();
+
   return text.isEmpty ? null : text;
 }
 
 double _parseSize(dynamic value) {
-  final parsed = double.tryParse(value?.toString() ?? '');
-  if (parsed == null || parsed < 18 || parsed > 48) return 30;
+  final parsed = double.tryParse(
+    value?.toString() ?? '',
+  );
+
+  if (parsed == null || parsed < 18 || parsed > 48) {
+    return 30;
+  }
+
   return parsed;
+}
+
+int _parseInt(
+  dynamic value, {
+  int fallback = 0,
+}) {
+  final parsed = int.tryParse(
+    value?.toString() ?? '',
+  );
+
+  return parsed ?? fallback;
 }
 
 class AppBanner {
   final String? id;
+
   final String title;
+
   final String message;
+
   final String? imageUrl;
-  final String textColor; // white | black | gold | indigo
-  final String textStyle; // strong | modern | elegant | condensed
+
+  final String textColor;
+
+  final String textStyle;
+
   final double textSize;
+
   final String? linkText;
+
   final String? linkUrl;
+
   final bool isActive;
+
   final String? updatedBy;
+
+  final String? createdBy;
+
   final DateTime? createdAt;
+
   final DateTime? updatedAt;
+
+  final DateTime? deletedAt;
+
+  final int position;
+
+  final int displaySeconds;
 
   const AppBanner({
     this.id,
-    required this.title,
-    required this.message,
+    this.title = '',
+    this.message = '',
     this.imageUrl,
     this.textColor = 'white',
     this.textStyle = 'strong',
     this.textSize = 30,
     this.linkText,
     this.linkUrl,
-    required this.isActive,
+    this.isActive = false,
     this.updatedBy,
+    this.createdBy,
     this.createdAt,
     this.updatedAt,
+    this.deletedAt,
+    this.position = 1,
+    this.displaySeconds = 5,
   });
 
-  factory AppBanner.fromJson(Map<String, dynamic> json) {
+  factory AppBanner.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return AppBanner(
       id: json['id']?.toString(),
       title: json['title']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
-      imageUrl: _nullableString(json['image_url'] ?? json['imageUrl']),
-      textColor: _nullableString(json['text_color'] ?? json['textColor']) ?? 'white',
-      textStyle: _nullableString(json['text_style'] ?? json['textStyle']) ?? 'strong',
-      textSize: _parseSize(json['text_size'] ?? json['textSize']),
-      linkText: _nullableString(json['link_text'] ?? json['linkText']),
-      linkUrl: _nullableString(json['link_url'] ?? json['linkUrl']),
-      isActive: _parseBool(json['is_active'] ?? json['isActive']),
-      updatedBy: json['updated_by']?.toString(),
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
-      updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? ''),
+      imageUrl: _nullableString(
+        json['image_url'] ?? json['imageUrl'],
+      ),
+      textColor: _nullableString(
+            json['text_color'] ?? json['textColor'],
+          ) ??
+          'white',
+      textStyle: _nullableString(
+            json['text_style'] ?? json['textStyle'],
+          ) ??
+          'strong',
+      textSize: _parseSize(
+        json['text_size'] ?? json['textSize'],
+      ),
+      linkText: _nullableString(
+        json['link_text'] ?? json['linkText'],
+      ),
+      linkUrl: _nullableString(
+        json['link_url'] ?? json['linkUrl'],
+      ),
+      isActive: _parseBool(
+        json['is_active'] ?? json['isActive'],
+      ),
+      updatedBy: _nullableString(
+        json['updated_by'] ?? json['updatedBy'],
+      ),
+      createdBy: _nullableString(
+        json['created_by'] ?? json['createdBy'],
+      ),
+      createdAt: DateTime.tryParse(
+        json['created_at']?.toString() ?? '',
+      ),
+      updatedAt: DateTime.tryParse(
+        json['updated_at']?.toString() ?? '',
+      ),
+      deletedAt: DateTime.tryParse(
+        json['deleted_at']?.toString() ?? '',
+      ),
+      position: _parseInt(
+        json['position'],
+        fallback: 1,
+      ),
+      displaySeconds: _parseInt(
+        json['display_seconds'],
+        fallback: 5,
+      ),
     );
   }
 
@@ -90,9 +184,52 @@ class AppBanner {
       'link_text': linkText,
       'link_url': linkUrl,
       'is_active': isActive ? 1 : 0,
+      'position': position,
+      'display_seconds': displaySeconds,
     };
   }
 
   bool get hasLink => (linkUrl?.trim() ?? '').isNotEmpty;
+
   bool get hasImage => (imageUrl?.trim() ?? '').isNotEmpty;
+
+  AppBanner copyWith({
+    String? id,
+    String? title,
+    String? message,
+    String? imageUrl,
+    String? textColor,
+    String? textStyle,
+    double? textSize,
+    String? linkText,
+    String? linkUrl,
+    bool? isActive,
+    String? updatedBy,
+    String? createdBy,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    int? position,
+    int? displaySeconds,
+  }) {
+    return AppBanner(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      imageUrl: imageUrl ?? this.imageUrl,
+      textColor: textColor ?? this.textColor,
+      textStyle: textStyle ?? this.textStyle,
+      textSize: textSize ?? this.textSize,
+      linkText: linkText ?? this.linkText,
+      linkUrl: linkUrl ?? this.linkUrl,
+      isActive: isActive ?? this.isActive,
+      updatedBy: updatedBy ?? this.updatedBy,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      position: position ?? this.position,
+      displaySeconds: displaySeconds ?? this.displaySeconds,
+    );
+  }
 }

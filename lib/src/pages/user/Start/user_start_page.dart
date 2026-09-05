@@ -9,11 +9,12 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import '../../../models/coach.dart';
 import '../../../models/scheduled_class.dart';
 import '../../../models/app_banner.dart';
+import '../../../widgets/app_banner_carousel.dart';
 import '../../../widgets/app_banner_visual.dart';
 
 class UserStartPage extends StatelessWidget {
   final UserStartController con =
-  Get.put(UserStartController(), permanent: true);
+      Get.put(UserStartController(), permanent: true);
 
   UserStartPage({super.key});
 
@@ -75,30 +76,26 @@ class UserStartPage extends StatelessWidget {
                   ],
                 ),
                 Obx(() {
-                  final banner = con.activeBanner.value;
+                  final banners = con.activeBanners.toList();
 
-                  if (banner == null) {
-                    return const SizedBox(height: 18);
+                  if (banners.isEmpty) {
+                    return const SizedBox(
+                      height: 18,
+                    );
                   }
 
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    child: Column(
-                      key: ValueKey(
-                        '${banner.id}_${banner.updatedAt}_${banner.isActive}',
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      top: 14,
+                    ),
+                    child: AppBannerCarousel(
+                      banners: banners,
+                      onTap: (banner) => con.openBannerLink(
+                        banner,
                       ),
-                      children: [
-                        const SizedBox(height: 14),
-                        _homeNotificationBanner(banner),
-
-                      ],
                     ),
                   );
                 }),
-
-
                 const SizedBox(height: 20),
                 _sectionTitle(
                   title: 'Nuestros Coaches',
@@ -136,8 +133,8 @@ class UserStartPage extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     separatorBuilder: (_, __) => const SizedBox(height: 14),
-                    itemBuilder: (context, index) =>
-                        _scheduledClassCard(con.scheduledClasses[index], context),
+                    itemBuilder: (context, index) => _scheduledClassCard(
+                        con.scheduledClasses[index], context),
                   );
                 }),
               ],
@@ -192,23 +189,23 @@ class UserStartPage extends StatelessWidget {
   }
 
   Widget _boxBikesComplete() => _modernStatCard(
-    title: 'Rides',
-    count: '${con.completedRides.value}',
-    subtitle: 'Completos',
-    icon: Icons.check_circle_rounded,
-    accent: const Color(0xff20C997),
-  );
+        title: 'Rides',
+        count: '${con.completedRides.value}',
+        subtitle: 'Completos',
+        icon: Icons.check_circle_rounded,
+        accent: const Color(0xff20C997),
+      );
 
   Widget _boxBikesPending() => GestureDetector(
-    onTap: () => con.showUserPlansInfo(),
-    child: _modernStatCard(
-      title: 'Rides',
-      count: '${con.totalRides.value}',
-      subtitle: 'Adquiridos',
-      icon: Icons.local_fire_department_rounded,
-      accent: const Color(0xff6C63FF),
-    ),
-  );
+        onTap: () => con.showUserPlansInfo(),
+        child: _modernStatCard(
+          title: 'Rides',
+          count: '${con.totalRides.value}',
+          subtitle: 'Adquiridos',
+          icon: Icons.local_fire_department_rounded,
+          accent: const Color(0xff6C63FF),
+        ),
+      );
 
   Widget _modernStatCard({
     required String title,
@@ -319,7 +316,7 @@ class UserStartPage extends StatelessWidget {
                 radius: 36,
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage:
-                hasPhoto ? NetworkImage(coach.user!.photo_url!) : null,
+                    hasPhoto ? NetworkImage(coach.user!.photo_url!) : null,
                 child: !hasPhoto
                     ? const Icon(Icons.person, color: Colors.white, size: 34)
                     : null,
@@ -384,9 +381,10 @@ class UserStartPage extends StatelessWidget {
                   radius: 52,
                   backgroundColor: Colors.white.withOpacity(0.08),
                   backgroundImage:
-                  hasPhoto ? NetworkImage(coach.user!.photo_url!) : null,
+                      hasPhoto ? NetworkImage(coach.user!.photo_url!) : null,
                   child: !hasPhoto
-                      ? const Icon(Icons.person, size: 46, color: Colors.white70)
+                      ? const Icon(Icons.person,
+                          size: 46, color: Colors.white70)
                       : null,
                 ),
                 const SizedBox(height: 16),
@@ -402,7 +400,7 @@ class UserStartPage extends StatelessWidget {
                 const SizedBox(height: 10),
                 Container(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(16),
@@ -439,7 +437,7 @@ class UserStartPage extends StatelessWidget {
 
   Widget _scheduledClassCard(ScheduledClass c, BuildContext context) {
     final formattedDate =
-    c.classDate.split('T').first.split('-').reversed.join('/');
+        c.classDate.split('T').first.split('-').reversed.join('/');
     final formattedTime = c.classTime.substring(0, 5);
 
     final dateString = c.classDate.split('T').first;
@@ -538,7 +536,8 @@ class UserStartPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _deleteButton(canModify, () => con.onPressCancel(c, context)),
+                    _deleteButton(
+                        canModify, () => con.onPressCancel(c, context)),
                   ],
                 ),
               ],
@@ -686,16 +685,6 @@ class UserStartPage extends StatelessWidget {
     );
   }
 
-  Widget _homeNotificationBanner(
-      AppBanner banner,
-      ) {
-    return AppBannerVisual(
-      banner: banner,
-      onTap: banner.hasLink
-          ? () => con.openBannerLink(banner)
-          : null,
-    );
-  }
 
   Future<void> _showModalInfo(BuildContext context) {
     return showDialog(
