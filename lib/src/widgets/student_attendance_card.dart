@@ -10,11 +10,13 @@ class StudentAttendanceCard extends StatelessWidget {
   final AdminStartController con = Get.find();
   final String coachId;
   final DateTime date;
+  final String? onlyClassTime;
 
   StudentAttendanceCard({
     super.key,
     required this.coachId,
     required this.date,
+    this.onlyClassTime,
   });
 
   @override
@@ -24,17 +26,19 @@ class StudentAttendanceCard extends StatelessWidget {
       final _ = con.studentMap[coachId]?.length ?? 0;
 
       final groupedStudents = con.groupStudentsByTime(coachId, date);
+      if (onlyClassTime != null) {
+        String hhmm(String value) => value.length >= 5 ? value.substring(0, 5) : value;
+        groupedStudents.removeWhere((time, _) => hhmm(time) != hhmm(onlyClassTime!));
+      }
 
       if (groupedStudents.isEmpty) {
-        return Center(
-          child: Text(
-            'No hay estudiantes para esta fecha',
-            style: GoogleFonts.poppins(color: Colors.black54),
-          ),
-        );
+        return ListView(physics: const AlwaysScrollableScrollPhysics(),
+            children: const [Padding(padding: EdgeInsets.all(28),
+                child: Text('No hay estudiantes para esta fecha', textAlign: TextAlign.center))]);
       }
 
       return ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 16),
         itemCount: groupedStudents.entries.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),

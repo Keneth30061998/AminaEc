@@ -5,6 +5,15 @@ import '../../../../models/coach.dart';
 import '../../../../providers/coachs_provider.dart';
 
 class AdminCoachListController extends GetxController {
+  final List<void Function()> _subscriptions = [];
+  void _listen(String event, Function(dynamic) callback) {
+    _subscriptions.add(SocketService().subscribe(event, callback));
+  }
+  @override
+  void onClose() {
+    for (final cancel in _subscriptions) { cancel(); }
+    super.onClose();
+  }
   final CoachProvider coachProvider = CoachProvider();
   var coaches = <Coach>[].obs;
 
@@ -13,9 +22,9 @@ class AdminCoachListController extends GetxController {
     super.onInit();
     getCoaches();
 
-    SocketService().on('coach:new', (data) => refreshCoaches());
-    SocketService().on('coach:delete', (data) => refreshCoaches());
-    SocketService().on('coach:update', (data) => refreshCoaches());
+    _listen('coach:new', (data) => refreshCoaches());
+    _listen('coach:delete', (data) => refreshCoaches());
+    _listen('coach:update', (data) => refreshCoaches());
   }
 
   Future<void> getCoaches() async {
@@ -52,3 +61,4 @@ class AdminCoachListController extends GetxController {
     }
   }
 }
+

@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/models/class_rating_report.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/Ratings/admin_reports_class_ratings_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
@@ -5,312 +6,313 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-class AdminClassRatingsPage extends StatelessWidget {
-  const AdminClassRatingsPage({super.key});
+
+class AdminClassRatingsPage extends StatefulWidget {
+  final VoidCallback? onBack;
+  const AdminClassRatingsPage({super.key, this.onBack});
+
+  @override
+  State<AdminClassRatingsPage> createState() => _AdminClassRatingsPageState();
+}
+
+class _AdminClassRatingsPageState extends State<AdminClassRatingsPage> {
+  late final AdminClassRatingsReportController con;
+
+  @override
+  void initState() {
+    super.initState();
+    con = Get.isRegistered<AdminClassRatingsReportController>()
+        ? Get.find<AdminClassRatingsReportController>()
+        : Get.put(AdminClassRatingsReportController());
+  }
+
+  List<String> get _activeFilters => [
+    if (con.studentNameController.text.trim().isNotEmpty)
+      'Estudiante: ${con.studentNameController.text.trim()}',
+    if (con.coachNameController.text.trim().isNotEmpty)
+      'Coach: ${con.coachNameController.text.trim()}',
+    if (con.selectedYear.value.isNotEmpty) 'Año: ${con.selectedYear.value}',
+    if (con.selectedMonth.value.isNotEmpty) con.selectedMonth.value,
+    if (con.selectedDay.value.isNotEmpty) 'Día: ${con.selectedDay.value}',
+    if (con.startHour.value.isNotEmpty) 'Desde: ${con.startHour.value}',
+    if (con.endHour.value.isNotEmpty) 'Hasta: ${con.endHour.value}',
+    if (con.selectedRating.value.isNotEmpty) '${con.selectedRating.value} estrellas',
+    if (con.selectedCommentFilter.value != 'Todos') con.selectedCommentFilter.value,
+  ];
+
+  Future<void> _search() async {
+    if (con.isLoading.value) return;
+    // Evita conservar un reporte anterior bajo los nuevos filtros si falla la red.
+    con.results.clear();
+    con.coachSummary.clear();
+    con.summary.value = ClassRatingReportSummary.empty();
+    try {
+      await con.buscar();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(content: Text('No se pudo consultar. Intenta nuevamente.')),
+        );
+      }
+    } finally {
+      con.isLoading.value = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<AdminClassRatingsReportController>()) {
-      Get.put(AdminClassRatingsReportController());
-    }
-
-    final con = Get.find<AdminClassRatingsReportController>();
-
     return SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 700;
-          final tableHeight = isMobile ? 420.0 : 520.0;
-
-          return ListView(
-            padding: const EdgeInsets.all(12),
-            children: [
-              _topBar(context, con),
-              const SizedBox(height: 10),
-              _filterSection(context, con, isMobile),
-              const SizedBox(height: 10),
-              _summarySection(con, isMobile),
-              const SizedBox(height: 10),
-              Obx(() {
-                if (con.coachSummary.isEmpty) return const SizedBox.shrink();
-                return Column(
-                  children: [
-                    _coachSummaryCard(con),
-                    const SizedBox(height: 10),
-                  ],
-                );
-              }),
-              SizedBox(
-                height: tableHeight,
-                child: _resultsTableCard(con),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _topBar(BuildContext context, AdminClassRatingsReportController con) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      child: Row(
+      child: ListView(
+        key: const PageStorageKey('admin-class-ratings-scroll'),
+        padding: const EdgeInsets.all(16),
         children: [
-          Expanded(
-            child: Text(
-              'Reporte de Calificaciones',
-              style: GoogleFonts.montserrat(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: almostBlack,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: darkGrey),
-            onPressed: () => con.exportPDF(context),
-            tooltip: 'Exportar PDF',
-          ),
-          IconButton(
-            icon: const Icon(Icons.grid_on, color: darkGrey),
-            onPressed: () => con.exportExcel(context),
-            tooltip: 'Exportar Excel',
-          ),
+          Row(children: [
+            if (widget.onBack != null)
+              IconButton(onPressed: widget.onBack, icon: const Icon(Icons.arrow_back)),
+            Expanded(child: Text('Valoraciones', style: GoogleFonts.montserrat(
+                fontSize: 22, fontWeight: FontWeight.w800, color: almostBlack))),
+            Obx(() => PopupMenuButton<String>(
+              tooltip: 'Exportar reporte',
+              enabled: !con.isLoading.value,
+              icon: const Icon(Icons.file_download_outlined),
+              onSelected: (value) async {
+                try {
+                  if (value == 'pdf') {
+                    await con.exportPDF(context);
+                  } else {
+                    await con.exportExcel(context);
+                  }
+                } catch (_) {
+                  if (mounted) {
+                    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                        const SnackBar(content: Text('No se pudo exportar el reporte.')));
+                  }
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'pdf', child: Text('Exportar PDF')),
+                PopupMenuItem(value: 'excel', child: Text('Exportar Excel')),
+              ],
+            )),
+          ]),
+          const SizedBox(height: 4),
+          const Text('Consulta las opiniones y calificaciones de las clases.',
+              style: TextStyle(color: Colors.black54)),
+          const SizedBox(height: 20),
+          Obx(() {
+            final busy = con.isLoading.value;
+            final filters = _activeFilters;
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                OutlinedButton.icon(
+                  onPressed: busy ? null : _openFilters,
+                  icon: const Icon(Icons.tune),
+                  label: Text(filters.isEmpty ? 'Filtros' : 'Filtros (${filters.length})'),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: almostBlack,
+                      foregroundColor: Colors.white, minimumSize: const Size(0, 48)),
+                  onPressed: busy ? null : _search,
+                  icon: const Icon(Icons.search), label: const Text('Buscar'),
+                ),
+                if (filters.isNotEmpty)
+                  TextButton(onPressed: busy ? null : () {
+                    con.limpiarFiltros();
+                    setState(() {});
+                  }, child: const Text('Limpiar')),
+              ]),
+              const SizedBox(height: 8),
+              if (filters.isEmpty)
+                const Text('Sin filtros · La búsqueda incluye todas las valoraciones.',
+                    style: TextStyle(fontSize: 12, color: Colors.black54))
+              else
+                SizedBox(height: 40, child: ListView.separated(
+                  key: const PageStorageKey<String>('ratings-active-filters-scroll'),
+                  primary: false,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: filters.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (_, i) => Chip(label: Text(filters[i]),
+                      backgroundColor: const Color(0xFFF1F2F5),
+                      side: BorderSide.none),
+                )),
+            ]);
+          }),
+          const SizedBox(height: 20),
+          _summary(),
+          const SizedBox(height: 12),
+          Obx(() => con.coachSummary.isEmpty ? const SizedBox.shrink() :
+          ExpansionTile(
+            key: const PageStorageKey('ratings-coach-summary'),
+            tilePadding: EdgeInsets.zero,
+            title: const Text('Resumen por coach', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text('${con.coachSummary.length} coaches · Ver comparación'),
+            children: [_coachSummaryCard(con)],
+          )),
+          const SizedBox(height: 16),
+          Obx(() => Text('Resultados (${con.results.length})',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+          const SizedBox(height: 4),
+          const Text('Desliza la tabla hacia los lados para ver todas las columnas.',
+              style: TextStyle(fontSize: 12, color: Colors.black54)),
+          const SizedBox(height: 8),
+          SizedBox(height: 480, child: _resultsTableCard(con)),
         ],
       ),
     );
   }
 
-  Widget _filterSection(
-      BuildContext context,
-      AdminClassRatingsReportController con,
-      bool isMobile,
-      ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.tune_rounded, color: almostBlack, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  'Filtros de búsqueda',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: almostBlack,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _boxField(
-                  width: isMobile ? double.infinity : 250,
-                  child: _textField(
-                    controller: con.studentNameController,
-                    label: 'Estudiante',
-                    icon: Icons.person_outline,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? double.infinity : 250,
-                  child: _textField(
-                    controller: con.coachNameController,
-                    label: 'Coach',
-                    icon: Icons.sports_gymnastics_outlined,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? 150 : 150,
-                  child: _selector(
-                    context: context,
-                    label: 'Año',
-                    value: con.selectedYear,
-                    items: con.years,
-                    icon: Icons.calendar_today_outlined,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? 170 : 180,
-                  child: _selector(
-                    context: context,
-                    label: 'Mes',
-                    value: con.selectedMonth,
-                    items: con.months,
-                    icon: Icons.date_range_outlined,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? 120 : 120,
-                  child: _selector(
-                    context: context,
-                    label: 'Día',
-                    value: con.selectedDay,
-                    items: con.days,
-                    icon: Icons.today_outlined,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? 145 : 145,
-                  child: _selector(
-                    context: context,
-                    label: 'Desde',
-                    value: con.startHour,
-                    items: con.hours,
-                    icon: Icons.schedule_outlined,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? 145 : 145,
-                  child: _selector(
-                    context: context,
-                    label: 'Hasta',
-                    value: con.endHour,
-                    items: con.hours,
-                    icon: Icons.schedule_outlined,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? 130 : 130,
-                  child: _selector(
-                    context: context,
-                    label: 'Rating',
-                    value: con.selectedRating,
-                    items: con.ratingOptions,
-                    icon: Icons.star_border_rounded,
-                  ),
-                ),
-                _boxField(
-                  width: isMobile ? double.infinity : 220,
-                  child: _selector(
-                    context: context,
-                    label: 'Comentarios',
-                    value: con.selectedCommentFilter,
-                    items: con.commentOptions,
-                    icon: Icons.mode_comment_outlined,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                SizedBox(
-                  width: 210,
-                  child: ElevatedButton.icon(
-                    onPressed: con.buscar,
-                    icon: const Icon(Icons.search, color: Colors.white),
-                    label: Text(
-                      'Buscar',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: almostBlack,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 170,
-                  child: OutlinedButton.icon(
-                    onPressed: con.limpiarFiltros,
-                    icon: const Icon(Icons.cleaning_services_outlined),
-                    label: Text(
-                      'Limpiar',
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: almostBlack,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _summarySection(
-      AdminClassRatingsReportController con,
-      bool isMobile,
-      ) {
-    return Obx(() {
-      final s = con.summary.value;
-
-      final cards = [
-        _metricCard('Total', '${s.totalRatings}', Icons.poll_outlined),
-        _metricCard(
-          'Promedio',
-          s.averageRating.toStringAsFixed(2),
-          Icons.star_rounded,
-        ),
-        _metricCard('Comentarios', '${s.commentedCount}', Icons.comment),
-        _metricCard('5 estrellas', '${s.rating5Count}', Icons.workspace_premium),
-      ];
-
-      if (isMobile) {
-        return Column(
-          children: cards
-              .map(
-                (card) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: card,
-            ),
-          )
-              .toList(),
-        );
-      }
-
-      return Row(
-        children: List.generate(cards.length, (index) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: index == cards.length - 1 ? 0 : 10),
-              child: cards[index],
-            ),
-          );
-        }),
-      );
+  Widget _summary() => Obx(() {
+    final s = con.summary.value;
+    final values = ['${s.totalRatings}', s.averageRating.toStringAsFixed(2),
+      '${s.commentedCount}', '${s.rating5Count}'];
+    const labels = ['Valoraciones', 'Promedio / 5', 'Con comentario', '5 estrellas'];
+    return LayoutBuilder(builder: (_, constraints) {
+      final columns = constraints.maxWidth >= 700 ? 4 : 2;
+      final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
+      return Wrap(spacing: 10, runSpacing: 10, children: List.generate(4, (i) =>
+          Container(width: width, padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(16)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(values[i], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text(labels[i], style: const TextStyle(fontSize: 12, color: Colors.black54)),
+            ]),
+          )));
     });
-  }
+  });
 
+  Future<void> _openFilters() async {
+    var student = con.studentNameController.text;
+    var coach = con.coachNameController.text;
+    var resetVersion = 0;
+    var year = con.selectedYear.value;
+    var month = con.selectedMonth.value;
+    var day = con.selectedDay.value;
+    var start = con.startHour.value;
+    var end = con.endHour.value;
+    var rating = con.selectedRating.value;
+    var comments = con.selectedCommentFilter.value;
+    final applied = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) => StatefulBuilder(builder: (context, update) {
+        Widget select(String label, String value, List<String> options,
+            ValueChanged<String> change, {String empty = 'Todos'}) {
+          return DropdownButtonFormField<String>(
+            key: ValueKey('$label:$value'),
+            value: value,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: label, filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none)),
+            items: [
+              if (!options.contains('')) DropdownMenuItem(value: '', child: Text(empty)),
+              ...options.map((item) => DropdownMenuItem(value: item, child: Text(item))),
+            ],
+            onChanged: (next) => update(() => change(next ?? '')),
+          );
+        }
+        Widget group(String title, List<Widget> children) => Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const SizedBox(height: 12),
+              ...children.expand((child) => [child, const SizedBox(height: 12)]),
+            ]));
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SafeArea(top: false, child: SizedBox(
+            height: MediaQuery.of(context).size.height * .85,
+            child: Column(children: [
+              Padding(padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
+                  child: Row(children: [
+                    const Expanded(child: Text('Filtros', style: TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w800))),
+                    IconButton(tooltip: 'Cerrar sin aplicar', icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(sheetContext).pop(false)),
+                  ])),
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(alignment: Alignment.centerLeft,
+                      child: Text('Selecciona solo lo que necesitas. Todo es opcional.',
+                          style: TextStyle(color: Colors.black54)))),
+              Expanded(child: ListView(
+                  key: const PageStorageKey<String>('ratings-filter-panel-scroll'),
+                  primary: false,
+                  padding: const EdgeInsets.all(20), children: [
+                group('Personas', [
+                  TextFormField(key: ValueKey('student:$resetVersion'), initialValue: student,
+                      onChanged: (v) => student = v, decoration: const InputDecoration(
+                          labelText: 'Estudiante', prefixIcon: Icon(Icons.person_outline),
+                          border: OutlineInputBorder())),
+                  TextFormField(key: ValueKey('coach:$resetVersion'), initialValue: coach,
+                      onChanged: (v) => coach = v, decoration: const InputDecoration(
+                          labelText: 'Coach', prefixIcon: Icon(Icons.person_outline),
+                          border: OutlineInputBorder())),
+                ]),
+                group('Fecha de la clase', [
+                  select('Año', year, con.years, (v) => year = v),
+                  select('Mes', month, con.months, (v) => month = v),
+                  select('Día', day, con.days, (v) => day = v),
+                ]),
+                ExpansionTile(
+                  initiallyExpanded: start.isNotEmpty || end.isNotEmpty,
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text('Horario'),
+                  subtitle: const Text('Hora inicial y final'),
+                  children: [
+                    select('Desde', start, con.hours, (v) => start = v),
+                    const SizedBox(height: 12),
+                    select('Hasta', end, con.hours, (v) => end = v),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                group('Valoración', [
+                  select('Estrellas', rating, con.ratingOptions, (v) => rating = v),
+                  select('Comentarios', comments == 'Todos' ? '' : comments,
+                      con.commentOptions.where((v) => v != 'Todos').toList(),
+                          (v) => comments = v.isEmpty ? 'Todos' : v),
+                ]),
+              ])),
+              const Divider(height: 1),
+              Padding(padding: const EdgeInsets.all(16), child: Row(children: [
+                TextButton(onPressed: () => update(() {
+                  student = coach = ''; resetVersion++;
+                  year = month = day = start = end = rating = '';
+                  comments = 'Todos';
+                }), child: const Text('Restablecer')),
+                const SizedBox(width: 12),
+                Expanded(child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: almostBlack,
+                        foregroundColor: Colors.white, minimumSize: const Size(0, 48)),
+                    onPressed: () {
+                      con.studentNameController.text = student.trim();
+                      con.coachNameController.text = coach.trim();
+                      con.selectedYear.value = year;
+                      con.selectedMonth.value = month;
+                      con.selectedDay.value = day;
+                      con.startHour.value = start;
+                      con.endHour.value = end;
+                      con.selectedRating.value = rating;
+                      con.selectedCommentFilter.value = comments;
+                      Navigator.of(sheetContext).pop(true);
+                    }, child: const Text('Aplicar y buscar'))),
+              ])),
+            ]),
+          )),
+        );
+      }),
+    );
+    if (!mounted || applied != true) return;
+    setState(() {});
+    await _search();
+  }
   Widget _coachSummaryCard(AdminClassRatingsReportController con) {
     return Card(
       elevation: 2,
@@ -331,6 +333,8 @@ class AdminClassRatingsPage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               SingleChildScrollView(
+                key: const PageStorageKey<String>('ratings-coach-table-horizontal'),
+                primary: false,
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(Colors.grey.shade200),
@@ -423,8 +427,12 @@ class AdminClassRatingsPage extends StatelessWidget {
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: SingleChildScrollView(
+              key: const PageStorageKey<String>('ratings-results-vertical'),
+              primary: false,
               scrollDirection: Axis.vertical,
               child: SingleChildScrollView(
+                key: const PageStorageKey<String>('ratings-results-horizontal'),
+                primary: false,
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(almostBlack),
@@ -521,192 +529,4 @@ class AdminClassRatingsPage extends StatelessWidget {
     );
   }
 
-  Widget _metricCard(String title, String value, IconData icon) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.black12,
-              child: Icon(icon, color: almostBlack),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: almostBlack,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _boxField({
-    required double width,
-    required Widget child,
-  }) {
-    if (width == double.infinity) return child;
-    return SizedBox(width: width, child: child);
-  }
-
-  Widget _textField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        isDense: true,
-      ),
-    );
-  }
-
-  Widget _selector({
-    required BuildContext context,
-    required String label,
-    required RxString value,
-    required List<String> items,
-    required IconData icon,
-  }) {
-    return InkWell(
-      onTap: () async {
-        final selected = await showDialog<String>(
-          context: context,
-          builder: (_) => _simpleListDialog(
-            title: 'Seleccionar $label',
-            items: items,
-            selected: value.value,
-          ),
-        );
-
-        if (selected != null) {
-          value.value = selected;
-        }
-      },
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FB),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.grey[700], size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Obx(
-                    () => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.grey[600],
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      value.value.isEmpty ? 'Seleccionar' : value.value,
-                      style: GoogleFonts.montserrat(
-                        color: almostBlack,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _simpleListDialog({
-    required String title,
-    required List<String> items,
-    required String selected,
-  }) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: 320,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: almostBlack,
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 300,
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (_, i) {
-                    final item = items[i];
-                    final isSelected = item == selected;
-                    return ListTile(
-                      title: Text(
-                        item,
-                        style: GoogleFonts.montserrat(
-                          fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check_circle, color: almostBlack)
-                          : null,
-                      onTap: () => Get.back(result: item),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

@@ -1,339 +1,463 @@
-import 'package:amina_ec/src/pages/Admin/Reports/Class/Block/admin_edit_class_controller.dart';
-import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:amina_ec/src/utils/color.dart';
+import 'admin_edit_class_controller.dart';
+import 'admin_class_attendance_page.dart';
+import '../Reassign/admin_change_coach_page.dart';
+import '../../../Shared/admin_ui.dart';
 
-class AdminCoachBlockPage extends StatelessWidget {
-  final AdminCoachBlockController con = Get.put(AdminCoachBlockController());
+enum _BikeMode { reservations, block, unblock }
 
-  AdminCoachBlockPage({super.key});
+class AdminCoachBlockPage extends StatefulWidget {
+  const AdminCoachBlockPage({super.key});
+  @override
+  State<AdminCoachBlockPage> createState() => _AdminCoachBlockPageState();
+}
+
+class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
+  late final AdminCoachBlockController con;
+  _BikeMode mode = _BikeMode.reservations;
+  bool navigating = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: whiteLight,
-        foregroundColor: almostBlack,
-        title: Text(
-          "Gestion de Bicicletas",
-          style: GoogleFonts.montserrat(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-      body: Obx(() {
-        // ✅ FIX GetX: este Obx ahora SÍ depende de variables Rx
-        // (no cambia UI, solo evita el "improper use of Obx")
+  void initState() {
+    super.initState();
+    con = Get.put(AdminCoachBlockController());
+  }
 
-        final selectedCount = con.selectedEquipos.length;
+  bool get busy => con.isProcessing.value || con.isLoading.value || navigating;
 
-        if (con.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
+  String get instruction {
+    switch (mode) {
+      case _BikeMode.reservations:
+        return 'Toca una bicicleta disponible para asignar un alumno, o una ocupada para consultar su reserva.';
+      case _BikeMode.block:
+        return 'Selecciona bicicletas disponibles y pulsa Bloquear. Tocar el mapa todavía no guarda cambios.';
+      case _BikeMode.unblock:
+        return 'Selecciona bicicletas bloqueadas y pulsa Desbloquear. Tocar el mapa todavía no guarda cambios.';
+    }
+  }
 
-                // Igual que el diseño original (cajitas)
-                SingleChildScrollView(child: _containerCount(selectedCount)),
+  String get dateLabel {
+    final date = DateTime.tryParse(con.classDate);
+    return date == null
+        ? con.classDate
+        : DateFormat('EEEE d MMMM yyyy', 'es_ES').format(date);
+  }
 
-                const SizedBox(height: 30),
+  void _setMode(_BikeMode next) {
+    if (busy || next == mode) return;
+    // Only draft selection is cleared. No request is sent when changing modes.
+    con.selectedEquipos.clear();
+    setState(() => mode = next);
+  }
 
-                // Indicadores estilo original (sin overflow)
-                _simbolIndicator(),
+  void _tapBike(int bicycle) {
+    if (busy) return;
+    final occupied = con.occupiedEquipos.contains(bicycle);
+    final blocked = con.blockedEquipos.contains(bicycle);
+    if (mode == _BikeMode.reservations) {
+      if (occupied) {
+        con.onBikePressed(bicycle); // Original remove/return-ride flow.
+      } else if (blocked) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Esta bicicleta está bloqueada. Usa Desbloquear para habilitarla.')));
+      } else {
+        con.showUserPicker(
+            bicycle); // Original search, assignment and confirmation.
+      }
+      return;
+    }
+    final eligible =
+        !occupied && (mode == _BikeMode.block ? !blocked : blocked);
+    if (eligible) con.toggleSeat(bicycle);
+  }
 
-                const SizedBox(height: 30),
+  Future<void> _runClassAction(bool attendance) async {
+    if (busy) return;
+    setState(() => navigating = true);
+    try {
+      if (attendance) {
+        final date = DateTime.tryParse(con.classDate);
+        if (date == null) return;
+        await Get.to(
+            () => AdminStyled(
+                child: AdminClassAttendancePage(
+                    coachId: con.coachId,
+                    coachName: con.coachName,
+                    date: date,
+                    classTime: con.classTime)),
+            routeName: '/admin/classes/attendance');
+        if (mounted) await con.refreshBikeStatus();
+      } else {
+        final changed = await Get.to<bool>(
+            () => AdminStyled(child: AdminChangeCoachPage()),
+            routeName: '/admin/classes/change-coach',
+            arguments: {
+              'coach_id': con.coachId,
+              'coach_name': con.coachName,
+              'class_date': con.classDate,
+              'class_time': con.classTime
+            });
+        // Return to refreshed calendar after reassignment: old context is stale.
+        if (changed == true && mounted) Get.back(result: true);
+      }
+    } finally {
+      if (mounted) setState(() => navigating = false);
+    }
+  }
 
-                _buildBigSeat(),
-                const SizedBox(height: 20),
-
-                // Primera fila dividida (2-5) y (6-9)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(child: _buildSeatRow(context, 2, 4)),
-                    const SizedBox(width: 24),
-                    Expanded(child: _buildSeatRow(context, 6, 4)),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // Segunda fila (10-19) responsiva, sin overflow
-                _buildSeatRow(context, 10, 10),
-
-                const SizedBox(height: 16),
-
-                // Botones (misma funcionalidad)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed:
-                            con.isProcessing.value ? null : con.applyBlock,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48),
-                          backgroundColor: almostBlack,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text(
-                          "Bloquear selección",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed:
-                            con.isProcessing.value ? null : con.applyUnblock,
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48),
-                          foregroundColor: almostBlack,
-                        ),
-                        child: const Text(
-                          "Desbloquear selección",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+  Future<void> _applySelection() async {
+    if (busy || con.selectedEquipos.isEmpty) return;
+    try {
+      if (mode == _BikeMode.block) {
+        await con.applyBlock();
+      } else if (mode == _BikeMode.unblock) {
+        await con.applyUnblock();
+      }
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'No se completó la operación. Actualiza el mapa antes de reintentar.'),
           ),
         );
-      }),
-    );
+    }
   }
 
-  // ====== TOP BOXES (estilo original) ======
-
-  Widget _containerCount(int selectedCount) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _boxDate(),
-        const SizedBox(width: 15),
-        _boxCoach(),
-      ],
-    );
-  }
-
-  Widget _boxDate() {
-    return _boxTemplate(
-      icon: Icons.date_range,
-      title: 'Hora',
-      subtitle: formatHora(con.classTime),
-      color: Colors.blueGrey.shade50,
-    );
-  }
-
-  Widget _boxCoach() {
-    return _boxTemplate(
-      icon: Icons.person,
-      title: 'Instructor',
-      subtitle: con.coachName,
-      color: Colors.blueGrey.shade50,
-    );
-  }
-
-  Widget _boxTemplate({
-    required String title,
-    required String subtitle,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      height: 80,
-      width: 110,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 3,
-            offset: Offset(3, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon),
-          Text(
-            title,
-            style: GoogleFonts.roboto(
-              color: almostBlack,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(
-            subtitle,
-            style: GoogleFonts.kodchasan(
-              color: darkGrey,
-              fontSize: 15,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ====== INDICATORS (estilo original, pero con bloqueada) ======
-  // Uso Wrap para que en pantallas pequeñas NO desborde.
-  Widget _simbolIndicator() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 20,
-      runSpacing: 10,
-      children: [
-        _legendItem(limeGreen, 'Tu selección'),
-        _legendItem(Colors.black12, 'Disponible'),
-        _legendItem(indigoAmina, 'Ocupada'),
-        _legendItem(Colors.grey.shade600, 'Bloqueada'),
-      ],
-    );
-  }
-
-  Widget _legendItem(Color color, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 15, height: 15, color: color),
-        Text(
-          ' $text',
-          style: GoogleFonts.roboto(color: almostBlack),
-        ),
-      ],
-    );
-  }
-
-  // ====== BIG SEAT (igual al original) ======
-  Widget _buildBigSeat() {
-    return Center(
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          border: Border.all(
-            color: Colors.grey,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Center(
-          child: Text(
-            "Coach",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ====== SEAT ROW (misma responsividad del original con LayoutBuilder) ======
-  Widget _buildSeatRow(BuildContext context, int start, int count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth;
-          final seatWidth = (availableWidth - (count * 8)) / count;
-
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(count, (index) {
-              final seatNumber = start + index;
-
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Obx(() {
-                  final bool isSelected =
-                      con.selectedEquipos.contains(seatNumber);
-                  final bool isOccupied =
-                      con.occupiedEquipos.contains(seatNumber);
-                  final bool isBlocked =
-                      con.blockedEquipos.contains(seatNumber);
-
-                  Color seatColor;
-                  if (isSelected) {
-                    seatColor = limeGreen;
-                  } else if (isOccupied) {
-                    seatColor = indigoAmina;
-                  } else if (isBlocked) {
-                    seatColor = Colors.grey.shade600;
-                  } else {
-                    seatColor = Colors.grey[300]!;
-                  }
-
-                  return GestureDetector(
-                    onTap: () {
-                      con.onBikePressed(seatNumber);
-                    },
-                    child: Container(
-                      width: seatWidth,
-                      height: seatWidth,
-                      decoration: BoxDecoration(
-                        color: seatColor,
-                        border: Border.all(
-                          color: isSelected ? Colors.black12 : Colors.black26,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Center(
-                        child: Text(
-                          "$seatNumber",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: seatWidth * 0.3,
-                            color: isSelected ? darkGrey : Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Detalle de clase'), actions: [
+          Obx(() => IconButton(
+              tooltip: 'Actualizar bicicletas',
+              onPressed: busy ? null : con.refreshBikeStatus,
+              icon: const Icon(Icons.refresh))),
+        ]),
+        body: SafeArea(
+          child: ListView(
+            key: PageStorageKey(
+                'class-${con.coachId}-${con.classDate}-${con.classTime}'),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              Text('${con.coachName} · ${formatHora(con.classTime)}',
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text(dateLabel, style: const TextStyle(color: AdminUi.muted)),
+              const SizedBox(height: 12),
+              Obx(
+                () => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: busy ? null : () => _runClassAction(true),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Asistencia'),
                     ),
-                  );
-                }),
-              );
-            }),
+                    TextButton.icon(
+                      onPressed: busy ? null : () => _runClassAction(false),
+                      icon: const Icon(Icons.swap_horiz),
+                      label: const Text('Cambiar coach'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text('Bicicletas',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Obx(
+                () => Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final item in _BikeMode.values)
+                      ChoiceChip(
+                          label: Text(const [
+                            'Reservas',
+                            'Bloquear',
+                            'Desbloquear'
+                          ][item.index]),
+                          selected: mode == item,
+                          showCheckmark: false,
+                          onSelected: busy ? null : (_) => _setMode(item)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(instruction,
+                  style: const TextStyle(fontSize: 13, color: AdminUi.muted)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 14,
+                runSpacing: 8,
+                children: [
+                  _legend(Colors.grey.shade300, 'Disponible'),
+                  _legend(indigoAmina, 'Ocupada'),
+                  _legend(Colors.grey.shade600, 'Bloqueada'),
+                  if (mode != _BikeMode.reservations)
+                    _legend(limeGreen, 'Seleccionada'),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Obx(() => con.isLoading.value
+                  ? const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()))
+                  : _map()),
+              Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                      onPressed: _expandMap,
+                      icon: const Icon(Icons.zoom_in),
+                      label: const Text('Ampliar mapa'))),
+              const SizedBox(height: 12),
+              if (mode == _BikeMode.reservations)
+                Obx(
+                  () {
+                    final entries = con.reservationByBike.entries.toList()
+                      ..sort((a, b) => a.key.compareTo(b.key));
+                    return ExpansionTile(
+                      title: Text('Alumnos reservados (${entries.length})'),
+                      children: [
+                        if (entries.isEmpty)
+                          const ListTile(
+                              title: Text('No hay reservas activas.')),
+                        for (final entry in entries)
+                          ListTile(
+                            leading: CircleAvatar(child: Text('${entry.key}')),
+                            title: Text(entry.value.userName ?? 'Alumno'),
+                            subtitle: Text('Bicicleta ${entry.key}'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: busy ? null : () => _tapBike(entry.key),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+        bottomNavigationBar:
+            mode == _BikeMode.reservations ? null : _selectionBar(),
+      );
+
+  Widget _selectionBar() => Obx(
+        () {
+          final count = con.selectedEquipos.length;
+          final verb = mode == _BikeMode.block ? 'Bloquear' : 'Desbloquear';
+          return Material(
+            color: Colors.white,
+            elevation: 6,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '$count seleccionada(s)',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: busy || count == 0
+                              ? null
+                              : () => con.selectedEquipos.clear(),
+                          child: const Text('Limpiar'),
+                        )
+                      ],
+                    ),
+                    SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                            onPressed:
+                                busy || count == 0 ? null : _applySelection,
+                            child: Text(con.isProcessing.value
+                                ? 'Guardando…'
+                                : '$verb $count bicicleta(s)'))),
+                  ],
+                ),
+              ),
+            ),
           );
         },
+      );
+
+  // Physical arrangement from the original page. Rows never wrap or reflow.
+  Widget _map() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+              child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      border: Border.all(color: Colors.grey, width: 2),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Center(
+                      child: Text('Coach',
+                          style: TextStyle(fontWeight: FontWeight.bold))))),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: _seatRow(2, 4)),
+              const SizedBox(width: 24),
+              Expanded(child: _seatRow(6, 4)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _seatRow(10, 10),
+        ],
+      );
+
+  Widget _seatRow(int start, int count) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final seatWidth = (constraints.maxWidth - count * 8) / count;
+            return Row(
+              children: List.generate(
+                count,
+                (index) {
+                  final bicycle = start + index;
+                  return Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Obx(
+                      () {
+                        final selected = con.selectedEquipos.contains(bicycle);
+                        final occupied = con.occupiedEquipos.contains(bicycle);
+                        final blocked = con.blockedEquipos.contains(bicycle);
+                        final eligible = mode == _BikeMode.reservations ||
+                            (!occupied &&
+                                (mode == _BikeMode.block ? !blocked : blocked));
+                        final color = selected
+                            ? limeGreen
+                            : occupied
+                                ? indigoAmina
+                                : blocked
+                                    ? Colors.grey.shade600
+                                    : Colors.grey.shade300;
+                        final state = occupied
+                            ? 'ocupada'
+                            : blocked
+                                ? 'bloqueada'
+                                : 'disponible';
+                        return Semantics(
+                          button: true,
+                          selected: selected,
+                          enabled: eligible && !busy,
+                          label: 'Bicicleta $bicycle, $state',
+                          child: Tooltip(
+                            message: 'Bicicleta $bicycle · $state',
+                            child: Opacity(
+                              opacity: eligible ? 1 : .35,
+                              child: Material(
+                                color: color,
+                                borderRadius: BorderRadius.circular(4),
+                                child: InkWell(
+                                  onTap: busy || !eligible
+                                      ? null
+                                      : () => _tapBike(bicycle),
+                                  child: Container(
+                                    width: seatWidth,
+                                    height: seatWidth,
+                                    decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: selected
+                                                ? almostBlack
+                                                : Colors.black26,
+                                            width: 2),
+                                        borderRadius: BorderRadius.circular(4)),
+                                    child: Center(
+                                      child: Text(
+                                        '$bicycle',
+                                        style: TextStyle(
+                                            fontSize: seatWidth * .3,
+                                            fontWeight: FontWeight.bold,
+                                            color: selected ||
+                                                    (!occupied && !blocked)
+                                                ? almostBlack
+                                                : Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+  Widget _legend(Color color, String label) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+                color: color, borderRadius: BorderRadius.circular(3))),
+        const SizedBox(width: 5),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ]);
+
+  Future<void> _expandMap() async {
+    await showDialog<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (dialog) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('Mapa de bicicletas'),
+              leading: IconButton(
+                  tooltip: 'Cerrar mapa',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(dialog))),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(instruction),
+              ),
+              const Text(
+                  'Pellizca para ampliar y arrastra para recorrer el mapa.'),
+              Expanded(
+                child: InteractiveViewer(
+                  minScale: 1,
+                  maxScale: 4,
+                  child: Center(
+                    child: _map(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar:
+              mode == _BikeMode.reservations ? null : _selectionBar(),
+        ),
       ),
     );
   }
 }
 
-// Utilidad igual a tu ejemplo, pero soporta "18:00:00" también.
 String formatHora(String rawTime) {
-  final parts = rawTime.split(":");
+  final parts = rawTime.split(':');
   if (parts.length < 2) return rawTime;
-
-  final hour = parts[0].padLeft(2, '0');
-  final minute = parts[1].padLeft(2, '0');
-  return "$hour:$minute";
+  return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
 }

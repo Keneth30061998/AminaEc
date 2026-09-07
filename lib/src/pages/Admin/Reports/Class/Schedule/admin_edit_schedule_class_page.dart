@@ -1,150 +1,140 @@
-import 'package:amina_ec/src/pages/Admin/Reports/Class/Block/admin_edit_class_page.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Class/Reassign/admin_change_coach_page.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Class/Reschedule/admin_reschedule_user_page.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-
 import '../../../../../models/coach.dart';
-import '../../../../../utils/color.dart';
-import '../../../../../widgets/no_data_widget.dart';
+import '../../../../../models/schedule.dart';
+import '../../../Shared/admin_ui.dart';
+import '../Block/admin_edit_class_page.dart';
+import 'admin_edit_schedule_class_controller.dart';
 
 class AdminCoachSchedulePage extends StatelessWidget {
   AdminCoachSchedulePage({super.key});
-
   final AdminCoachScheduleController con =
       Get.isRegistered<AdminCoachScheduleController>()
           ? Get.find<AdminCoachScheduleController>()
           : Get.put(AdminCoachScheduleController());
 
+  Map<String, dynamic> _arguments(Coach coach, Schedule s) => {
+        'coach_id': coach.id,
+        'coach_name': coach.user?.name,
+        'class_date': s.date,
+        'class_time': s.start_time,
+        'schedule_id': s.id,
+        'class_theme': s.class_theme,
+      };
+  Future<void> _open(Coach coach, Schedule s) async {
+    await Get.to(() => AdminStyled(child: AdminCoachBlockPage()),
+        routeName: '/admin/classes/detail', arguments: _arguments(coach, s));
+    await con.loadCoaches();
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: whiteLight,
-      body: RefreshIndicator(
-        color: indigoAmina,
-        onRefresh: () async {
-          await con.loadCoaches(); // recarga toda la info de clases
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Material(
-                  elevation: 2,
-                  borderRadius: BorderRadius.circular(12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    // ✅ IMPORTANTE:
-                    // El calendario usa Rx (trigger + datasource), así que debe estar en Obx.
-                    child: Obx(() {
-                      return SfCalendar(
-                        key: ValueKey(con.calendarRefreshTrigger.value),
-                        view: CalendarView.month,
-                        dataSource: con.calendarDataSource.value,
-                        onTap: (details) {
-                          if (details.date != null)
-                            con.selectDate(details.date!);
-                        },
-                        todayHighlightColor: indigoAmina,
-                        headerStyle: CalendarHeaderStyle(
-                          textAlign: TextAlign.center,
-                          backgroundColor: indigoAmina,
-                          textStyle: const TextStyle(color: whiteLight),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-              ),
-
-              // Lista de coaches filtrados por fecha
-              Obx(() {
-                if (con.filteredCoaches.isEmpty) {
-                  return const NoDataWidget(text: "No hay clases ese día");
-                }
-
-                return Column(
-                  children: con.filteredCoaches
-                      .map((coach) => _coachCard(coach))
-                      .toList(),
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _coachCard(Coach coach) {
-    final schedules = coach.schedules.where((s) {
-      final d = con.selectedDate.value;
-      final date = DateTime.tryParse(s.date ?? '');
-      return date != null &&
-          date.year == d.year &&
-          date.month == d.month &&
-          date.day == d.day;
-    }).toList()
-      ..sort((a, b) => (a.start_time ?? '').compareTo(b.start_time ?? ''));
-
-    return Column(
-      children: schedules.map((s) {
-        final time = s.start_time?.substring(0, 5) ?? '--:--';
-        final theme =
-            (s.class_theme?.isNotEmpty == true) ? s.class_theme! : 'Clase';
-
-        return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 6, horizontal: 15),
-          title: Text(
-            'Rueda con ${coach.user?.name ?? ''}',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          subtitle: Text('$time  |  $theme'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () {
-            Get.bottomSheet(
-              Wrap(
+  Widget build(BuildContext context) => Scaffold(
+        appBar: const AdminHeader(
+            title: 'Clases', subtitle: 'Elige una fecha y abre una clase'),
+        body: RefreshIndicator(
+            onRefresh: con.loadCoaches,
+            child: ListView(
+                key: const PageStorageKey('admin-calendar-list'),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.directions_bike),
-                    title: const Text('Gestion bicicletas'),
-                    onTap: () {
-                      Get.back();
-                      Get.to(() => AdminCoachBlockPage(), arguments: {
-                        'coach_id': coach.id,
-                        'coach_name': coach.user?.name,
-                        'class_date': s.date,
-                        'class_time': s.start_time,
-                      });
-                    },
-                  ),
+                  ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: SizedBox(
+                          height: 340,
+                          child: Obx(() => SfCalendar(
+                                controller: con.calendarController,
+                                view: CalendarView.month,
+                                firstDayOfWeek: 1,
+                                dataSource: con.calendarDataSource.value,
+                                onTap: (details) {
+                                  if (details.date != null)
+                                    con.selectDate(details.date!);
+                                },
+                                todayHighlightColor: AdminUi.indigo,
+                                headerStyle: const CalendarHeaderStyle(
+                                    textAlign: TextAlign.center,
+                                    backgroundColor: AdminUi.indigo,
+                                    textStyle: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700)),
+                              )))),
+                  const SizedBox(height: 18),
+                  Obx(() => Text(
+                      DateFormat('EEEE, d MMMM', 'es_ES')
+                          .format(con.selectedDate.value),
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w800))),
+                  const SizedBox(height: 12),
+                  Obx(() {
+                    if (con.loading.value && con.allCoaches.isEmpty)
+                      return const Center(child: CircularProgressIndicator());
+                    if (con.error.value != null)
+                      return Column(children: [
+                        Text(con.error.value!),
+                        TextButton(
+                            onPressed: con.loadCoaches,
+                            child: const Text('Reintentar'))
+                      ]);
+                    final entries = <({Coach coach, Schedule schedule})>[];
+                    for (final coach in con.filteredCoaches) {
+                      for (final s in coach.schedules) {
+                        if (DateUtils.isSameDay(DateTime.tryParse(s.date ?? ''),
+                            con.selectedDate.value)) {
+                          entries.add((coach: coach, schedule: s));
+                        }
+                      }
+                    }
+                    entries.sort((a, b) => (a.schedule.start_time ?? '')
+                        .compareTo(b.schedule.start_time ?? ''));
+                    if (entries.isEmpty)
+                      return const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('No hay clases ese día.'));
+                    return Column(
+                        children: entries
+                            .map((e) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: Material(
+                                  color: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      side: const BorderSide(
+                                          color: AdminUi.border)),
+                                  child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                      leading: Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                              color: AdminUi.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(12)),
+                                          child: Text(
+                                              _time(e.schedule.start_time),
+                                              style: const TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.w800))),
+                                      title: Text(
+                                          'Rueda con ${e.coach.user?.name ?? 'Coach'}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w700)),
+                                      subtitle: Text(
+                                          '${e.schedule.class_theme ?? 'Clase'} · Ver detalle'),
+                                      trailing: const Icon(Icons.chevron_right),
+                                      onTap: () => _open(e.coach, e.schedule)),
+                                )))
+                            .toList());
+                  }),
+                ])),
+      );
+}
 
-
-                  ListTile(
-                    leading: const Icon(Icons.swap_horiz),
-                    title: const Text('Cambiar coach'),
-                    onTap: () {
-                      Get.back();
-                      Get.to(() => AdminChangeCoachPage(), arguments: {
-                        'coach_id': coach.id,
-                        'coach_name': coach.user?.name,
-                        'class_date': s.date,
-                        'class_time': s.start_time,
-                      });
-                    },
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.white,
-            );
-          },
-        );
-      }).toList(),
-    );
-  }
+String _time(String? value) {
+  final raw = value ?? '--:--';
+  return raw.length > 5 ? raw.substring(0, 5) : raw;
 }

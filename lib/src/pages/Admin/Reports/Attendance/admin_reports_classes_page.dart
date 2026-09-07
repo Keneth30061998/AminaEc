@@ -7,18 +7,21 @@ import '../../../../utils/color.dart';
 import '../../../../utils/iconos.dart';
 import 'admin_reports_controller.dart';
 
-final con = Get.put(AdminReportsController());
+
 
 class AdminClassesTab extends StatelessWidget {
-  const AdminClassesTab({super.key});
+  final VoidCallback? onBack;
+  const AdminClassesTab({super.key, this.onBack});
+  AdminReportsController get con => Get.find<AdminReportsController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: onBack == null ? null : IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBack),
         title: Text(
-          'Reporte de Asistencias',
+          'Asistencia histórica',
           style: GoogleFonts.montserrat(
             fontSize: 18,
             fontWeight: FontWeight.w800,

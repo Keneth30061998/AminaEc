@@ -31,6 +31,7 @@ class AdminReportsAppUsersController extends GetxController {
   // ----------------------------
   // Search
   // ----------------------------
+  late final Worker _searchWorker;
   final searchQuery = ''.obs;
   final searchController = TextEditingController();
 
@@ -42,9 +43,9 @@ class AdminReportsAppUsersController extends GetxController {
   void onInit() {
     super.onInit();
 
-    debounce<String>(
+    _searchWorker = debounce<String>(
       searchQuery,
-      (_) => _applyFilter(),
+          (_) => _applyFilter(),
       time: const Duration(milliseconds: 250),
     );
 
@@ -53,6 +54,7 @@ class AdminReportsAppUsersController extends GetxController {
 
   @override
   void onClose() {
+    _searchWorker.dispose();
     searchController.dispose();
     super.onClose();
   }
@@ -123,11 +125,12 @@ class AdminReportsAppUsersController extends GetxController {
   // ----------------------------
   // Navigation
   // ----------------------------
-  void openUserPlans(User user) {
-    Get.toNamed(
+  Future<void> openUserPlans(User user) async {
+    await Get.toNamed(
       '/admin/users/plans',
       arguments: user,
     );
+    await getUsers();
   }
 
   void openUserHistory(User user) {
@@ -141,8 +144,8 @@ class AdminReportsAppUsersController extends GetxController {
   // Actions sheet alternativo
   // ----------------------------
   Future<void> _closeActionsSheetThen(
-    Future<void> Function() action,
-  ) async {
+      Future<void> Function() action,
+      ) async {
     if (Get.isBottomSheetOpen == true) {
       Get.back();
     }
@@ -203,7 +206,7 @@ class AdminReportsAppUsersController extends GetxController {
                   ),
                   onTap: () async {
                     await _closeActionsSheetThen(
-                      () => showUserPlansInfo(user),
+                          () => showUserPlansInfo(user),
                     );
                   },
                 ),
@@ -219,7 +222,7 @@ class AdminReportsAppUsersController extends GetxController {
                   ),
                   onTap: () async {
                     await _closeActionsSheetThen(
-                      () async {
+                          () async {
                         showExtendDialog(user);
                       },
                     );
@@ -237,7 +240,7 @@ class AdminReportsAppUsersController extends GetxController {
                   ),
                   onTap: () async {
                     await _closeActionsSheetThen(
-                      () async {
+                          () async {
                         showRidesDialog(user);
                       },
                     );
@@ -262,7 +265,7 @@ class AdminReportsAppUsersController extends GetxController {
                   ),
                   onTap: () async {
                     await _closeActionsSheetThen(
-                      () => showEditCompletedRidesDialog(user),
+                          () => showEditCompletedRidesDialog(user),
                     );
                   },
                 ),
@@ -278,7 +281,7 @@ class AdminReportsAppUsersController extends GetxController {
                   ),
                   onTap: () async {
                     await _closeActionsSheetThen(
-                      () async {
+                          () async {
                         openUserHistory(user);
                       },
                     );
@@ -309,9 +312,9 @@ class AdminReportsAppUsersController extends GetxController {
   // API Actions
   // ----------------------------
   Future<void> extendPlan(
-    User user,
-    int days,
-  ) async {
+      User user,
+      int days,
+      ) async {
     final userId = user.id;
     final token = userSession.session_token;
 
@@ -355,9 +358,9 @@ class AdminReportsAppUsersController extends GetxController {
   }
 
   Future<void> returnRides(
-    User user,
-    int rides,
-  ) async {
+      User user,
+      int rides,
+      ) async {
     final userId = user.id;
     final token = userSession.session_token;
 
@@ -401,9 +404,9 @@ class AdminReportsAppUsersController extends GetxController {
   }
 
   Future<ResponseApi> editCompletedRides(
-    User user,
-    int completedRides,
-  ) async {
+      User user,
+      int completedRides,
+      ) async {
     try {
       final userId = user.id;
       final token = userSession.session_token;
@@ -440,8 +443,8 @@ class AdminReportsAppUsersController extends GetxController {
         );
 
         updatedValue = int.tryParse(
-              map['completed_rides']?.toString() ?? '',
-            ) ??
+          map['completed_rides']?.toString() ?? '',
+        ) ??
             completedRides;
       }
 
@@ -474,8 +477,8 @@ class AdminReportsAppUsersController extends GetxController {
   // ----------------------------
   // Dialogs
   // ----------------------------
-  void showExtendDialog(User user) {
-    _showCounterDialog(
+  Future<void> showExtendDialog(User user) async {
+    await _showCounterDialog(
       title: 'Extender plan',
       subtitle: 'Selecciona los días a añadir:',
       unit: 'días',
@@ -484,8 +487,8 @@ class AdminReportsAppUsersController extends GetxController {
     );
   }
 
-  void showRidesDialog(User user) {
-    _showCounterDialog(
+  Future<void> showRidesDialog(User user) async {
+    await _showCounterDialog(
       title: 'Añadir rides',
       subtitle: 'Selecciona la cantidad de rides a añadir:',
       unit: 'rides',
@@ -495,8 +498,8 @@ class AdminReportsAppUsersController extends GetxController {
   }
 
   Future<void> showEditCompletedRidesDialog(
-    User user,
-  ) async {
+      User user,
+      ) async {
     final savedValue = await Get.dialog<int>(
       _EditCompletedRidesDialog(
         currentValue: user.ridesCompleted ?? 0,
@@ -526,17 +529,17 @@ class AdminReportsAppUsersController extends GetxController {
     );
   }
 
-  void _showCounterDialog({
+  Future<void> _showCounterDialog({
     required String title,
     required String subtitle,
     required String unit,
     required String confirmText,
     required Future<void> Function(int value) onConfirm,
-  }) {
+  }) async {
     int value = 1;
     bool processing = false;
 
-    Get.dialog<void>(
+    await Get.dialog<void>(
       StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
@@ -572,10 +575,10 @@ class AdminReportsAppUsersController extends GetxController {
                       ),
                       onPressed: !processing && value > 1
                           ? () {
-                              setState(() {
-                                value--;
-                              });
-                            }
+                        setState(() {
+                          value--;
+                        });
+                      }
                           : null,
                     ),
                     Text(
@@ -593,10 +596,10 @@ class AdminReportsAppUsersController extends GetxController {
                       onPressed: processing
                           ? null
                           : () {
-                              setState(() {
-                                value++;
-                              });
-                            },
+                        setState(() {
+                          value++;
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -607,8 +610,8 @@ class AdminReportsAppUsersController extends GetxController {
                 onPressed: processing
                     ? null
                     : () {
-                        Get.back();
-                      },
+                  Get.back();
+                },
                 child: Text(
                   'Cancelar',
                   style: GoogleFonts.poppins(
@@ -628,34 +631,34 @@ class AdminReportsAppUsersController extends GetxController {
                 onPressed: processing
                     ? null
                     : () async {
-                        setState(() {
-                          processing = true;
-                        });
+                  setState(() {
+                    processing = true;
+                  });
 
-                        Get.back();
+                  Get.back();
 
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 180),
-                        );
+                  await Future<void>.delayed(
+                    const Duration(milliseconds: 180),
+                  );
 
-                        await onConfirm(value);
-                      },
+                  await onConfirm(value);
+                },
                 child: processing
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
                     : Text(
-                        confirmText,
-                        style: GoogleFonts.poppins(
-                          color: whiteLight,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                  confirmText,
+                  style: GoogleFonts.poppins(
+                    color: whiteLight,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           );
@@ -708,94 +711,94 @@ class AdminReportsAppUsersController extends GetxController {
           width: Get.width * 0.82,
           child: plans.isEmpty
               ? Text(
-                  'Este usuario no tiene planes activos.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey,
-                  ),
-                )
+            'Este usuario no tiene planes activos.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              color: Colors.grey,
+            ),
+          )
               : SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: plans.map((plan) {
-                      final rawStart =
-                          plan['start_date']?.toString();
-                      final rawEnd =
-                          plan['end_date']?.toString();
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: plans.map((plan) {
+                final rawStart =
+                plan['start_date']?.toString();
+                final rawEnd =
+                plan['end_date']?.toString();
 
-                      final start = rawStart != null
-                          ? rawStart
-                              .split('T')
-                              .first
-                              .split('-')
-                              .reversed
-                              .join('/')
-                          : 'No definida';
+                final start = rawStart != null
+                    ? rawStart
+                    .split('T')
+                    .first
+                    .split('-')
+                    .reversed
+                    .join('/')
+                    : 'No definida';
 
-                      final end = rawEnd != null
-                          ? rawEnd
-                              .split('T')
-                              .first
-                              .split('-')
-                              .reversed
-                              .join('/')
-                          : 'No definida';
+                final end = rawEnd != null
+                    ? rawEnd
+                    .split('T')
+                    .first
+                    .split('-')
+                    .reversed
+                    .join('/')
+                    : 'No definida';
 
-                      return Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(
-                          bottom: 10,
-                        ),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xfff3f3f3),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.black12,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              plan['plan_name']?.toString() ??
-                                  'Plan sin nombre',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: indigoAmina,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Rides restantes: '
-                              '${plan['remaining_rides'] ?? 0}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: almostBlack,
-                              ),
-                            ),
-                            Text(
-                              'Inicio: $start',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: almostBlack,
-                              ),
-                            ),
-                            Text(
-                              'Fin: $end',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: almostBlack,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(
+                    bottom: 10,
                   ),
-                ),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xfff3f3f3),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.black12,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        plan['plan_name']?.toString() ??
+                            'Plan sin nombre',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: indigoAmina,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Rides restantes: '
+                            '${plan['remaining_rides'] ?? 0}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: almostBlack,
+                        ),
+                      ),
+                      Text(
+                        'Inicio: $start',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: almostBlack,
+                        ),
+                      ),
+                      Text(
+                        'Fin: $end',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: almostBlack,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
@@ -890,8 +893,8 @@ class AdminReportsAppUsersController extends GetxController {
   }
 
   Future<void> exportPDF(
-    BuildContext context,
-  ) async {
+      BuildContext context,
+      ) async {
     final box = context.findRenderObject() as RenderBox?;
 
     final shareRect = box != null
@@ -920,8 +923,8 @@ class AdminReportsAppUsersController extends GetxController {
   }
 
   Future<void> exportExcel(
-    BuildContext context,
-  ) async {
+      BuildContext context,
+      ) async {
     final excel = Excel.createExcel();
     final sheet = excel['Usuarios'];
 
@@ -1000,7 +1003,7 @@ class AdminReportsAppUsersController extends GetxController {
   Future<Directory> _resolveExportDir() async {
     if (Platform.isAndroid) {
       final status =
-          await Permission.manageExternalStorage.request();
+      await Permission.manageExternalStorage.request();
 
       if (status.isGranted) {
         return Directory(
@@ -1084,7 +1087,7 @@ class _EditCompletedRidesDialogState
     if (newValue == widget.currentValue) {
       setState(() {
         _fieldError =
-            'El valor ingresado es igual al actual';
+        'El valor ingresado es igual al actual';
         _requestError = null;
       });
       return;
@@ -1133,7 +1136,7 @@ class _EditCompletedRidesDialogState
         ),
         child: SingleChildScrollView(
           keyboardDismissBehavior:
-              ScrollViewKeyboardDismissBehavior.onDrag,
+          ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(
             20,
             20,
@@ -1231,7 +1234,7 @@ class _EditCompletedRidesDialogState
                   filled: true,
                   fillColor: const Color(0xfffafafa),
                   contentPadding:
-                      const EdgeInsets.symmetric(
+                  const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 16,
                   ),
@@ -1288,9 +1291,9 @@ class _EditCompletedRidesDialogState
                     onPressed: _saving
                         ? null
                         : () {
-                            FocusScope.of(context).unfocus();
-                            Navigator.of(context).pop();
-                          },
+                      FocusScope.of(context).unfocus();
+                      Navigator.of(context).pop();
+                    },
                     child: Text(
                       'Cancelar',
                       style: GoogleFonts.poppins(
@@ -1306,32 +1309,32 @@ class _EditCompletedRidesDialogState
                       elevation: 0,
                       backgroundColor: almostBlack,
                       disabledBackgroundColor:
-                          Colors.black26,
+                      Colors.black26,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius:
-                            BorderRadius.circular(12),
+                        BorderRadius.circular(12),
                       ),
                     ),
                     child: _saving
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                         : Text(
-                            'Guardar',
-                            style: GoogleFonts.poppins(
-                              color: whiteLight,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                      'Guardar',
+                      style: GoogleFonts.poppins(
+                        color: whiteLight,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),

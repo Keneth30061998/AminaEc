@@ -1,187 +1,156 @@
-
-import 'package:amina_ec/src/pages/Admin/Services/Plan/List/admin_plan_list_controller.dart';
-import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-
+import 'package:intl/intl.dart';
 import '../../../../../models/plan.dart';
-import '../../../../../utils/iconos.dart';
-import '../../../../../widgets/no_data_widget.dart';
+import '../../../Shared/admin_ui.dart';
+import 'admin_plan_list_controller.dart';
 
 class AdminPlanListPage extends StatelessWidget {
-  final AdminPlanListController con = Get.put(AdminPlanListController());
-
+  final AdminPlanListController con =
+      Get.isRegistered<AdminPlanListController>()
+          ? Get.find<AdminPlanListController>()
+          : Get.put(AdminPlanListController());
   AdminPlanListPage({super.key});
+  Future<void> _edit(Plan plan) async {
+    await Get.toNamed('/admin/plans/update', arguments: {'plan': plan});
+    await con.getPlans();
+  }
+
+  Future<void> _delete(BuildContext context, Plan plan) async {
+    if (plan.id == null) return;
+    final yes = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+              title: const Text('Eliminar plan'),
+              content: Text('¿Deseas eliminar "${plan.name ?? 'Plan'}"?'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialog, false),
+                    child: const Text('Cancelar')),
+                TextButton(
+                    onPressed: () => Navigator.pop(dialog, true),
+                    child: const Text('Eliminar',
+                        style: TextStyle(color: Colors.red)))
+              ],
+            ));
+    if (yes == true) await con.deletePlan(plan.id!);
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      if (con.plans.isEmpty) {
-        return Center(child: NoDataWidget(text: 'No hay planes disponibles'));
-      } else {
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-          itemCount: con.plans.length,
-          itemBuilder: (context, index) {
-            final plan = con.plans[index];
-            return _cardPlan(context, plan);
-          },
-        );
-      }
-    });
-  }
-
-  Widget _cardPlan(BuildContext context, Plan plan) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Dismissible(
-          key: Key(plan.id.toString()),
-          background: _slideActionLeft(),
-          secondaryBackground: _slideActionRight(),
-          confirmDismiss: (direction) async {
-            if (direction == DismissDirection.startToEnd) {
-              Get.toNamed('/admin/plans/update', arguments: {'plan': plan});
-              return false;
-            } else if (direction == DismissDirection.endToStart) {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Confirmar eliminación'),
-                  content: const Text(
-                    '¿Deseas eliminar este plan?',
-                    style: TextStyle(color: almostBlack),
-                  ),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancelar')),
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Eliminar')),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                con.deletePlan(plan.id!);
-                return true;
-              }
-              return false;
-            }
-            return false;
-          },
-          child: Card(
-            elevation: 2,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            shadowColor: Color.fromARGB((0.2 * 255).toInt(), 128, 128, 128),
-            child: Container(
-              decoration: BoxDecoration(
-                color: colorBackgroundBox,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Row(
+  Widget build(BuildContext context) => Obx(() {
+        if (con.loading.value && con.plans.isEmpty)
+          return const Center(child: CircularProgressIndicator());
+        return RefreshIndicator(
+            onRefresh: con.getPlans,
+            child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                key: const PageStorageKey('admin-plan-catalog'),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: plan.image != null
-                        ? Image.network(
-                            plan.image!,
-                            width: 75,
-                            height: 75,
-                            fit: BoxFit.cover,
-                          )
-                        : Container(
-                            width: 75,
-                            height: 75,
-                            color: Colors.grey[300],
-                            child:
-                                const Icon(Icons.image_not_supported, size: 40),
-                          ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          plan.name ?? 'Sin nombre',
-                          style: GoogleFonts.roboto(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: almostBlack,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          plan.description ?? 'Sin descripción',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '\$${plan.price?.toStringAsFixed(2) ?? '0.00'}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _slideActionLeft() {
-    return Container(
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-      ),
-      color: indigoAmina,
-      child: const Row(
-        children: [
-          Icon(iconEdit, color: Colors.white),
-          SizedBox(width: 8),
-          Text('Editar',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  Widget _slideActionRight() {
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-      ),
-      color: darkGrey,
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Icon(iconEraser, color: Colors.white),
-          SizedBox(width: 8),
-          Text('Eliminar',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
+                  if (con.error.value != null)
+                    Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(children: [
+                          Text(con.error.value!),
+                          TextButton(
+                              onPressed: con.getPlans,
+                              child: const Text('Reintentar'))
+                        ])),
+                  if (con.plans.isEmpty && con.error.value == null)
+                    const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('No hay planes disponibles.')),
+                  for (final plan in con.plans)
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Material(
+                          color: AdminUi.surface,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: const BorderSide(color: AdminUi.border)),
+                          child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(children: [
+                                Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: (plan.image ?? '').isEmpty
+                                              ? Image.asset(
+                                                  'assets/img/bicicleta.png',
+                                                  width: 72,
+                                                  height: 82,
+                                                  fit: BoxFit.contain)
+                                              : Image.network(plan.image!,
+                                                  width: 72,
+                                                  height: 82,
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (_, __, ___) =>
+                                                      const SizedBox(
+                                                          width: 72,
+                                                          height: 82,
+                                                          child: Icon(
+                                                              Icons
+                                                                  .directions_bike_outlined,
+                                                              size: 40)))),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                          child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                            Text(plan.name ?? 'Plan',
+                                                style: const TextStyle(
+                                                    fontSize: 17,
+                                                    fontWeight:
+                                                        FontWeight.w800)),
+                                            const SizedBox(height: 5),
+                                            Text(
+                                                '${plan.rides ?? 0} rides · ${plan.duration_days ?? 0} días',
+                                                style: const TextStyle(
+                                                    color: AdminUi.muted)),
+                                            if ((plan.description ?? '')
+                                                .isNotEmpty)
+                                              Text(plan.description!,
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: AdminUi.muted)),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                                NumberFormat.currency(
+                                                        locale: 'es_EC',
+                                                        symbol: '\$',
+                                                        decimalDigits: 2)
+                                                    .format(plan.price ?? 0),
+                                                style: const TextStyle(
+                                                    fontSize: 19,
+                                                    fontWeight:
+                                                        FontWeight.w800)),
+                                          ])),
+                                    ]),
+                                const SizedBox(height: 8),
+                                Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Wrap(spacing: 8, children: [
+                                      TextButton.icon(
+                                          onPressed: () => _edit(plan),
+                                          icon: const Icon(Icons.edit_outlined,
+                                              size: 19),
+                                          label: const Text('Editar')),
+                                      TextButton.icon(
+                                          onPressed: con.deleting
+                                                  .contains(plan.id)
+                                              ? null
+                                              : () => _delete(context, plan),
+                                          icon: const Icon(Icons.delete_outline,
+                                              size: 19),
+                                          label: const Text('Eliminar')),
+                                    ])),
+                              ])),
+                        )),
+                ]));
+      });
 }

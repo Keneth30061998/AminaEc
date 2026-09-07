@@ -18,7 +18,7 @@ class AdminSponsorListPage extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         backgroundColor: indigoAmina,
-        onPressed: () => Get.toNamed('/admin/sponsors/create'),
+        onPressed: () async { await Get.toNamed('/admin/sponsors/create'); con.getSponsors(); },
         child: const Icon(iconAdd, color: Colors.white),
       ),
       body: Obx(() {
@@ -50,7 +50,8 @@ class AdminSponsorListPage extends StatelessWidget {
           confirmDismiss: (direction) async {
             if (direction == DismissDirection.startToEnd) {
               // EDITAR
-              Get.toNamed('/admin/sponsors/update', arguments: {'sponsor': sponsor});
+              await Get.toNamed('/admin/sponsors/update', arguments: {'sponsor': sponsor});
+              con.getSponsors();
               return false; // No cerrar el dismiss
             } else if (direction == DismissDirection.endToStart) {
               // ELIMINAR
@@ -186,3 +187,4 @@ class AdminSponsorListPage extends StatelessWidget {
     );
   }
 }
+

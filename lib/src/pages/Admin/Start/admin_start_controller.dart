@@ -14,6 +14,12 @@ import '../../../providers/class_reservation_provider.dart';
 import '../../../providers/coachs_provider.dart';
 
 class AdminStartController extends GetxController {
+  final List<void Function()> _subscriptions = [];
+  final isLoading = false.obs;
+  final loadError = RxnString();
+  void _listen(String event, Function(dynamic) callback) {
+    _subscriptions.add(SocketService().subscribe(event, callback));
+  }
   final coachProvider = CoachProvider();
   final classReservationProvider = ClassReservationProvider();
   final attendanceProvider = AttendanceProvider();
@@ -66,6 +72,7 @@ class AdminStartController extends GetxController {
 
   @override
   void onClose() {
+    for (final cancel in _subscriptions) { cancel(); }
     super.onClose();
   }
 
@@ -77,35 +84,43 @@ class AdminStartController extends GetxController {
   // GET COACHES
   // =====================================================
   Future<void> getCoaches() async {
-    print("\n===============================");
-    print("🔵 [getCoaches] Iniciando...");
-    print("===============================\n");
+    if (isLoading.value) return;
+    isLoading.value = true;
+    loadError.value = null;
+    try {
+      print("\n===============================");
+      print("🔵 [getCoaches] Iniciando...");
+      print("===============================\n");
 
-    final result = await coachProvider.getAll();
+      final result = await coachProvider.getAll();
 
-    // Inicializar maps
-    for (var coach in result) {
-      final id = coach.id!;
-      selectedDatePerCoach.putIfAbsent(
-        id,
-            () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
-      );
-      studentMap.putIfAbsent(id, () => <StudentInscription>[].obs);
-    }
+      // Inicializar maps
+      for (var coach in result) {
+        final id = coach.id!;
+        selectedDatePerCoach.putIfAbsent(
+          id,
+              () => Rx<DateTime>(DateTime(today.year, today.month, today.day)),
+        );
+        studentMap.putIfAbsent(id, () => <StudentInscription>[].obs);
+      }
 
-    coaches.value = result;
+      coaches.value = result;
 
-    if (result.isNotEmpty && selectedCoachId.value.isEmpty) {
-      selectedCoachId.value = result.first.id!;
-    }
+      if (result.isNotEmpty && !result.any((c) => c.id == selectedCoachId.value)) {
+        selectedCoachId.value = result.first.id!;
+      }
 
-    for (var coach in result) {
-      await loadStudents(coach.id!);
-      refreshAttendanceMapForCoachDate(
-        coach.id!,
-        selectedDatePerCoach[coach.id!]!.value,
-      );
-    }
+      for (var coach in result) {
+        await loadStudents(coach.id!);
+        refreshAttendanceMapForCoachDate(
+          coach.id!,
+          selectedDatePerCoach[coach.id!]!.value,
+        );
+      }
+
+    } catch (_) {
+      loadError.value = 'No se pudieron cargar los horarios. Intenta nuevamente.';
+    } finally { isLoading.value = false; }
   }
 
   // =====================================================
@@ -517,32 +532,32 @@ class AdminStartController extends GetxController {
     }
 
     // Nombre utilizado actualmente por schedule() en el backend.
-    SocketService().on(
+    _listen(
       'class:coach:reserved',
       refreshReservations,
     );
 
     // Se conserva como compatibilidad con emisiones antiguas del proyecto.
-    SocketService().on(
+    _listen(
       'class:reserved',
       refreshReservations,
     );
 
     // Lo emiten tanto la cancelación del usuario como la remoción del admin.
-    SocketService().on(
+    _listen(
       'class:coach:canceled',
       refreshReservations,
     );
 
     // Lo emite el endpoint de reagendamiento corregido.
-    SocketService().on(
+    _listen(
       'class:coach:rescheduled',
       refreshReservations,
     );
 
     // Cambiar el coach de una clase también modifica la lista de horarios,
     // por lo que se recargan coaches y estudiantes en conjunto.
-    SocketService().on(
+    _listen(
       'class:coach:changed',
           (data) async {
         print(
@@ -553,7 +568,7 @@ class AdminStartController extends GetxController {
       },
     );
 
-    SocketService().on(
+    _listen(
       'attendance:group:registered',
           (data) {
         try {
@@ -637,3 +652,4 @@ class AdminStartController extends GetxController {
     banners.refresh();
   }
 }
+

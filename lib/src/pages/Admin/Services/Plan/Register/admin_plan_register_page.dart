@@ -1,4 +1,3 @@
-
 import 'package:amina_ec/src/pages/Admin/Services/Plan/List/admin_plan_list_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Plan/Register/admin_plan_register_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
@@ -275,16 +274,15 @@ class AdminPlanRegisterPage extends StatelessWidget {
 
   Widget _switchNewUserOnly() {
     return Obx(() => SwitchListTile(
-      title: Text(
-        "Solo para nuevos usuarios",
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      ),
-      activeThumbColor: almostBlack,
-      value: con.isNewUserOnly.value,
-      onChanged: (value) => con.isNewUserOnly.value = value,
-    ));
+          title: Text(
+            "Solo para nuevos usuarios",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          activeThumbColor: almostBlack,
+          value: con.isNewUserOnly.value,
+          onChanged: (value) => con.isNewUserOnly.value = value,
+        ));
   }
-
 
   Widget _buttonSave(BuildContext context) {
     return Container(
@@ -312,17 +310,17 @@ class AdminPlanRegisterPage extends StatelessWidget {
 
   Widget _switchDeferredPayment() {
     return Obx(() => SwitchListTile(
-      title: Text(
-        "Permite pago diferido",
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        "Si está apagado, el plan solo podrá pagarse de contado.",
-        style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-      ),
-      activeThumbColor: almostBlack,
-      value: con.allowDeferredPayment.value,
-      onChanged: (value) => con.allowDeferredPayment.value = value,
-    ));
+          title: Text(
+            "Permite pago diferido",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            "Si está apagado, el plan solo podrá pagarse de contado.",
+            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+          ),
+          activeThumbColor: almostBlack,
+          value: con.allowDeferredPayment.value,
+          onChanged: (value) => con.allowDeferredPayment.value = value,
+        ));
   }
 }

@@ -12,6 +12,21 @@ class AdminCoachScheduleController extends GetxController {
   final CoachProvider _provider = CoachProvider();
 
   final selectedDate = DateTime.now().obs;
+  final CalendarController calendarController = CalendarController();
+  final loading = false.obs;
+  final error = RxnString();
+  final List<void Function()> _subscriptions = [];
+  Worker? _coachWorker;
+  void _listen(String event, Function(dynamic) callback) {
+    _subscriptions.add(SocketService().subscribe(event, callback));
+  }
+  @override
+  void onClose() {
+    _coachWorker?.dispose();
+    for (final cancel in _subscriptions) { cancel(); }
+    calendarController.dispose();
+    super.onClose();
+  }
   final allCoaches = <Coach>[].obs;
   final filteredCoaches = <Coach>[].obs;
 
@@ -24,34 +39,37 @@ class AdminCoachScheduleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    calendarController.selectedDate = selectedDate.value;
+    calendarController.displayDate = selectedDate.value;
     loadCoaches();
 
-    ever(CoachEvents.to.coachUpdated, (_) => loadCoaches());
+    _coachWorker = ever(CoachEvents.to.coachUpdated, (_) => loadCoaches());
 
-    SocketService()
-        .on('coach:new', (_) => CoachEvents.to.notifyCoachesUpdated());
-    SocketService().on('coach:update', (_) {
+    _listen('coach:new', (_) => CoachEvents.to.notifyCoachesUpdated());
+    _listen('coach:update', (_) {
       CoachEvents.to.notifyCoachesUpdated();
       _updateCalendar();
     });
-    SocketService()
-        .on('coach:delete', (_) => CoachEvents.to.notifyCoachesUpdated());
+    _listen('coach:delete', (_) => CoachEvents.to.notifyCoachesUpdated());
+    _listen('class:coach:changed', (_) => loadCoaches());
   }
 
   Future<void> loadCoaches() async {
+    loading.value = true;
+    error.value = null;
     try {
       final list = await _provider.getAll();
       allCoaches.value = list;
       _filterByDate(selectedDate.value);
       _updateCalendar();
     } catch (_) {
-      // Mantengo tu comportamiento silencioso (sin romper funcionalidad).
-      // Si quieres, aquí puedes loguear el error.
-    }
+      error.value = 'No se pudieron cargar las clases.';
+    } finally { loading.value = false; }
   }
 
   void selectDate(DateTime date) {
     selectedDate.value = date;
+    calendarController.selectedDate = date;
     _filterByDate(date);
   }
 
@@ -177,3 +195,4 @@ class ScheduleDataSource extends CalendarDataSource {
     return DateTime(base.year, base.month, base.day, h, m);
   }
 }
+

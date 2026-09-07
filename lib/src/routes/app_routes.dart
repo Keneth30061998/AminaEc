@@ -1,3 +1,4 @@
+import '../pages/Admin/Shared/admin_ui.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_image_page.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_page.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_schedule_page.dart';
@@ -68,29 +69,30 @@ final List<GetPage> appRoutes = [
   GetPage(name: '/admin/home', page: () => AdminHomePage()),
 
   // --- Admin > Coach ---
-  GetPage(name: '/admin/coach/register', page: () => AdminCoachRegisterPage()),
+  GetPage(name: '/admin/coach/register', page: () => AdminStyled(child: AdminCoachRegisterPage())),
   GetPage(
     name: '/admin/coach/register-image',
-    page: () => AdminCoachRegisterImagePage(),
+    page: () => AdminStyled(child: AdminCoachRegisterImagePage()),
   ),
   GetPage(
     name: '/admin/coach/register-schedule',
-    page: () => AdminCoachRegisterSchedulePage(),
+    page: () => AdminStyled(child: AdminCoachRegisterSchedulePage()),
   ),
-  GetPage(name: '/admin/coach/update', page: () => AdminCoachUpdatePage()),
+  GetPage(name: '/admin/coach/update', page: () => AdminStyled(child: AdminCoachUpdatePage())),
   GetPage(
     name: '/admin/coach/update/schedule',
-    page: () => AdminCoachUpdateSchedulePage(),
+    page: () => AdminStyled(child: AdminCoachUpdateSchedulePage()),
   ),
 
   // --- Admin > Sponsors ---
-  GetPage(name: '/admin/sponsors/create', page: () => AdminSponsorRegisterPage()),
-  GetPage(name: '/admin/sponsors/update', page: () => AdminSponsorUpdatePage()),
+  GetPage(name: '/admin/sponsors/create', page: () => AdminStyled(child: AdminSponsorRegisterPage())),
+  GetPage(name: '/admin/sponsors/update', page: () => AdminStyled(child: AdminSponsorUpdatePage())),
   // --- Admin > Planes ---
-  GetPage(name: '/admin/plans/update', page: () => AdminPlanUpdatePage()),
+  GetPage(name: '/admin/plans/update', page: () => AdminStyled(child: AdminPlanUpdatePage())),
 
   // --- Admin > user - plan
-  GetPage(name: '/admin/users/plans', page: () => AdminUserPlansPage()),
-  GetPage(name: '/admin/users/history', page: () => AdminUserHistoryPage()),
+  GetPage(name: '/admin/users/plans', page: () => AdminStyled(child: AdminUserPlansPage())),
+  GetPage(name: '/admin/users/history', page: () => AdminStyled(child: AdminUserHistoryPage())),
 
 ];
+

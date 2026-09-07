@@ -111,7 +111,7 @@ class AdminSponsorUpdateController extends GetxController {
 
           if (data["success"] == true) {
             Get.snackbar("Éxito", "Sponsor actualizado correctamente");
-            Get.offAllNamed("/admin/home");
+            Get.back(result: true);
           } else {
             Get.snackbar("Error", "No se pudo actualizar");
           }
@@ -123,7 +123,7 @@ class AdminSponsorUpdateController extends GetxController {
 
         if (res.statusCode == 200 || res.statusCode == 201) {
           Get.snackbar("Éxito", "Sponsor actualizado");
-          Get.offAllNamed("/admin/home");
+          Get.back(result: true);
         } else {
           Get.snackbar("Error", "No se pudo actualizar el sponsor");
         }
@@ -134,3 +134,4 @@ class AdminSponsorUpdateController extends GetxController {
     }
   }
 }
+

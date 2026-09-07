@@ -5,6 +5,15 @@ import '../../../../../models/sponsor.dart';
 import '../../../../../providers/sponsor_provider.dart';
 
 class AdminSponsorListController extends GetxController {
+  final List<void Function()> _subscriptions = [];
+  void _listen(String event, Function(dynamic) callback) {
+    _subscriptions.add(SocketService().subscribe(event, callback));
+  }
+  @override
+  void onClose() {
+    for (final cancel in _subscriptions) { cancel(); }
+    super.onClose();
+  }
   final SponsorProvider sponsorProvider = SponsorProvider();
 
   // Lista reactiva de sponsors
@@ -16,15 +25,15 @@ class AdminSponsorListController extends GetxController {
     getSponsors();
 
     // 🔄 Escuchar cambios en tiempo real (mismos eventos que planes)
-    SocketService().on('sponsor:new', (data) {
+    _listen('sponsor:new', (data) {
       getSponsors();
     });
 
-    SocketService().on('sponsor:delete', (data) {
+    _listen('sponsor:delete', (data) {
       getSponsors();
     });
 
-    SocketService().on('sponsor:update', (data) {
+    _listen('sponsor:update', (data) {
       getSponsors();
     });
   }
@@ -49,3 +58,4 @@ class AdminSponsorListController extends GetxController {
     }
   }
 }
+

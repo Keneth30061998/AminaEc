@@ -1,3 +1,4 @@
+import '../../Shared/admin_ui.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/AppUsers/admin_reports_app_users_controller.dart';
 import 'package:amina_ec/src/utils/color.dart';
@@ -26,29 +27,13 @@ class AdminReportsAppUsersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff9f9f9),
-      appBar: AppBar(
-        title: const Text(
-          'Usuarios registrados',
-        ),
-        centerTitle: true,
-        backgroundColor: whiteLight,
-        surfaceTintColor: whiteLight,
-        forceMaterialTransparency: true,
-        actions: [
-          _AppBarIcon(
-            icon: Icons.picture_as_pdf,
-            tooltip: 'Exportar PDF',
-            onTap: () => con.exportPDF(context),
-          ),
-          const SizedBox(width: 6),
-          _AppBarIcon(
-            icon: Icons.grid_on,
-            tooltip: 'Exportar Excel',
-            onTap: () => con.exportExcel(context),
-          ),
-          const SizedBox(width: 10),
-        ],
-      ),
+      appBar: AdminHeader(title: 'Usuarios', actions: [
+        PopupMenuButton<String>(tooltip: 'Exportar usuarios',
+            icon: const Icon(Icons.file_download_outlined),
+            onSelected: (value) { if (value == 'pdf') { con.exportPDF(context); } else { con.exportExcel(context); } },
+            itemBuilder: (_) => const [PopupMenuItem(value: 'pdf', child: Text('Exportar PDF')),
+              PopupMenuItem(value: 'excel', child: Text('Exportar Excel'))]),
+      ]),
       body: SafeArea(
         child: Column(
           children: [
@@ -72,6 +57,12 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                   );
                 }
 
+                if (con.error.value != null) {
+                  return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Padding(padding: const EdgeInsets.all(20), child: Text(con.error.value!, textAlign: TextAlign.center)),
+                    TextButton(onPressed: con.getUsers, child: const Text('Reintentar')),
+                  ]));
+                }
                 final list = con.filteredUsers;
 
                 if (list.isEmpty) {
@@ -84,9 +75,11 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                       ),
-                      children: const [
-                        SizedBox(height: 110),
-                        _EmptyState(),
+                      children: [
+                        const SizedBox(height: 110),
+                        if (con.searchQuery.value.trim().isNotEmpty)
+                          const Center(child: Text('No hay usuarios que coincidan con la búsqueda.'))
+                        else const _EmptyState(),
                       ],
                     ),
                   );
@@ -104,6 +97,7 @@ class AdminReportsAppUsersPage extends StatelessWidget {
                       16,
                       18,
                     ),
+                    key: const PageStorageKey('admin-users-list'),
                     itemCount: list.length,
                     separatorBuilder: (_, __) {
                       return const SizedBox(height: 10);
@@ -198,7 +192,7 @@ class AdminReportsAppUsersPage extends StatelessWidget {
               ),
               _ActionTile(
                 icon: Icons.edit_outlined,
-                title: 'Editar rides completos',
+                title: 'Corregir rides completados',
                 subtitle:
                 'Actual: ${user.ridesCompleted ?? 0}',
                 onTap: () {
@@ -399,7 +393,7 @@ class _SearchPill extends StatelessWidget {
             Icons.search,
             color: Colors.black54,
           ),
-          hintText: 'Buscar por nombre...',
+          hintText: 'Buscar por nombre o correo…',
           hintStyle: GoogleFonts.poppins(
             fontSize: 13,
             color: Colors.grey[600],

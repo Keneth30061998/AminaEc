@@ -9,7 +9,8 @@ import '../../../../utils/iconos.dart';
 import 'admin_transactions_controller.dart';
 
 class AdminTransactionsPage extends StatefulWidget {
-  const AdminTransactionsPage({super.key});
+  final VoidCallback? onBack;
+  const AdminTransactionsPage({super.key, this.onBack});
 
   @override
   State<AdminTransactionsPage> createState() => _AdminTransactionsPageState();
@@ -23,19 +24,10 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
     super.initState();
 
     if (!Get.isRegistered<AdminTransactionsController>()) {
-      txCon = Get.put(AdminTransactionsController(), permanent: true);
+      txCon = Get.put(AdminTransactionsController());
     } else {
       txCon = Get.find<AdminTransactionsController>();
     }
-  }
-
-  @override
-  void dispose() {
-    if (Get.isRegistered<AdminTransactionsController>()) {
-      Get.delete<AdminTransactionsController>(force: true);
-    }
-
-    super.dispose();
   }
 
   @override
@@ -43,8 +35,9 @@ class _AdminTransactionsPageState extends State<AdminTransactionsPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: widget.onBack == null ? null : IconButton(icon: const Icon(Icons.arrow_back), onPressed: widget.onBack),
         title: Text(
-          'Reporte de Transacciones',
+          'Transacciones',
           style: GoogleFonts.montserrat(
             fontSize: 17,
             fontWeight: FontWeight.w800,

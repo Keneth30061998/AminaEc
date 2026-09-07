@@ -111,7 +111,7 @@ class AdminPlanUpdateController extends GetxController {
         stream.listen(
               (res) {
             Get.snackbar('Éxito', 'Plan actualizado con imagen');
-            Get.offAllNamed('/admin/home');
+            Get.back(result: true);
           },
           onError: (error) {
             Get.snackbar('Error', 'No se pudo actualizar el plan: $error');
@@ -122,7 +122,7 @@ class AdminPlanUpdateController extends GetxController {
 
         if (res.statusCode == 200 || res.statusCode == 201) {
           Get.snackbar('Éxito', 'Plan actualizado');
-          Get.offAllNamed('/admin/home');
+          Get.back(result: true);
         } else {
           Get.snackbar('Error', 'No se pudo actualizar: ${res.body}');
         }

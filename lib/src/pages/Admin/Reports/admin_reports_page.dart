@@ -1,73 +1,74 @@
-import 'package:amina_ec/src/pages/Admin/Reports/AppUsers/admin_reports_app_users_page.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Attendance/admin_reports_classes_page.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Attendance/admin_reports_controller.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Class/Schedule/admin_edit_schedule_class_page.dart';
-import 'package:amina_ec/src/pages/Admin/Reports/Ratings/admin_reports_class_ratings_page.dart';
-import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-import '../../../utils/color.dart';
+import '../Shared/admin_ui.dart';
+import 'Attendance/admin_reports_classes_page.dart';
+import 'Attendance/admin_reports_controller.dart';
 import 'Transactions/admin_transactions_page.dart';
+import 'Transactions/admin_transactions_controller.dart';
+import 'Ratings/admin_reports_class_ratings_page.dart';
+import 'Ratings/admin_reports_class_ratings_controller.dart';
 
-class AdminReportsPage extends StatelessWidget {
+class AdminReportsPage extends StatefulWidget {
   const AdminReportsPage({super.key});
+  @override
+  AdminReportsPageState createState() => AdminReportsPageState();
+}
+
+class AdminReportsPageState extends State<AdminReportsPage> {
+  int index = 0;
+  late final List<Widget> reports;
+  bool get showingReport => index != 0;
+  void showHub() => setState(() => index = 0);
+  @override
+  void initState() {
+    super.initState();
+    if (!Get.isRegistered<AdminReportsController>())
+      Get.put(AdminReportsController());
+    if (!Get.isRegistered<AdminTransactionsController>())
+      Get.put(AdminTransactionsController());
+    if (!Get.isRegistered<AdminClassRatingsReportController>())
+      Get.put(AdminClassRatingsReportController());
+    reports = [
+      AdminClassesTab(onBack: showHub),
+      AdminTransactionsPage(onBack: showHub),
+      AdminClassRatingsPage(onBack: showHub)
+    ];
+  }
 
   @override
-  Widget build(BuildContext context) {
-    // Mantiene la funcionalidad de tener el controller disponible para las tabs,
-    // pero evita crear instancias en variables globales (y duplicados).
-    if (!Get.isRegistered<AdminReportsController>()) {
-      Get.put(AdminReportsController());
-    }
-
-    return DefaultTabController(
-      length: 5, // Usuarios, Clases, Asistencia, Transacciones
-      child: Scaffold(
-        appBar: AppBar(
-          title: _appBarTitle(),
-          bottom: TabBar(
-            indicatorColor: almostBlack,
-            labelColor: almostBlack,
-            tabs: const [
-              Tab(icon: Icon(iconProfile), text: 'Usuarios'),
-              Tab(icon: Icon(iconRides), text: 'Clases'),
-              Tab(icon: Icon(iconCheck), text: 'Asistencia'),
-              Tab(icon: Icon(iconCard), text: 'Transacciones'),
-              Tab(icon: Icon(iconRating), text: 'Feedback'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            // Tab 1: Usuarios
-            AdminReportsAppUsersPage(),
-
-            // Tab 2: Clases (Schedule)
-            AdminCoachSchedulePage(),
-
-            // Tab 3: Asistencia
-            AdminClassesTab(),
-
-            // Tab 4: Transacciones
-            AdminTransactionsPage(),
-
-            //Tab 5: Feendback de clases
-            AdminClassRatingsPage(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _appBarTitle() {
-    return Text(
-      'Reportes',
-      style: GoogleFonts.montserrat(
-        fontSize: 22,
-        fontWeight: FontWeight.w900,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => IndexedStack(
+        index: index,
+        sizing: StackFit.expand,
+        children: [
+          Scaffold(
+              appBar: const AdminHeader(
+                  title: 'Reportes', subtitle: 'Consultas e históricos'),
+              body: ListView(padding: const EdgeInsets.all(20), children: [
+                AdminGroup(children: [
+                  AdminActionTile(
+                      icon: Icons.bar_chart_outlined,
+                      title: 'Asistencia histórica',
+                      subtitle: 'Consultar y exportar registros',
+                      onTap: () => setState(() => index = 1))
+                ]),
+                const SizedBox(height: 12),
+                AdminGroup(children: [
+                  AdminActionTile(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'Transacciones',
+                      subtitle: 'Consultar movimientos',
+                      onTap: () => setState(() => index = 2))
+                ]),
+                const SizedBox(height: 12),
+                AdminGroup(children: [
+                  AdminActionTile(
+                      icon: Icons.star_outline,
+                      title: 'Valoraciones',
+                      subtitle: 'Revisar opiniones de las clases',
+                      onTap: () => setState(() => index = 3))
+                ]),
+              ])),
+          ...reports,
+        ],
+      );
 }

@@ -1,3 +1,4 @@
+import '../AppUsers/admin_reports_app_users_controller.dart';
 import 'package:amina_ec/src/models/plan.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/providers/admin_user_plans_provider.dart';
@@ -19,6 +20,7 @@ class AdminUserPlansController extends GetxController {
 
   final token = ''.obs;
   var loading = false.obs;
+  final loadError = RxnString();
   var saving = false.obs; // Previene doble envío
 
   var plans = <Map<String, dynamic>>[].obs;
@@ -35,21 +37,29 @@ class AdminUserPlansController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    if (!Get.isRegistered<AdminReportsAppUsersController>()) Get.put(AdminReportsAppUsersController());
     token.value = user.session_token ?? storage.read('user')?['session_token'] ?? '';
     loadAll();
   }
 
   Future<void> loadAll() async {
     loading.value = true;
-    await loadUserPlans();
-    await loadAvailablePlans();
-    loading.value = false;
+    loadError.value = null;
+    try {
+      await loadUserPlans();
+      await loadAvailablePlans();
+    } catch (_) {
+      loadError.value = 'No se pudieron cargar los planes. Intenta nuevamente.';
+    } finally { loading.value = false; }
   }
 
   Future<void> loadUserPlans() async {
     final t = token.value;
     if (t.isEmpty) return;
     plans.value = await _provider.getUserPlans(user.id!, t);
+    if (Get.isRegistered<AdminReportsAppUsersController>()) {
+      await Get.find<AdminReportsAppUsersController>().getUsers();
+    }
   }
 
   Future<void> loadAvailablePlans() async {
@@ -387,3 +397,4 @@ class AdminUserPlansController extends GetxController {
     await loadUserPlans();
   }
 }
+

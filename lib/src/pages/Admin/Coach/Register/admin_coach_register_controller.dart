@@ -255,7 +255,7 @@ class AdminCoachRegisterController extends GetxController {
       final data = json.decode(res);
       if (data["success"]) {
         Get.snackbar("Éxito", "Coach registrado correctamente");
-        Get.offAllNamed('/admin/home');
+        Get.until((route) => route.settings.name == '/admin/management/coaches' || route.settings.name == '/admin/home');
       } else {
         Get.snackbar("Error", data["message"] ?? "Ocurrió un problema");
       }
@@ -282,3 +282,4 @@ class ScheduleDataSource extends CalendarDataSource {
     }).toList();
   }
 }
+

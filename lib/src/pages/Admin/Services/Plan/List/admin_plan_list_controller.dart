@@ -7,10 +7,22 @@ import '../../../../../models/plan.dart';
 
 
 class AdminPlanListController extends GetxController {
+  final List<void Function()> _subscriptions = [];
+  void _listen(String event, Function(dynamic) callback) {
+    _subscriptions.add(SocketService().subscribe(event, callback));
+  }
+  @override
+  void onClose() {
+    for (final cancel in _subscriptions) { cancel(); }
+    super.onClose();
+  }
   final PlanProvider planProvider = PlanProvider();
 
   // Lista reactiva de planes
   var plans = <Plan>[].obs;
+  final loading = false.obs;
+  final error = RxnString();
+  final deleting = <String>[].obs;
 
   @override
   void onInit() {
@@ -19,25 +31,28 @@ class AdminPlanListController extends GetxController {
     getPlans();
 
     // 🔄 Escuchar cambios en tiempo real
-    SocketService().on('plan:new', (data) {
+    _listen('plan:new', (data) {
       //print('📡 Evento recibido: $data');
       getPlans(); // Recarga la lista
     });
 
-    SocketService().on('plan:delete', (data) {
+    _listen('plan:delete', (data) {
       //print('🗑️ Evento plan:delete recibido');
       getPlans();
     });
 
-    SocketService().on('plan:update', (data) {
+    _listen('plan:update', (data) {
       //print('🗑️ Evento plan:update recibido');
       getPlans();
     });
   }
 
-  void getPlans() async {
-    List<Plan> result = await planProvider.getAll();
-    plans.value = result;
+  Future<void> getPlans() async {
+    loading.value = true;
+    error.value = null;
+    try { plans.value = await planProvider.getAll(); }
+    catch (_) { error.value = 'No se pudieron cargar los planes.'; }
+    finally { loading.value = false; }
   }
 
   @override
@@ -45,14 +60,16 @@ class AdminPlanListController extends GetxController {
     getPlans();
   }
 
-  void deletePlan(String id) async {
-    final res = await planProvider.deletePlan(id);
-    if (res.statusCode == 201) {
-      Get.snackbar('Éxito', 'Plan eliminado correctamente');
-
-      getPlans(); // recargar lista
-    } else {
-      Get.snackbar('Error', 'No se pudo eliminar el plan');
-    }
+  Future<void> deletePlan(String id) async {
+    if (deleting.contains(id)) return;
+    deleting.add(id);
+    try {
+      final res = await planProvider.deletePlan(id);
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        Get.snackbar('Éxito', 'Plan eliminado correctamente');
+        await getPlans();
+      } else { Get.snackbar('Error', 'No se pudo eliminar el plan'); }
+    } catch (_) { Get.snackbar('Error', 'No se pudo eliminar el plan'); }
+    finally { deleting.remove(id); }
   }
 }

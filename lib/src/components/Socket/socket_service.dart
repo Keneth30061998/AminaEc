@@ -113,6 +113,14 @@ class SocketService {
     });
   }
 
+  /// Returns a cancellation function for this listener only.
+  void Function() subscribe(String event, Function(dynamic) callback) {
+    final boundSocket = socket;
+    void handler(dynamic data) => callback(data);
+    boundSocket.on(event, handler);
+    return () => boundSocket.off(event, handler);
+  }
+
   void once(String event, Function(dynamic) callback) {
     socket.once(event, callback);
   }
@@ -162,3 +170,4 @@ class SocketService {
     } catch (_) {}
   }
 }
+
