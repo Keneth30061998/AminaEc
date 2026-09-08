@@ -5,6 +5,8 @@ Plan planFromJson(String str) => Plan.fromJson(json.decode(str));
 String planToJson(Plan data) => json.encode(data.toJson());
 
 class Plan {
+  int is_course;
+  bool get isCourse => is_course == 1;
   String? id;
   String? name;
   String? description;
@@ -16,6 +18,7 @@ class Plan {
   int? allow_deferred_payment;
 
   Plan({
+    this.is_course = 0,
     this.id,
     this.name,
     this.description,
@@ -27,18 +30,19 @@ class Plan {
     this.allow_deferred_payment,
   });
   factory Plan.fromJson(Map<String, dynamic> json) => Plan(
-        id: json['id'],
-        name: json['name'],
-        description: json['description'],
-        image: json['image'],
-        rides: json['rides'],
-        price: json['price'] is num
-            ? json['price'].toDouble()
-            : double.tryParse(json["price"]?.toString() ?? "0.0") ?? 0.0,
-        duration_days: json['duration_days'],
-        is_new_user_only: json['is_new_user_only'] ?? 0,
-        allow_deferred_payment: json['allow_deferred_payment'] ?? 0,
-      );
+    is_course: json['is_course'] == true || json['is_course'].toString() == '1' ? 1 : 0,
+    id: json['id'],
+    name: json['name'],
+    description: json['description'],
+    image: json['image'],
+    rides: json['rides'],
+    price: json['price'] is num
+        ? json['price'].toDouble()
+        : double.tryParse(json["price"]?.toString() ?? "0.0") ?? 0.0,
+    duration_days: json['duration_days'],
+    is_new_user_only: json['is_new_user_only'] ?? 0,
+    allow_deferred_payment: json['allow_deferred_payment'] ?? 0,
+  );
 
   //Se requiere para listar el plan que llega como json
   static List<Plan> fromJsonList(List<dynamic> jsonList) {
@@ -51,15 +55,17 @@ class Plan {
   }
 
   Map<String, dynamic> toJson() => {
-        "id": id,
-        "name": name,
-        "description": description,
-        "image": image,
-        "rides": rides,
-        "price": price,
-        "duration_days": duration_days,
-        "is_new_user_only": is_new_user_only,
-        "allow_deferred_payment": allow_deferred_payment,
-      };
+    "is_course": is_course,
+    "id": id,
+    "name": name,
+    "description": description,
+    "image": image,
+    "rides": rides,
+    "price": price,
+    "duration_days": duration_days,
+    "is_new_user_only": is_new_user_only,
+    "allow_deferred_payment": allow_deferred_payment,
+  };
   bool get allowsDeferredPayment => allow_deferred_payment == 1;
 }
+

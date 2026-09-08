@@ -29,6 +29,10 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
   late String selectedTime;
   late int selectedBike;
 
+  List<Map<String, dynamic>> options = [];
+  bool loading = true;
+  bool submitting = false;
+  String? loadError;
   List<String> dates = [];
   List<String> times = [];
   List<int> bikes = [];
@@ -42,47 +46,50 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
     selectedDate = widget.reservation.classDate.split('T').first;
     selectedTime = widget.reservation.classTime;
     selectedBike = widget.reservation.bicycle;
-    _loadDates();
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    final response = await classProv.courseRescheduleOptions(widget.reservation.id);
+    if (!mounted) return;
+    if (response.success == true && response.data is List) {
+      options = (response.data as List).map((e) => Map<String,dynamic>.from(e as Map)).toList();
+      if (options.isNotEmpty && !options.any((e) => '${e['coach_id']}' == selectedCoach)) {
+        selectedCoach = '${options.first['coach_id']}';
+      }
+    } else { loadError = response.message; }
+    loading = false;
+    await _loadDates();
   }
 
   Future<void> _loadDates() async {
-    dates = await classProv.getAvailableDates(coachId: selectedCoach);
-    if (!dates.contains(selectedDate) && dates.isNotEmpty) {
-      selectedDate = dates.first;
-    }
+    dates = options.where((e) => '${e['coach_id']}' == selectedCoach)
+        .map((e) => '${e['class_date']}').toSet().toList();
+    if (!dates.contains(selectedDate)) selectedDate = dates.isEmpty ? '' : dates.first;
     await _loadTimes();
-    setState(() {});
   }
 
   Future<void> _loadTimes() async {
-    times = await classProv.getAvailableTimes(
-      coachId: selectedCoach,
-      date: selectedDate,
-    );
-    if (!times.contains(selectedTime) && times.isNotEmpty) {
-      selectedTime = times.first;
-    }
+    times = options.where((e) => '${e['coach_id']}' == selectedCoach && e['class_date'] == selectedDate)
+        .map((e) => '${e['class_time']}').toSet().toList();
+    if (!times.contains(selectedTime)) selectedTime = times.isEmpty ? '' : times.first;
     await _loadBikes();
-    setState(() {});
   }
 
   Future<void> _loadBikes() async {
-    bikes = await classProv.getAvailableBikes(
-      coachId: selectedCoach,
-      date: selectedDate,
-      time: selectedTime,
-    );
-    if (!bikes.contains(selectedBike) && bikes.isNotEmpty) {
-      selectedBike = bikes.first;
-    }
-    setState(() {});
+    final matches = options.where((e) => '${e['coach_id']}' == selectedCoach &&
+        e['class_date'] == selectedDate && e['class_time'] == selectedTime);
+    bikes = matches.isEmpty ? [] : (matches.first['bikes'] as List)
+        .map((e) => int.parse('$e')).toList();
+    if (!bikes.contains(selectedBike)) selectedBike = bikes.isEmpty ? -1 : bikes.first;
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Card(
           margin: const EdgeInsets.all(16),
@@ -103,13 +110,17 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
               ),
               const SizedBox(height: 20),
 
+              if (loading) const LinearProgressIndicator(),
+              if (loadError != null) Text(loadError!),
+              if (!loading && options.isEmpty) const Text('No hay clases compatibles con el plan original y su vigencia.'),
+              const Text('Se conserva el plan de la reserva. No se consume otro ride.'),
               // Coach
               _buildDropdown<String>(
                 label: "Coach",
                 value: widget.coaches
-                        .map((c) => c.id)
-                        .toSet()
-                        .contains(selectedCoach)
+                    .map((c) => c.id)
+                    .toSet()
+                    .contains(selectedCoach)
                     ? selectedCoach
                     : null,
                 items: widget.coaches.map((c) {
@@ -119,7 +130,7 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
                       children: [
                         CircleAvatar(
                           backgroundImage:
-                              NetworkImage(c.user?.photo_url ?? ""),
+                          NetworkImage(c.user?.photo_url ?? ""),
                           radius: 16,
                         ),
                         const SizedBox(width: 10),
@@ -232,12 +243,12 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
                         ),
                         boxShadow: isSelected
                             ? [
-                                BoxShadow(
-                                  color: whiteGrey,
-                                  blurRadius: 4,
-                                  offset: const Offset(2, 3),
-                                )
-                              ]
+                          BoxShadow(
+                            color: whiteGrey,
+                            blurRadius: 4,
+                            offset: const Offset(2, 3),
+                          )
+                        ]
                             : [],
                       ),
                       child: Center(
@@ -276,7 +287,8 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
                         fontWeight: FontWeight.bold,
                         color: Colors.white),
                   ),
-                  onPressed: () async {
+                  onPressed: loading || submitting || !bikes.contains(selectedBike) ? null : () async {
+                    setState(() => submitting = true);
                     final resp = await classProv.rescheduleClass(
                       reservationId: widget.reservation.id,
                       newDate: selectedDate,
@@ -284,6 +296,8 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
                       newCoachId: selectedCoach,
                       newBicycle: selectedBike,
                     );
+                    if (!mounted) return;
+                    setState(() => submitting = false);
                     if (resp.success == true) {
                       Navigator.of(context).pop();
                       widget.onSuccess();
@@ -324,7 +338,7 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
           borderRadius: BorderRadius.circular(8),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       initialValue: value,
       items: items,
@@ -332,3 +346,4 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
     );
   }
 }
+

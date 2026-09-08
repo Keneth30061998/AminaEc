@@ -57,6 +57,9 @@ class UserPlanBuyResumePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildInfoRow("Paquete seleccionado", con.plan.name!),
+                  _buildInfoRow("Acceso", con.plan.isCourse
+                      ? "Solo clases de curso. No incluye clases regulares."
+                      : "Solo clases regulares. No incluye cursos."),
                   _buildInfoRow("Rides acreditados", "${con.plan.rides}"),
                   const Divider(height: 32),
                   _buildInfoRow("Subtotal",
@@ -385,3 +388,4 @@ class UserPlanBuyResumePage extends StatelessWidget {
     );
   }
 }
+

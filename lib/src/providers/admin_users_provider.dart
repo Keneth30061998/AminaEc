@@ -45,7 +45,7 @@ class AdminUsersProvider {
     }
   }
 
-  Future<ResponseApi> extendPlan(String userId, int days, String token) async {
+  Future<ResponseApi> extendPlan(String userId, int days, String token, {String? userPlanId}) async {
     try {
       Uri url = Uri.parse('$_baseUrl$_api/$userId/extend-expiration');
       final res = await http.post(
@@ -54,7 +54,7 @@ class AdminUsersProvider {
           'Content-Type': 'application/json',
           'Authorization': token,
         },
-        body: '{"days": $days}',
+        body: jsonEncode({'days': days, if (userPlanId != null) 'user_plan_id': userPlanId}),
       );
       return responseApiFromJson(res.body);
     } catch (e) {
@@ -63,7 +63,7 @@ class AdminUsersProvider {
     }
   }
 
-  Future<ResponseApi> returnRides(String userId, int rides, String token) async {
+  Future<ResponseApi> returnRides(String userId, int rides, String token, {String? userPlanId}) async {
     try {
       Uri url = Uri.parse('$_baseUrl$_api/$userId/return-rides');
       final res = await http.post(
@@ -72,7 +72,7 @@ class AdminUsersProvider {
           'Content-Type': 'application/json',
           'Authorization': token,
         },
-        body: '{"rides": $rides}',
+        body: jsonEncode({'rides': rides, if (userPlanId != null) 'user_plan_id': userPlanId}),
       );
       return responseApiFromJson(res.body);
     } catch (e) {
@@ -155,3 +155,4 @@ class AdminUsersProvider {
     }
   }
 }
+

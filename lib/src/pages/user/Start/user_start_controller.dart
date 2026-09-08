@@ -27,7 +27,7 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   final UserPlanProvider userPlanProvider = UserPlanProvider();
   final AppBannerProvider appBannerProvider = AppBannerProvider();
   final ScheduledClassProvider scheduledClassProvider =
-      ScheduledClassProvider();
+  ScheduledClassProvider();
   final ClassReservationProvider classResProv = ClassReservationProvider();
 
   final RxList<UserPlan> acquiredPlans = <UserPlan>[].obs;
@@ -63,8 +63,8 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(
-    AppLifecycleState state,
-  ) {
+      AppLifecycleState state,
+      ) {
     if (state == AppLifecycleState.resumed) {
       getAppBanner();
     }
@@ -82,27 +82,27 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   void _setupSocketListeners() {
     SocketService().on(
       'coach:new',
-      (_) => getCoaches(),
+          (_) => getCoaches(),
     );
 
     SocketService().on(
       'coach:delete',
-      (_) => getCoaches(),
+          (_) => getCoaches(),
     );
 
     SocketService().on(
       'coach:update',
-      (_) => getCoaches(),
+          (_) => getCoaches(),
     );
 
     SocketService().on(
       'rides:updated',
-      (_) => refreshTotalRides(),
+          (_) => refreshTotalRides(),
     );
 
     SocketService().on(
       'class:coach:reserved',
-      (payload) {
+          (payload) {
         if (payload['user_id'].toString() == user.id.toString()) {
           getScheduledClasses();
         }
@@ -111,12 +111,12 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
 
     SocketService().on(
       'class:reserved',
-      (_) => getScheduledClasses(),
+          (_) => getScheduledClasses(),
     );
 
     SocketService().on(
       'class:coach:rescheduled',
-      (payload) {
+          (payload) {
         if (payload['user_id'].toString() == user.id.toString()) {
           getScheduledClasses();
         }
@@ -158,7 +158,7 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   void getAcquiredPlans() async {
     if (user.session_token != null) {
       final result =
-          await userPlanProvider.getAllPlansWithRides(user.session_token!);
+      await userPlanProvider.getAllPlansWithRides(user.session_token!);
       acquiredPlans.value = result;
     }
   }
@@ -171,7 +171,7 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   void getTotalRides() async {
     if (user.session_token != null) {
       int rides =
-          await userPlanProvider.getTotalActiveRides(user.session_token!);
+      await userPlanProvider.getTotalActiveRides(user.session_token!);
       totalRides.value = rides;
     }
   }
@@ -327,62 +327,62 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
           width: Get.width * 0.8,
           child: plans.isEmpty
               ? Center(
-                  child: Text(
-                    "Este usuario no tiene planes activos.",
-                    style: GoogleFonts.poppins(color: Colors.grey),
-                  ),
-                )
+            child: Text(
+              "Este usuario no tiene planes activos.",
+              style: GoogleFonts.poppins(color: Colors.grey),
+            ),
+          )
               : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: plans.map((plan) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(14),
-                      width: Get.width * 0.8,
-                      decoration: BoxDecoration(
-                        color: colorBackgroundBox,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.black12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            plan["plan_name"] ?? "Plan sin nombre",
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: indigoAmina,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Rides restantes: ${plan["remaining_rides"]}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: almostBlack,
-                            ),
-                          ),
-                          Text(
-                            "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: almostBlack,
-                            ),
-                          ),
-                          Text(
-                            "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: almostBlack,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+            mainAxisSize: MainAxisSize.min,
+            children: plans.map((plan) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                width: Get.width * 0.8,
+                decoration: BoxDecoration(
+                  color: colorBackgroundBox,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.black12),
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${plan['is_course'].toString() == '1' ? 'Curso' : 'Regular'} · ${plan['plan_name'] ?? 'Plan sin nombre'}",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: indigoAmina,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Rides restantes: ${plan["remaining_rides"]}",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: almostBlack,
+                      ),
+                    ),
+                    Text(
+                      "Inicio: ${plan["start_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: almostBlack,
+                      ),
+                    ),
+                    Text(
+                      "Fin: ${plan["end_date"]?.split('T').first.split('-').reversed.join('/') ?? 'No definida'} ",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: almostBlack,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
@@ -401,8 +401,8 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   }
 
   void _handleBannerSocketEvent(
-    dynamic rawData,
-  ) {
+      dynamic rawData,
+      ) {
     try {
       if (rawData == null) {
         activeBanners.clear();
@@ -432,18 +432,18 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
       final banners = rawList
           .map(
             (item) => AppBanner.fromJson(
-              Map<String, dynamic>.from(
-                item,
-              ),
-            ),
-          )
+          Map<String, dynamic>.from(
+            item,
+          ),
+        ),
+      )
           .where(
             (banner) => banner.isActive && banner.hasImage,
-          )
+      )
           .toList();
 
       banners.sort(
-        (a, b) => a.position.compareTo(
+            (a, b) => a.position.compareTo(
           b.position,
         ),
       );
@@ -522,3 +522,4 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
     }
   }
 }
+

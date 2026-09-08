@@ -313,8 +313,7 @@ class AdminReportsAppUsersController extends GetxController {
   // ----------------------------
   Future<void> extendPlan(
       User user,
-      int days,
-      ) async {
+      int days, {String? userPlanId}) async {
     final userId = user.id;
     final token = userSession.session_token;
 
@@ -335,6 +334,7 @@ class AdminReportsAppUsersController extends GetxController {
         userId,
         days,
         token,
+        userPlanId: userPlanId,
       );
 
       Get.snackbar(
@@ -359,8 +359,7 @@ class AdminReportsAppUsersController extends GetxController {
 
   Future<void> returnRides(
       User user,
-      int rides,
-      ) async {
+      int rides, {String? userPlanId}) async {
     final userId = user.id;
     final token = userSession.session_token;
 
@@ -381,6 +380,7 @@ class AdminReportsAppUsersController extends GetxController {
         userId,
         rides,
         token,
+        userPlanId: userPlanId,
       );
 
       Get.snackbar(
@@ -477,23 +477,47 @@ class AdminReportsAppUsersController extends GetxController {
   // ----------------------------
   // Dialogs
   // ----------------------------
+  Future<String?> _chooseUserPlan(User user) async {
+    try {
+      final plans = await _provider.getUserPlansSummary(user.id!, userSession.session_token!);
+      final active = plans.where((p) => p['status'] == 'active').toList();
+      if (active.isEmpty) { Get.snackbar('Planes', 'El cliente no tiene planes activos.'); return null; }
+      if (active.length == 1) return '${active.first['id']}';
+      return await Get.dialog<String>(AlertDialog(
+        title: const Text('Selecciona el plan'),
+        content: SizedBox(width: 360, height: 320, child: ListView(
+          children: active.map((p) => ListTile(
+            title: Text('${p['plan_name'] ?? 'Plan'} · #${p['id']}'),
+            subtitle: Text('${p['is_course'].toString() == '1' ? 'Curso' : 'Regular'} · ${p['remaining_rides']} rides · Hasta ${p['end_date'] ?? 'activar'}'),
+            onTap: () => Get.back(result: '${p['id']}'),
+          )).toList(),
+        )),
+        actions: [TextButton(onPressed: () => Get.back(), child: const Text('Cancelar'))],
+      ));
+    } catch (_) { Get.snackbar('Planes', 'No se pudieron consultar los planes.'); return null; }
+  }
+
   Future<void> showExtendDialog(User user) async {
+    final planId = await _chooseUserPlan(user);
+    if (planId == null) return;
     await _showCounterDialog(
       title: 'Extender plan',
       subtitle: 'Selecciona los días a añadir:',
       unit: 'días',
       confirmText: 'Confirmar',
-      onConfirm: (value) => extendPlan(user, value),
+      onConfirm: (value) => extendPlan(user, value, userPlanId: planId),
     );
   }
 
   Future<void> showRidesDialog(User user) async {
+    final planId = await _chooseUserPlan(user);
+    if (planId == null) return;
     await _showCounterDialog(
       title: 'Añadir rides',
       subtitle: 'Selecciona la cantidad de rides a añadir:',
       unit: 'rides',
       confirmText: 'Confirmar',
-      onConfirm: (value) => returnRides(user, value),
+      onConfirm: (value) => returnRides(user, value, userPlanId: planId),
     );
   }
 
@@ -1345,3 +1369,4 @@ class _EditCompletedRidesDialogState
     );
   }
 }
+

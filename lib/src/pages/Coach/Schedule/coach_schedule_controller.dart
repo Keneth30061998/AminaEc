@@ -182,7 +182,7 @@ class CoachScheduleController extends GetxController {
       appointments.add(Appointment(
         startTime: start,
         endTime: end,
-        subject: subject,
+        subject: '${s.isCourse ? 'Curso' : 'Regular'} · $subject',
         color: color,
         isAllDay: false,
       ));
@@ -241,3 +241,4 @@ class CoachScheduleDataSource extends CalendarDataSource {
     appointments = source;
   }
 }
+

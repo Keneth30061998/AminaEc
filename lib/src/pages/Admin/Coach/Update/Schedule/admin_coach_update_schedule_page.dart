@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/components/course_schedule_button.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class AdminCoachUpdateSchedulePage extends StatelessWidget {
               ),
             ),
             actions: [
+              CourseScheduleButton(schedules: con.selectedSchedules),
               IconButton(
                 tooltip: 'Reporte de clases',
                 icon: const Icon(Icons.bar_chart_rounded, color: darkGrey),
@@ -1071,3 +1073,4 @@ class _BottomBar extends StatelessWidget {
     );
   }
 }
+

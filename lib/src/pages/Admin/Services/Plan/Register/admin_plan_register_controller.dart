@@ -29,6 +29,7 @@ class AdminPlanRegisterController extends GetxController {
   RxBool isNewUserOnly = false.obs;
 
   RxBool allowDeferredPayment = false.obs;
+  final isCourse = false.obs;
 
   // ---------------------------------------------------------
   // VALIDACIÓN PROFESIONAL
@@ -112,6 +113,7 @@ class AdminPlanRegisterController extends GetxController {
         duration_days: durationInt,
         is_new_user_only: isNewUserOnly.value ? 1 : 0,
         allow_deferred_payment: allowDeferredPayment.value ? 1 : 0,
+        is_course: isCourse.value ? 1 : 0,
       );
 
       // Enviar al backend con imagen
@@ -215,6 +217,8 @@ class AdminPlanRegisterController extends GetxController {
     imageFile.value = null;
     isNewUserOnly.value = false;
     allowDeferredPayment.value = false;
+    isCourse.value = false;
     update();
   }
 }
+

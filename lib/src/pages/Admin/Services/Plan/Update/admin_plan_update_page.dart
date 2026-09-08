@@ -43,6 +43,13 @@ class AdminPlanUpdatePage extends StatelessWidget {
               _textFieldDurationDays(),
               _switchNewUserOnly(),
               _switchDeferredPayment(),
+              Obx(() => SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Es un curso'),
+                subtitle: const Text('Sus rides solo sirven para clases de curso. Los planes ya comprados conservan su tipo original.'),
+                value: con.isCourse.value,
+                onChanged: (value) => con.isCourse.value = value,
+              )),
               const SizedBox(height: 20),
               _buttonUpdate(context),
             ],

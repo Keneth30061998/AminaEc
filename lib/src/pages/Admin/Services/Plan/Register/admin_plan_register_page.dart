@@ -79,6 +79,7 @@ class AdminPlanRegisterPage extends StatelessWidget {
                 _textFieldDurationDays(),
                 _switchNewUserOnly(),
                 _switchDeferredPayment(),
+                _switchIsCourse(),
                 const SizedBox(
                   height: 10,
                 ),
@@ -306,6 +307,19 @@ class AdminPlanRegisterPage extends StatelessWidget {
         backgroundColor: almostBlack,
       ),
     );
+  }
+
+  Widget _switchIsCourse() {
+    return Obx(() => SwitchListTile(
+          title: Text('Es un curso',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          subtitle: Text(
+              'Sus rides solo sirven para clases de curso. Los planes ya comprados conservan su tipo original.',
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
+          activeThumbColor: almostBlack,
+          value: con.isCourse.value,
+          onChanged: (value) => con.isCourse.value = value,
+        ));
   }
 
   Widget _switchDeferredPayment() {

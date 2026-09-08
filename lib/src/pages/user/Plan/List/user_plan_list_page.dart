@@ -237,7 +237,7 @@ class UserPlanListPage extends StatelessWidget {
   }
 
   Widget _planTile(Plan plan) {
-    final name = (plan.name ?? 'SIN NOMBRE').toUpperCase();
+    final name = '${plan.isCourse ? 'CURSO · ' : ''}${plan.name ?? 'SIN NOMBRE'}'.toUpperCase();
 
     return Container(
       decoration: BoxDecoration(
@@ -300,6 +300,19 @@ class UserPlanListPage extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
+                    ),
+                  ),
+                if(plan.isCourse)
+                  Positioned(
+                    top: 30,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: indigoAmina,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(Icons.school, color: whiteLight,size: 16,),
                     ),
                   ),
               ],
@@ -372,16 +385,16 @@ class UserPlanListPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Expanded(
-                        child: Text(
-                          '* NO reembolsable o transferible',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    child: Text(
+                      '* NO reembolsable o transferible',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const Spacer(),
                   SizedBox(
@@ -456,3 +469,4 @@ class UserPlanListPage extends StatelessWidget {
     );
   }
 }
+

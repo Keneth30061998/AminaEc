@@ -9,6 +9,29 @@ import 'package:http/http.dart' as http;
 import '../models/student_inscription.dart';
 
 class ClassReservationProvider {
+  Future<ResponseApi> courseRescheduleOptions(String id) async {
+    try {
+      final response = await http.get(Uri.parse('${_baseUrl}api/class-reservations/$id/course-options'), headers: _headers);
+      return _responseApiFromHttp(response, emptyMessage: 'No hay horarios disponibles.');
+    } catch (_) { return ResponseApi(success:false, message:'No se pudieron consultar horarios compatibles.'); }
+  }
+
+  Future<ResponseApi> courseAccess({required String coachId, required String classDate,
+    required String classTime, String? targetUserId}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${_baseUrl}api/class-reservations/course-access'),
+        headers: _headers,
+        body: json.encode({'coach_id': coachId, 'class_date': classDate,
+          'class_time': _normalizeTime(classTime),
+          if (targetUserId != null) 'user_id': targetUserId}),
+      );
+      return _responseApiFromHttp(response, emptyMessage: 'No se pudo consultar el plan compatible.');
+    } catch (_) {
+      return ResponseApi(success: false, message: 'No se pudo verificar el acceso. Intenta de nuevo.');
+    }
+  }
+
   final String _baseUrl = Environment.API_URL;
 
   /// Usuario autenticado guardado en GetStorage.
@@ -624,3 +647,4 @@ class ClassReservationProvider {
     }
   }
 }
+

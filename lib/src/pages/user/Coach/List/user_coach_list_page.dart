@@ -208,7 +208,7 @@ class UserCoachSchedulePage extends StatelessWidget {
         avatar: avatarWidget,
         coachName: title,
         coachImageUrl: relatedCoaches.first.user?.photo_url ?? '',
-        classTheme: theme,
+        classTheme: '${schedule.isCourse ? 'Curso' : 'Regular'} · $theme',
         duration: '$formattedTime — ${_formatTime(schedule.end_time)}',
         locationName: coachPrincipal.hobby?.isNotEmpty == true ? coachPrincipal.hobby! : 'Studio',
         occupiedCount: occupied,
@@ -219,7 +219,7 @@ class UserCoachSchedulePage extends StatelessWidget {
             coachId: relatedCoaches.first.id ?? '',
             classTime: schedule.start_time ?? '00:00:00',
             coachName: relatedCoaches.first.user?.name ?? '',
-            classTheme: theme,
+            classTheme: '${schedule.isCourse ? 'Curso' : 'Regular'} · $theme',
           );
         },
         heroTag: '${relatedCoaches.first.id}_${schedule.date}_${schedule.start_time}',
@@ -570,3 +570,4 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
     );
   }
 }
+

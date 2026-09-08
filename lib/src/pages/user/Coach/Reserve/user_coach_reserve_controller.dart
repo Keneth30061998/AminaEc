@@ -26,6 +26,9 @@ class UserCoachReserveController extends GetxController {
   final occupiedEquipos = <int>{}.obs;
   final blockedEquipos = <int>{}.obs;
   final RxInt totalRides = 0.obs;
+  final accessMessage = ''.obs;
+  final courseClass = false.obs;
+  final accessVerified = false.obs;
 
   final RxBool isInitializing = true.obs;
   final RxBool isSubmittingReservation = false.obs;
@@ -229,10 +232,15 @@ class UserCoachReserveController extends GetxController {
 
     FocusManager.instance.primaryFocus?.unfocus();
 
+    await getTotalRides();
+    if (!accessVerified.value) {
+      Get.snackbar('Verificar acceso', accessMessage.value);
+      return;
+    }
     if (totalRides.value <= 0) {
       Get.snackbar(
         'No tienes rides disponibles',
-        'Compra un plan para reservar esta clase',
+        accessMessage.value,
         backgroundColor: almostBlack,
         colorText: whiteLight,
         duration: const Duration(seconds: 2),
@@ -522,7 +530,7 @@ class UserCoachReserveController extends GetxController {
                             'Google Calendar no pudo sincronizar: $googleError',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: almostBlack
+                                color: almostBlack
                             ),
                           ),
                         ),
@@ -632,9 +640,16 @@ class UserCoachReserveController extends GetxController {
   }
 
   Future<void> getTotalRides() async {
-    if (user.session_token != null) {
-      int rides = await userPlanProvider.getTotalActiveRides(user.session_token!);
-      totalRides.value = rides;
+    final response = await _provider.courseAccess(coachId: coachId, classDate: classDate, classTime: classTime);
+    accessVerified.value = response.success == true && response.data is Map;
+    if (accessVerified.value) {
+      final data = response.data as Map;
+      totalRides.value = int.tryParse('${data['compatible_rides']}') ?? 0;
+      courseClass.value = '${data['is_course']}' == '1';
+      accessMessage.value = '${data['message'] ?? ''}';
+    } else {
+      totalRides.value = 0;
+      accessMessage.value = response.message ?? 'No se pudo verificar el acceso.';
     }
   }
 

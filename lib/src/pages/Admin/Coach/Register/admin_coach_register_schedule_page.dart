@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/components/course_schedule_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,6 +24,7 @@ class AdminCoachRegisterSchedulePage extends StatelessWidget {
       backgroundColor: whiteLight,
       appBar: AppBar(
         title: _titleAppBar(),
+        actions: [CourseScheduleButton(schedules: con.selectedSchedules)],
         backgroundColor: whiteLight,
         foregroundColor: almostBlack,
         elevation: 0,
@@ -261,3 +263,4 @@ class _ScheduleCard extends StatelessWidget {
     return DateFormat.Hm().format(fullDateTime);
   }
 }
+

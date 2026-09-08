@@ -14,6 +14,7 @@ class AdminPlanUpdateController extends GetxController {
 
   // Variable para activar/desactivar pago diferido
   RxBool allowDeferredPayment = false.obs;
+  final isCourse = false.obs;
 
   Plan plan = Get.arguments['plan'];
 
@@ -38,6 +39,7 @@ class AdminPlanUpdateController extends GetxController {
 
     isNewUserOnly.value = plan.is_new_user_only == 1;
     allowDeferredPayment.value = plan.allow_deferred_payment == 1;
+    isCourse.value = plan.isCourse;
   }
 
   @override
@@ -103,6 +105,7 @@ class AdminPlanUpdateController extends GetxController {
     plan.duration_days = duration;
     plan.is_new_user_only = isNewUserOnly.value ? 1 : 0;
     plan.allow_deferred_payment = allowDeferredPayment.value ? 1 : 0;
+    plan.is_course = isCourse.value ? 1 : 0;
 
     try {
       if (imageFile != null) {
@@ -132,3 +135,4 @@ class AdminPlanUpdateController extends GetxController {
     }
   }
 }
+

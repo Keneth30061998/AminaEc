@@ -120,7 +120,7 @@ class AdminUserPlansPage extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: Text(p['plan_name'] ?? 'Plan', style: GoogleFonts.poppins(fontWeight: FontWeight.w700,color: almostBlack,),),
+                              child: Text('${p['is_course'].toString() == '1' ? 'Curso · ' : 'Regular · '}${p['plan_name'] ?? 'Plan'}', style: GoogleFonts.poppins(fontWeight: FontWeight.w700,color: almostBlack,),),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -166,4 +166,5 @@ class AdminUserPlansPage extends StatelessWidget {
     );
   }
 }
+
 

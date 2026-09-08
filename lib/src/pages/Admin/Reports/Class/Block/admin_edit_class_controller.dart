@@ -317,9 +317,9 @@ class AdminCoachBlockController extends GetxController {
               Text(
                 'Bicicleta $bicycle',
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: almostBlack
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: almostBlack
                 ),
               ),
               const SizedBox(height: 6),
@@ -374,8 +374,8 @@ class AdminCoachBlockController extends GetxController {
                       'Remover de la clase',
                     ),
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: almostBlack
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: almostBlack
                     ),
                   ),
                 ),
@@ -408,9 +408,9 @@ class AdminCoachBlockController extends GetxController {
               Text(
                 'Bicicleta $bicycle disponible',
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: almostBlack
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: almostBlack
                 ),
               ),
               const SizedBox(height: 6),
@@ -439,8 +439,8 @@ class AdminCoachBlockController extends GetxController {
                     'Asignar usuario',
                   ),
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: almostBlack
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: almostBlack
                   ),
                 ),
               ),
@@ -497,9 +497,9 @@ class AdminCoachBlockController extends GetxController {
               Text(
                 'Bicicleta $bicycle bloqueada',
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: almostBlack
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: almostBlack
                 ),
               ),
               const SizedBox(height: 6),
@@ -528,7 +528,7 @@ class AdminCoachBlockController extends GetxController {
                         ? 'Quitar de la selección'
                         : 'Seleccionar para desbloquear',
                     style: TextStyle(
-                      color: Colors.redAccent
+                        color: Colors.redAccent
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -666,9 +666,9 @@ class AdminCoachBlockController extends GetxController {
                     child: Text(
                       'Asignar bicicleta $bicycle',
                       style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        color: almostBlack
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          color: almostBlack
                       ),
                     ),
                   ),
@@ -788,7 +788,7 @@ class AdminCoachBlockController extends GetxController {
           '¿Deseas asignar a $fullName en la bicicleta $bicycle?\n\n'
               'Esta acción consumirá un ride del plan del usuario.',
           style: TextStyle(
-            color: almostBlack
+              color: almostBlack
           ),
         ),
         actions: [
@@ -841,6 +841,14 @@ class AdminCoachBlockController extends GetxController {
     try {
       isProcessing.value = true;
 
+      final access = await classReservationProvider.courseAccess(
+          coachId: coachId, classDate: classDate, classTime: classTime, targetUserId: targetUserId);
+      if (access.success != true || access.data is! Map ||
+          (int.tryParse('${access.data['compatible_rides']}') ?? 0) <= 0) {
+        Get.snackbar('Plan incompatible', access.data is Map
+            ? '${access.data['message']}' : (access.message ?? 'No se pudo verificar el acceso.'));
+        return;
+      }
       final response = await classReservationProvider.scheduleClass(
         coachId: coachId,
         bicycle: bicycle,
@@ -884,13 +892,13 @@ class AdminCoachBlockController extends GetxController {
     Get.dialog<void>(
       AlertDialog(
         title: const Text('Remover usuario', style: TextStyle(
-          color: almostBlack
+            color: almostBlack
         ),),
         content: Text(
           '¿Deseas devolver el ride al plan de '
               '${reservation.userName ?? 'este usuario'}?',
           style: TextStyle(
-            color: almostBlack
+              color: almostBlack
           ),
         ),
         actions: [
@@ -1178,3 +1186,4 @@ class AdminCoachBlockController extends GetxController {
     return cleanValue;
   }
 }
+
