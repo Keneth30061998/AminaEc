@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:amina_ec/src/models/coach.dart';
 import 'package:amina_ec/src/models/schedule.dart';
 import 'package:amina_ec/src/providers/coachs_provider.dart';
@@ -92,20 +92,11 @@ class AdminCoachUpdateScheduleController extends GetxController {
   }
 
   void _loadSchedules() {
-    final current = coach.schedules;
-    if (current.isNotEmpty) {
-      final normalized = current.map((s) {
-        if (s.coaches == null || s.coaches!.isEmpty) {
-          s.coaches = [int.tryParse(coach.id ?? '') ?? 0];
-        }
-        return s;
-      }).toList();
+    selectedSchedules.assignAll(
+      coach.schedules.map(_copySchedule).toList(),
+    );
 
-      selectedSchedules.assignAll(normalized);
-      _actualizarCalendario();
-    } else {
-      _actualizarCalendario();
-    }
+    _actualizarCalendario();
   }
 
   Future<void> _loadAvailableCoaches() async {
@@ -356,7 +347,6 @@ class AdminCoachUpdateScheduleController extends GetxController {
   int _compare(TimeOfDay a, TimeOfDay b) =>
       (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute);
 
-  /// ✅ UPDATE (con loading visible)
   Future<void> updateSchedule(BuildContext context) async {
     if (isSaving.value) return;
 
@@ -368,48 +358,81 @@ class AdminCoachUpdateScheduleController extends GetxController {
     isSaving.value = true;
 
     try {
-      final principalId = int.tryParse(coach.id ?? '') ?? 0;
+      // No excluir silenciosamente horarios incompletos:
+      // el backend interpreta los horarios omitidos como eliminaciones.
+      final hasIncomplete = selectedSchedules.any(
+            (s) =>
+        (s.date ?? '').trim().isEmpty ||
+            (s.start_time ?? '').trim().isEmpty ||
+            (s.end_time ?? '').trim().isEmpty,
+      );
 
-      final validSchedules = selectedSchedules
-          .where((s) =>
-      s.date != null && s.start_time != null && s.end_time != null)
-          .map((s) {
-        if (s.coaches == null || s.coaches!.isEmpty) {
-          s.coaches = [principalId];
-        } else {
-          if (!s.coaches!.contains(principalId)) {
-            s.coaches = [principalId, ...s.coaches!];
-          } else {
-            s.coaches!.remove(principalId);
-            s.coaches = [principalId, ...s.coaches!];
-          }
-        }
-        return s;
-      })
-          .toList();
-
-      final res = await _coachProvider
-          .updateSchedule(coach.id!, validSchedules)
-          .timeout(const Duration(seconds: 25));
-
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        await _refreshCoach(); // ⏳ aquí es donde tarda y ahora ya se ve el loading
-        Get.back();
-        Get.snackbar('Éxito', 'Horarios actualizados correctamente');
-      } else {
-        String message = 'No se pudo actualizar los horarios';
-        try {
-          message = (res.body ?? message).toString();
-        } catch (_) {}
-        Get.snackbar('Error', message);
+      if (hasIncomplete) {
+        Get.snackbar(
+          'Horario incompleto',
+          'Completa la fecha y las horas antes de guardar.',
+        );
+        return;
       }
-    } catch (e) {
-      print('❌ Error updateSchedule: $e');
+
+      final schedulesToSend =
+      selectedSchedules.map(_copySchedule).toList();
+
+      // Mantiene el bloqueo de Guardar mientras esta petición está pendiente.
+      // Retirar el timeout local NO corrige el bloqueo de MySQL.
+      final res = await _coachProvider.updateSchedule(
+        coach.id!,
+        schedulesToSend,
+      );
+
+      Map<String, dynamic>? body;
+
+      try {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map) {
+          body = Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {
+        // Se mostrará un mensaje según el estado HTTP.
+      }
+
+      final success =
+          (res.statusCode == 200 || res.statusCode == 201) &&
+              body?['success'] == true;
+
+      if (!success) {
+        Get.snackbar(
+          res.statusCode == 409 ? 'Cambio rechazado' : 'Error al guardar',
+          body?['message']?.toString() ??
+              'El servidor respondió con HTTP ${res.statusCode}.',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 6),
+        );
+        return;
+      }
+
+      // El guardado ya fue confirmado. Un fallo al recargar
+      // no debe presentarse como un fallo al guardar.
+      try {
+        await _refreshCoach();
+      } catch (e) {
+        debugPrint('Guardado confirmado; error al recargar: $e');
+      }
+
+      Get.back(result: true);
       Get.snackbar(
-        'Error',
-        'No se pudo guardar. Revisa tu conexión o el servidor.',
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
+        'Éxito',
+        'Horarios actualizados correctamente',
+      );
+    } catch (e) {
+      debugPrint('Error updateSchedule: $e');
+
+      Get.snackbar(
+        'No se pudo confirmar el guardado',
+        'Consulta nuevamente los horarios antes de volver a guardar. '
+            'Detalle: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 6),
       );
     } finally {
       isSaving.value = false;
@@ -422,12 +445,10 @@ class AdminCoachUpdateScheduleController extends GetxController {
 
     if (updated != null) {
       coach = updated;
-      selectedSchedules.assignAll(coach.schedules.map((s) {
-        if (s.coaches == null || s.coaches!.isEmpty) {
-          s.coaches = [int.tryParse(coach.id ?? '') ?? 0];
-        }
-        return s;
-      }).toList());
+
+      selectedSchedules.assignAll(
+        coach.schedules.map(_copySchedule).toList(),
+      );
     }
 
     await _loadAvailableCoaches();
@@ -651,6 +672,47 @@ class AdminCoachUpdateScheduleController extends GetxController {
       Get.snackbar('Excel generado', 'Archivo guardado en: ${file.path}');
     }
   }
+
+  Schedule _copySchedule(Schedule source) {
+    final principalId = int.tryParse(coach.id ?? '');
+
+    if (principalId == null || principalId <= 0) {
+      throw StateError('El coach principal no es válido.');
+    }
+
+    final participants = List<int>.from(source.coaches ?? []);
+
+    // Compatibilidad con horarios antiguos sin lista de participantes.
+    if (participants.isEmpty) {
+      participants.add(principalId);
+    }
+
+    if (!participants.contains(principalId) ||
+        participants.length > 2 ||
+        participants.any((id) => id <= 0) ||
+        participants.toSet().length != participants.length) {
+      throw StateError(
+        'Participantes inválidos en la clase '
+            '${source.id ?? "nueva"} del ${source.date}.',
+      );
+    }
+
+    // El selector de segundo coach espera al principal en la posición 0.
+    final ordered = [
+      principalId,
+      ...participants.where((id) => id != principalId),
+    ];
+
+    return Schedule(
+      id: source.id,
+      is_course: source.is_course,
+      date: source.date,
+      start_time: source.start_time,
+      end_time: source.end_time,
+      class_theme: source.class_theme,
+      coaches: ordered,
+    );
+  }
 }
 
 /// ✅ DataSource estable: NO recrear el calendar, solo actualizar appointments
@@ -695,4 +757,5 @@ class ScheduleDataSource extends CalendarDataSource {
       );
     }
   }
+
 }

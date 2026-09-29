@@ -208,7 +208,7 @@ class UserCoachSchedulePage extends StatelessWidget {
         avatar: avatarWidget,
         coachName: title,
         coachImageUrl: relatedCoaches.first.user?.photo_url ?? '',
-        classTheme: '${schedule.isCourse ? 'Curso' : 'Regular'} · $theme',
+        classTheme: '${schedule.isCourse ? 'Curso -': ''} $theme',
         duration: '$formattedTime — ${_formatTime(schedule.end_time)}',
         locationName: coachPrincipal.hobby?.isNotEmpty == true ? coachPrincipal.hobby! : 'Studio',
         occupiedCount: occupied,

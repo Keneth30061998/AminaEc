@@ -221,6 +221,9 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
                     final entries = con.reservationByBike.entries.toList()
                       ..sort((a, b) => a.key.compareTo(b.key));
                     return ExpansionTile(
+                      key: PageStorageKey<String>(
+                        'reserved-students-${con.coachId}-${con.classDate}-${con.classTime}',
+                      ),
                       title: Text('Alumnos reservados (${entries.length})'),
                       children: [
                         if (entries.isEmpty)
