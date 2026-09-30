@@ -3,6 +3,7 @@ import 'package:amina_ec/src/models/class_reservation.dart';
 import 'package:amina_ec/src/models/response_api.dart';
 
 import 'package:amina_ec/src/providers/class_reservation_provider.dart';
+import 'package:amina_ec/src/providers/reservation_queue_provider.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -32,12 +33,14 @@ class UserCoachReserveController extends GetxController {
 
   final RxBool isInitializing = true.obs;
   final RxBool isSubmittingReservation = false.obs;
+  final RxBool isClassFull = false.obs;
+  final RxBool joinedQueue = false.obs;
   final RxString loadingMessage = 'Cargando estudio...'.obs;
 
   bool get isBusy =>
       isInitializing.value ||
-          isSubmittingReservation.value ||
-          _isGoogleAuthInProgress.value;
+      isSubmittingReservation.value ||
+      _isGoogleAuthInProgress.value;
 
   late String coachId;
   late String classDate;
@@ -48,6 +51,7 @@ class UserCoachReserveController extends GetxController {
 
   final GoogleCalendarProvider _gcalProvider = GoogleCalendarProvider();
   final ClassReservationProvider _provider = ClassReservationProvider();
+  final ReservationQueueProvider _queueProvider = ReservationQueueProvider();
   final Map<String, dynamic> _user = GetStorage().read('user');
 
   static const String _appStoreUrl =
@@ -58,10 +62,8 @@ class UserCoachReserveController extends GetxController {
   int? _lastReservedBicycle;
   Timer? _autoNavTimer;
 
-
   // evita que navegación/timer tumben el flujo de Google Sign-In
   final RxBool _isGoogleAuthInProgress = false.obs;
-
 
   @override
   void onInit() {
@@ -80,7 +82,7 @@ class UserCoachReserveController extends GetxController {
     SocketService().updateUserSession(user);
     SocketService().on('rides:updated', (_) => getTotalRides());
     listenToMachineStatus();
-
+    listenToQueueOffer();
     _initializePage();
   }
 
@@ -106,7 +108,8 @@ class UserCoachReserveController extends GetxController {
   }
 
   void toggleEquipo(int equipo) {
-    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo)) return;
+    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo))
+      return;
 
     if (selectedEquipos.contains(equipo)) {
       selectedEquipos.remove(equipo);
@@ -115,7 +118,6 @@ class UserCoachReserveController extends GetxController {
       selectedEquipos.add(equipo);
     }
   }
-
 
   DateTime _parseLocalStartDateTime(String dateRaw, String timeRaw) {
     final dateOnly = dateRaw.split('T').first.trim();
@@ -153,15 +155,12 @@ class UserCoachReserveController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               const Icon(
                 Icons.calendar_month,
                 size: 55,
                 color: Colors.black87,
               ),
-
               const SizedBox(height: 14),
-
               const Text(
                 'Conectar Google Calendar',
                 textAlign: TextAlign.center,
@@ -170,16 +169,14 @@ class UserCoachReserveController extends GetxController {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 14),
-
               const Text(
                 'AMINA utilizará Google Calendar únicamente para crear '
-                    'recordatorios automáticos de tus clases reservadas.\n\n'
-                    '✔ Solo se crean eventos de tus reservas.\n'
-                    '✔ No leemos eventos personales.\n'
-                    '✔ No modificamos tu calendario existente.\n'
-                    '✔ Puedes desconectarlo cuando quieras.',
+                'recordatorios automáticos de tus clases reservadas.\n\n'
+                '✔ Solo se crean eventos de tus reservas.\n'
+                '✔ No leemos eventos personales.\n'
+                '✔ No modificamos tu calendario existente.\n'
+                '✔ Puedes desconectarlo cuando quieras.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.5,
@@ -187,21 +184,16 @@ class UserCoachReserveController extends GetxController {
                   color: Colors.black87,
                 ),
               ),
-
               const SizedBox(height: 22),
-
               Row(
                 children: [
-
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Get.back(),
                       child: const Text('Ahora no'),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
@@ -251,7 +243,14 @@ class UserCoachReserveController extends GetxController {
     }
 
     if (selectedEquipos.isEmpty) {
+      if (isClassFull.value && occupiedEquipos.length >= 18) {
+        await joinReservationQueue();
+
+        return;
+      }
+
       Get.snackbar('Máquina no seleccionada', 'Debes elegir una bicicleta');
+
       return;
     }
 
@@ -280,9 +279,11 @@ class UserCoachReserveController extends GetxController {
           final gc = reservationMap['google_calendar'];
           final bool googleConnected = (gc is Map) && (gc['connected'] == true);
           final bool googleSynced = (gc is Map) && (gc['synced'] == true);
-          final bool offerGoogleButton = (gc is Map) && (gc['connected'] == false);
-          final String? googleError =
-          (gc is Map && gc['error'] != null) ? gc['error'].toString() : null;
+          final bool offerGoogleButton =
+              (gc is Map) && (gc['connected'] == false);
+          final String? googleError = (gc is Map && gc['error'] != null)
+              ? gc['error'].toString()
+              : null;
 
           _lastReservedBicycle = bicycle;
 
@@ -299,7 +300,8 @@ class UserCoachReserveController extends GetxController {
               final description =
                   'Reserva confirmada en AMINA.\nCoach: $coachName\nBici: #$bicycle\nFecha: ${_formatDateEs(classDate)}\nHora: ${_formatTimeHHmm(classTime)}';
 
-              final eventId = await CalendarSyncService.instance.createOrUpdateEvent(
+              final eventId =
+                  await CalendarSyncService.instance.createOrUpdateEvent(
                 reservationId: reservationIdSafe,
                 title: title,
                 start: start,
@@ -349,7 +351,8 @@ class UserCoachReserveController extends GetxController {
           Get.snackbar('Error', 'No se pudo procesar la reserva correctamente');
         }
       } else {
-        Get.snackbar('Error', response.message ?? 'No se pudo agendar la clase');
+        Get.snackbar(
+            'Error', response.message ?? 'No se pudo agendar la clase');
       }
     } finally {
       isSubmittingReservation.value = false;
@@ -375,19 +378,21 @@ class UserCoachReserveController extends GetxController {
 
       print("🟦 [GCAL] connect() start...");
       final resp = await _gcalProvider.connect();
-      print("🟦 [GCAL] connect() resp: success=${resp.success} message=${resp.message}");
+      print(
+          "🟦 [GCAL] connect() resp: success=${resp.success} message=${resp.message}");
 
       ResponseApi finalResp = resp;
 
       final msg = (resp.message ?? "").toLowerCase();
-      final needsForceConsent =
-          msg.contains("refresh_token") || msg.contains("no devolvió refresh_token");
+      final needsForceConsent = msg.contains("refresh_token") ||
+          msg.contains("no devolvió refresh_token");
 
       if (resp.success != true && needsForceConsent) {
         print("🟦 [GCAL] refresh_token missing -> connectForceConsent()");
         await Future.delayed(const Duration(milliseconds: 250));
         finalResp = await _gcalProvider.connectForceConsent();
-        print("🟦 [GCAL] connectForceConsent resp: success=${finalResp.success} message=${finalResp.message}");
+        print(
+            "🟦 [GCAL] connectForceConsent resp: success=${finalResp.success} message=${finalResp.message}");
       }
 
       if (finalResp.success == true) {
@@ -441,8 +446,9 @@ class UserCoachReserveController extends GetxController {
     final timePretty = _formatTimeHHmm(classTime);
 
     final iosSection = '📲 iOS (App Store)\n$_appStoreUrl';
-    final androidSection =
-    (_appAndroid.trim().isNotEmpty) ? '\n\n🤖 Android (Google Play)\n$_appAndroid' : '';
+    final androidSection = (_appAndroid.trim().isNotEmpty)
+        ? '\n\n🤖 Android (Google Play)\n$_appAndroid'
+        : '';
 
     return '🚴‍♂️ *AMINA* — Invitación a clase\n'
         '──────────────\n'
@@ -473,94 +479,101 @@ class UserCoachReserveController extends GetxController {
   }
 
   void showReservationDialog(
-      BuildContext context, {
-        bool offerGoogleCalendar = false,
-        bool googleConnected = false,
-        bool googleSynced = false,
-        String? googleError,
-      }) {
+    BuildContext context, {
+    bool offerGoogleCalendar = false,
+    bool googleConnected = false,
+    bool googleSynced = false,
+    String? googleError,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(20)),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 10),
-                  const Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
+                  const Icon(Icons.check_circle_outline,
+                      color: Colors.green, size: 60),
                   const SizedBox(height: 15),
                   const Text(
                     '¡Reserva confirmada!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87),
                   ),
                   const SizedBox(height: 10),
                   const Text(
                     'Sabemos que a veces surgen imprevistos — recuerda que puedes cancelar tu clase hasta 12 horas antes.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, color: Colors.black87, height: 1.4),
+                    style: TextStyle(
+                        fontSize: 15, color: Colors.black87, height: 1.4),
                   ),
                   const SizedBox(height: 16),
-
                   if (googleSynced) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
                         Icon(Icons.calendar_month, color: Colors.green),
                         SizedBox(width: 8),
-                        Text('Agregado a Google Calendar ✅', style: TextStyle(color: almostBlack),),
+                        Text(
+                          'Agregado a Google Calendar ✅',
+                          style: TextStyle(color: almostBlack),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                  ] else if (googleConnected && googleError != null && googleError.isNotEmpty) ...[
+                  ] else if (googleConnected &&
+                      googleError != null &&
+                      googleError.isNotEmpty) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                        const Icon(Icons.warning_amber_rounded,
+                            color: Colors.orange),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             'Google Calendar no pudo sincronizar: $googleError',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: almostBlack
-                            ),
+                            style: TextStyle(color: almostBlack),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                   ],
-
                   const SizedBox(height: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
                       _BulletPoint(
                         text:
-                        'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
+                            'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
                       ),
                       _BulletPoint(
                         text:
-                        'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
+                            'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
                       ),
                       _BulletPoint(text: 'Usa ropa cómoda.'),
                       _BulletPoint(
                         text:
-                        'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.',
+                            'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.',
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
                   if (offerGoogleCalendar) ...[
                     SizedBox(
                       width: double.infinity,
@@ -576,9 +589,11 @@ class UserCoachReserveController extends GetxController {
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black87,
-                          side: BorderSide(color: Colors.black.withOpacity(.12)),
+                          side:
+                              BorderSide(color: Colors.black.withOpacity(.12)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
@@ -590,7 +605,6 @@ class UserCoachReserveController extends GetxController {
                     ),
                     const SizedBox(height: 10),
                   ],
-
                   Column(
                     children: [
                       SizedBox(
@@ -602,9 +616,11 @@ class UserCoachReserveController extends GetxController {
                               style: TextStyle(fontWeight: FontWeight.bold)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.black87,
-                            side: BorderSide(color: Colors.black.withOpacity(.12)),
+                            side: BorderSide(
+                                color: Colors.black.withOpacity(.12)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ),
@@ -619,12 +635,16 @@ class UserCoachReserveController extends GetxController {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black87,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           child: const Text(
                             'Aceptar',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: whiteLight),
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: whiteLight),
                           ),
                         ),
                       ),
@@ -640,7 +660,8 @@ class UserCoachReserveController extends GetxController {
   }
 
   Future<void> getTotalRides() async {
-    final response = await _provider.courseAccess(coachId: coachId, classDate: classDate, classTime: classTime);
+    final response = await _provider.courseAccess(
+        coachId: coachId, classDate: classDate, classTime: classTime);
     accessVerified.value = response.success == true && response.data is Map;
     if (accessVerified.value) {
       final data = response.data as Map;
@@ -649,7 +670,8 @@ class UserCoachReserveController extends GetxController {
       accessMessage.value = '${data['message'] ?? ''}';
     } else {
       totalRides.value = 0;
-      accessMessage.value = response.message ?? 'No se pudo verificar el acceso.';
+      accessMessage.value =
+          response.message ?? 'No se pudo verificar el acceso.';
     }
   }
 
@@ -678,9 +700,48 @@ class UserCoachReserveController extends GetxController {
     });
   }
 
+  void listenToQueueOffer() {
+    SocketService().on('reservation:queue:offer', (payload) {
+      print("🚴 Bicicleta disponible desde cola: $payload");
+
+      Get.dialog(AlertDialog(
+        title: const Text("¡Bicicleta disponible!"),
+        content: const Text("Una bicicleta quedó libre para tu clase. "
+            "¿Deseas tomarla?", style: TextStyle(color: almostBlack),),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: const Text("Después"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+
+              acceptQueueOffer(payload['queue_id'].toString());
+            },
+            child: const Text("Aceptar"),
+          )
+        ],
+      ));
+    });
+  }
+
+  Future<void> acceptQueueOffer(String queueId) async {
+    final response = await _queueProvider.acceptOffer(queueId);
+
+    if (response.success == true) {
+      Get.snackbar("Reserva confirmada", "Tu bicicleta fue asignada",
+          backgroundColor: Colors.black87, colorText: Colors.white);
+    } else {
+      Get.snackbar("Oferta expirada",
+          response.message ?? "La bicicleta ya no está disponible");
+    }
+  }
+
   Future<void> fetchOccupiedEquiposInicial() async {
-    final reservations =
-    await _provider.getReservationsForSlot(
+    final reservations = await _provider.getReservationsForSlot(
       classDate: classDate,
       classTime: classTime,
     );
@@ -689,23 +750,54 @@ class UserCoachReserveController extends GetxController {
     blockedEquipos.clear();
 
     for (final reservation in reservations) {
-      /*
-     * bicycle es nullable en el modelo.
-     * Primero comprobamos que exista y luego Dart
-     * reconoce la variable local como int.
-     */
       final bicycle = reservation.bicycle;
 
-      if (bicycle == null) {
-        continue;
-      }
+      if (bicycle == null) continue;
 
       if (reservation.status == 'blocked') {
         blockedEquipos.add(bicycle);
-      } else if (
-      reservation.status == 'scheduled') {
+      } else if (reservation.status == 'scheduled') {
         occupiedEquipos.add(bicycle);
       }
+    }
+
+    final available = await _provider.getAvailableBikes(
+      coachId: coachId,
+      date: classDate,
+      time: classTime,
+    );
+
+    isClassFull.value = available.isEmpty;
+  }
+
+  Future<void> joinReservationQueue() async {
+    if (isBusy) return;
+
+    isSubmittingReservation.value = true;
+
+    try {
+      final response = await _queueProvider.joinQueue(
+        coachId: coachId,
+        classDate: classDate,
+        classTime: classTime,
+      );
+
+      if (response.success == true) {
+        joinedQueue.value=true;
+        Get.snackbar(
+          "Lista de espera",
+          "Te notificaremos cuando una bicicleta quede disponible",
+          backgroundColor: Colors.black87,
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar(
+          "Error",
+          response.message ?? "No se pudo ingresar a la lista",
+        );
+      }
+    } finally {
+      isSubmittingReservation.value = false;
     }
   }
 }
@@ -730,7 +822,8 @@ class _BulletPoint extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 14.5, color: Colors.black87, height: 1.4),
+              style: const TextStyle(
+                  fontSize: 14.5, color: Colors.black87, height: 1.4),
             ),
           ),
         ],

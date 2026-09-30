@@ -17,7 +17,6 @@ class UserCoachReservePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: whiteLight,
         foregroundColor: almostBlack,
-
         title: _textTitleAppBar(),
         actions: [
           IconButton.filled(
@@ -48,7 +47,6 @@ class UserCoachReservePage extends StatelessWidget {
                       const SizedBox(height: 30),
                       _buildBigSeat(),
                       const SizedBox(height: 20),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -61,19 +59,83 @@ class UserCoachReservePage extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 10),
                       _buildSeatRow(context, 10, 10),
                       const SizedBox(height: 16),
+                      Obx(() {
+                        if (!con.isClassFull.value) {
+                          return const SizedBox();
+                        }
 
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(.4),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  "Esta clase está llena. "
+                                  "Puedes ingresar a la lista de espera "
+                                  "y recibirás una notificación si queda una bicicleta disponible.",
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 13,
+                                    color: almostBlack,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Obx(() {
                           final bool busy = con.isBusy;
-                          final bool reserving = con.isSubmittingReservation.value;
+                          final bool reserving =
+                              con.isSubmittingReservation.value;
 
-                          String text = "Reservar";
-                          if (reserving) text = "Reservando...";
+                          final bool full = con.isClassFull.value;
+
+                          if (full) {
+                            return ElevatedButton.icon(
+                              onPressed: busy
+                                  ? null
+                                  : () => con.joinReservationQueue(),
+                              icon: const Icon(
+                                Icons.notifications_active_outlined,
+                                color: Colors.white,
+                              ),
+                              label: Text(
+                                reserving
+                                    ? "Ingresando..."
+                                    : con.joinedQueue.value
+                                        ? "Esperando disponibilidad"
+                                        : "Unirme a lista de espera",
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 52),
+                                backgroundColor: almostBlack,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor:
+                                    almostBlack.withOpacity(.7),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          }
 
                           return ElevatedButton(
                             onPressed: busy ? null : () => con.reserveClass(),
@@ -81,42 +143,47 @@ class UserCoachReservePage extends StatelessWidget {
                               minimumSize: const Size(double.infinity, 52),
                               backgroundColor: almostBlack,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: almostBlack.withOpacity(0.7),
-                              disabledForegroundColor: Colors.white,
+                              disabledBackgroundColor:
+                                  almostBlack.withOpacity(.7),
                             ),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 250),
                               child: busy
                                   ? Row(
-                                key: ValueKey(text),
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    text,
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              )
+                                      key: const ValueKey("loading"),
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          reserving
+                                              ? "Reservando..."
+                                              : "Procesando...",
+                                          style: const TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    )
                                   : const Text(
-                                "Reservar",
-                                key: ValueKey("Reservar"),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                                      "Reservar",
+                                      key: ValueKey("Reservar"),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           );
                         }),
@@ -126,7 +193,6 @@ class UserCoachReservePage extends StatelessWidget {
                 ),
               ),
             ),
-
             Obx(() {
               if (!con.isBusy) return const SizedBox.shrink();
 
@@ -135,7 +201,8 @@ class UserCoachReservePage extends StatelessWidget {
                 child: Center(
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 32),
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 22, vertical: 20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
@@ -192,10 +259,14 @@ class UserCoachReservePage extends StatelessWidget {
 
   Widget _containerCount() {
     return Column(children: [
-      Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10,
+      Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 10,
+          runSpacing: 10,
           children: [_boxDate(), _boxCoach(), _boxRides()]),
       const SizedBox(height: 8),
-      Obx(() => Text(con.accessMessage.value, textAlign: TextAlign.center,
+      Obx(() => Text(con.accessMessage.value,
+          textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 12, color: Colors.black54))),
     ]);
   }
@@ -298,8 +369,7 @@ class UserCoachReservePage extends StatelessWidget {
           height: 15,
           color: Colors.black12,
         ),
-        Text(' Disponible',
-            style: GoogleFonts.roboto(color: almostBlack)),
+        Text(' Disponible', style: GoogleFonts.roboto(color: almostBlack)),
         SizedBox(
           width: 20,
         ),
@@ -308,8 +378,7 @@ class UserCoachReservePage extends StatelessWidget {
           height: 15,
           color: indigoAmina,
         ),
-        Text(' Ocupada',
-            style: GoogleFonts.roboto(color: almostBlack)),
+        Text(' Ocupada', style: GoogleFonts.roboto(color: almostBlack)),
       ],
     );
   }
@@ -358,10 +427,10 @@ class UserCoachReservePage extends StatelessWidget {
                 child: Obx(() {
                   final con = Get.find<UserCoachReserveController>();
                   final bool isSelected =
-                  con.selectedEquipos.contains(seatNumber);
+                      con.selectedEquipos.contains(seatNumber);
                   final bool isOccupied =
-                  con.occupiedEquipos.contains(seatNumber);
-
+                      con.occupiedEquipos.contains(seatNumber);
+                  final bool classFull = con.isClassFull.value;
                   Color seatColor;
                   if (isSelected) {
                     seatColor = limeGreen;
@@ -374,6 +443,17 @@ class UserCoachReservePage extends StatelessWidget {
                   return GestureDetector(
                     onTap: () {
                       if (con.isBusy) return;
+
+                      if (classFull) {
+                        Get.snackbar(
+                          'Clase llena',
+                          'Puedes ingresar a la lista de espera',
+                          backgroundColor: Colors.black87,
+                          colorText: Colors.white,
+                        );
+
+                        return;
+                      }
 
                       if (isOccupied) {
                         Get.snackbar(
@@ -433,4 +513,3 @@ String formatHora(String rawTime) {
   final minute = parts[1].padLeft(2, '0');
   return "$hour:$minute";
 }
-
