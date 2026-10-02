@@ -1,4 +1,4 @@
-# Miscellaneous
+ # Miscellaneous
 *.class
 *.log
 *.pyc
@@ -49,8 +49,3 @@ app.*.map.json
 # FVM Version Cache
 .fvm/
 
-#Eliminar providers
-/lib/src/providers
-/lib/src/environment
-/lib/src/routes
-/lib/src/models

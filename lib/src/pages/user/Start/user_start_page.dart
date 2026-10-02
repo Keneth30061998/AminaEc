@@ -120,7 +120,7 @@ class UserStartPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 _sectionTitle(
                   title: 'Tus clases agendadas',
-                  subtitle: 'Administra tus próximas sesiones fácilmente',
+                  subtitle: 'Administra tus próximas sesiones',
                 ),
                 const SizedBox(height: 14),
                 Obx(() {
