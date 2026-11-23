@@ -1,6 +1,4 @@
-// File: coach_schedule_page.dart
-
-import 'package:amina_ec/src/pages/coach/Schedule/coach_schedule_controller.dart';
+import 'package:amina_ec/src/pages/Coach/Schedule/coach_schedule_controller.dart';
 import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:amina_ec/src/models/app_banner.dart';
 import 'package:amina_ec/src/widgets/app_banner_visual.dart';
 
 import 'package:flutter/material.dart';
-import 'package:amina_ec/src/models/app_banner.dart';
 
 class AppBannerCarousel extends StatefulWidget {
   final List<AppBanner> banners;
@@ -639,25 +636,6 @@ class _AppBannerCarouselState extends State<AppBannerCarousel>
     double width,
     double height,
   ) {
-    /*
-     * ==========================================================
-     * IMPORTANTE
-     * ==========================================================
-     *
-     * Ya no utilizamos:
-     *
-     *   Column + Spacer + Spacer
-     *
-     * porque eso provocaba:
-     *
-     * RenderFlex overflow
-     *
-     * especialmente en móviles.
-     *
-     * En su lugar utilizamos un Stack con posiciones relativas.
-     * Así cada elemento conoce exactamente el espacio disponible.
-     */
-
     final isSmall = width < 380.0;
 
     final horizontalPadding = isSmall
@@ -781,7 +759,7 @@ class _AppBannerCarouselState extends State<AppBannerCarousel>
 
         if (_hasText(banner.title))
           Text(
-            banner.title!,
+            banner.title,
             maxLines: isSmall ? 2 : 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -809,7 +787,7 @@ class _AppBannerCarouselState extends State<AppBannerCarousel>
               top: isSmall ? 5.0 : 8.0,
             ),
             child: Text(
-              banner.message!,
+              banner.message,
               maxLines: isSmall ? 2 : 3,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

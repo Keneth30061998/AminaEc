@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:amina_ec/src/providers/reservation_queue_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
@@ -8,8 +10,32 @@ import '../../../../../models/coach.dart';
 import '../../../../../models/schedule.dart';
 import '../../../../../providers/coachs_provider.dart';
 
-class AdminCoachScheduleController extends GetxController {
+class AdminCoachScheduleController extends GetxController with WidgetsBindingObserver {
   final CoachProvider _provider = CoachProvider();
+  final ReservationQueueProvider _queue=ReservationQueueProvider();
+  final queueCounts=<String,Map<String,int>>{}.obs;
+  final queueCountsLoading=false.obs;
+  final queueCountsError=RxnString();
+  Timer? _queuePoll;
+  AppLifecycleState _lifecycle=AppLifecycleState.resumed;
+  int _countsGeneration=0;
+  String get _day=>selectedDate.value.toIso8601String().split('T').first;
+  Future<void> loadQueueCounts() async {
+    final day=_day,generation=++_countsGeneration;queueCountsLoading.value=true;
+    try{
+      final response=await _queue.counts(day);
+      if(isClosed||day!=_day||generation!=_countsGeneration)return;
+      if(response.success!=true||response.data is! List){queueCountsError.value=response.message ?? 'No se pudieron consultar las colas.';return;}
+      final counts=<String,Map<String,int>>{};
+      for(final row in (response.data as List).whereType<Map>())counts['${row['schedule_id']}']={
+        'waiting':int.tryParse('${row['waiting']}') ?? 0,'offered':int.tryParse('${row['offered']}') ?? 0};
+      queueCounts.assignAll(counts);queueCountsError.value=null;
+    }catch(_){if(!isClosed&&generation==_countsGeneration)queueCountsError.value='No se pudieron consultar las colas.';}
+    finally{if(!isClosed&&generation==_countsGeneration)queueCountsLoading.value=false;}
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state){_lifecycle=state;if(state==AppLifecycleState.resumed)loadQueueCounts();}
+
 
   final selectedDate = DateTime.now().obs;
   final CalendarController calendarController = CalendarController();
@@ -22,7 +48,7 @@ class AdminCoachScheduleController extends GetxController {
   }
   @override
   void onClose() {
-    _coachWorker?.dispose();
+    _coachWorker?.dispose();_queuePoll?.cancel();WidgetsBinding.instance.removeObserver(this);
     for (final cancel in _subscriptions) { cancel(); }
     calendarController.dispose();
     super.onClose();
@@ -41,7 +67,11 @@ class AdminCoachScheduleController extends GetxController {
     super.onInit();
     calendarController.selectedDate = selectedDate.value;
     calendarController.displayDate = selectedDate.value;
+    WidgetsBinding.instance.addObserver(this);
     loadCoaches();
+    _listen('queue:changed',(_)=>loadQueueCounts());
+    _listen('connect',(_)=>loadQueueCounts());
+    _queuePoll=Timer.periodic(const Duration(seconds:20),(_){if(_lifecycle==AppLifecycleState.resumed)loadQueueCounts();});
 
     _coachWorker = ever(CoachEvents.to.coachUpdated, (_) => loadCoaches());
 
@@ -62,6 +92,7 @@ class AdminCoachScheduleController extends GetxController {
       allCoaches.value = list;
       _filterByDate(selectedDate.value);
       _updateCalendar();
+      await loadQueueCounts();
     } catch (_) {
       error.value = 'No se pudieron cargar las clases.';
     } finally { loading.value = false; }
@@ -70,7 +101,7 @@ class AdminCoachScheduleController extends GetxController {
   void selectDate(DateTime date) {
     selectedDate.value = date;
     calendarController.selectedDate = date;
-    _filterByDate(date);
+    _filterByDate(date);queueCounts.clear();queueCountsError.value=null;loadQueueCounts();
   }
 
   void _filterByDate(DateTime date) {

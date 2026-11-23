@@ -1,7 +1,7 @@
+import 'dart:async';
+
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:amina_ec/src/utils/textos.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,10 +24,11 @@ class LoginController extends GetxController {
   var passwordText = ''.obs;
 
   UserProvider usersProvider = UserProvider();
-  User user = User.fromJson(GetStorage().read('user') ?? {});
+  late User user = usersProvider.userSession;
 
   var obscureText = true.obs;
   var isPressed = false.obs;
+  bool _loginInProgress = false;
 
   void goToRegisterPage() {
     Get.toNamed('/register');
@@ -46,86 +47,112 @@ class LoginController extends GetxController {
   }
 
   void login(BuildContext context) async {
+    if (_loginInProgress) return;
+
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
+    if (!isValidForm(email, password)) return;
 
-    if (isValidForm(email, password)) {
-      ProgressDialog progressDialog = ProgressDialog(context: context);
-      progressDialog.show(max: 100, msg: txtIniciandoSesion);
+    _loginInProgress = true;
+    ProgressDialog progressDialog = ProgressDialog(context: context);
+    progressDialog.show(max: 100, msg: txtIniciandoSesion);
 
-      try {
-        ResponseApi responseApi = await usersProvider.login(email, password);
+    User? authenticatedUser;
+    String successMessage = '';
+    var stage = 'peticion';
 
-        if (responseApi.success == true) {
-          // Guardar usuario en almacenamiento local
-          GetStorage().write('user', responseApi.data);
+    try {
+      ResponseApi responseApi = await usersProvider.login(email, password);
+      if (!context.mounted) return;
 
-          // Obtener usuario y actualizar sesión global
-          User myUser = User.fromJson(GetStorage().read('user') ?? {});
-          userSession = myUser; // 🔹 Actualización crítica
-
-          // Configurar socket con nueva sesión
-          SocketService().updateUserSession(myUser);
-
-          // Enviar token FCM al backend
-          // Enviar token FCM al backend
-          try {
-            bool isIOSSimulator = false;
-
-            if (defaultTargetPlatform == TargetPlatform.iOS) {
-              final iosInfo = await DeviceInfoPlugin().iosInfo;
-              isIOSSimulator = iosInfo.model.toLowerCase().contains('simulator');
-            }
-
-            String? fcmToken;
-
-            if (isIOSSimulator) {
-              // ✅ Token simulado para evitar apns-token-not-set
-              fcmToken = "SIMULATOR_IOS_TOKEN";
-            } else {
-              fcmToken = await FirebaseMessaging.instance.getToken();
-            }
-
-            if (fcmToken != null && fcmToken.isNotEmpty) {
-              await sendTokenToServer(fcmToken);
-            }
-          } catch (_) {
-            // ✅ No mostramos error si falla en simulador
-          }
-
-
-          progressDialog.close();
-
-          // Ocultar teclado antes de navegar
-          FocusScope.of(context).unfocus();
-
-          // Redirigir según roles
-          if (myUser.roles != null && myUser.roles!.length > 1) {
-            goToRolesPage();
-          } else {
-            if (myUser.roles != null && myUser.roles!.isNotEmpty) {
-              if (myUser.roles!.first.id == '3') {
-                goToCoachHomePage();
-              } else {
-                goToUserHomePage();
-              }
-            } else {
-              Get.snackbar('Error', 'No se encontraron roles asignados');
-            }
-          }
-
-          Get.snackbar('Login Exitoso', responseApi.message ?? '');
-        } else {
-          progressDialog.close();
-          Get.snackbar(
-              'Login Fallido',
-              responseApi.message ?? 'Credenciales incorrectas');
-        }
-      } catch (e) {
-        progressDialog.close();
-        Get.snackbar('Error', 'Ocurrió un problema: ${e.toString()}');
+      if (responseApi.success != true) {
+        Get.snackbar(
+          'Login Fallido',
+          responseApi.message ?? 'No se pudo iniciar sesión',
+        );
+        return;
       }
+
+      stage = 'datos_respuesta';
+      final data = responseApi.data;
+      if (kDebugMode) {
+        debugPrint(
+          '[AMINA][LoginController] dataType=${data.runtimeType}',
+        );
+      }
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Datos de usuario inválidos');
+      }
+
+      // Convertir antes de guardar: una respuesta inválida no reemplaza la sesión.
+      stage = 'modelo_usuario';
+      final myUser = User.fromJson(data);
+      if (myUser.session_token == null || myUser.session_token!.trim().isEmpty ||
+          myUser.roles == null || myUser.roles!.isEmpty) {
+        throw const FormatException('Modelo de usuario sin sesión o roles');
+      }
+      stage = 'guardar_sesion';
+      await GetStorage().write('user', data);
+      userSession = myUser;
+      usersProvider.userSession = myUser;
+      user = myUser;
+
+      // Los servicios auxiliares no deben convertir un login válido en fallido.
+      unawaited(
+        Future<void>.sync(() => SocketService().updateUserSession(myUser))
+            .catchError((Object error, StackTrace stackTrace) {
+          if (kDebugMode) {
+            debugPrint('[AMINA][LoginController] etapa=socket errorType=${error.runtimeType}');
+          }
+        }),
+      );
+      unawaited(
+        Future<void>.sync(registerCurrentPushToken)
+            .catchError((Object error, StackTrace stackTrace) {
+          if (kDebugMode) {
+            debugPrint('[AMINA][LoginController] etapa=push errorType=${error.runtimeType}');
+          }
+        }),
+      );
+
+      authenticatedUser = myUser;
+      successMessage = responseApi.message ?? '';
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+          '[AMINA][LoginController] etapa=$stage errorType=${error.runtimeType}',
+        );
+      }
+      final message = stage == 'modelo_usuario' || stage == 'datos_respuesta'
+          ? 'Los datos recibidos no coinciden con el modelo de usuario de la app.'
+          : stage == 'guardar_sesion'
+          ? 'No se pudo guardar la sesión en el dispositivo.'
+          : 'No se pudo completar el inicio de sesión.';
+      Get.snackbar('Error', message);
+    } finally {
+      _loginInProgress = false;
+      if (context.mounted) progressDialog.close();
     }
+
+    final myUser = authenticatedUser;
+    if (myUser == null || !context.mounted) return;
+
+    FocusScope.of(context).unfocus();
+
+    if (myUser.roles != null && myUser.roles!.length > 1) {
+      goToRolesPage();
+    } else if (myUser.roles != null && myUser.roles!.isNotEmpty) {
+      if (myUser.roles!.first.id == '3') {
+        goToCoachHomePage();
+      } else {
+        goToUserHomePage();
+      }
+    } else {
+      Get.snackbar('Error', 'No se encontraron roles asignados');
+      return;
+    }
+
+    Get.snackbar('Login Exitoso', successMessage);
   }
 
   bool isValidForm(String email, String password) {

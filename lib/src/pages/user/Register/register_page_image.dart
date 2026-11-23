@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:io';
 import 'package:amina_ec/src/pages/user/Register/register_controller.dart';
 import 'package:amina_ec/src/utils/iconos.dart';
 import 'package:flutter/material.dart';

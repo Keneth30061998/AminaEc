@@ -1,3 +1,5 @@
+import 'package:amina_ec/src/services/waitlist_service.dart';
+import 'package:amina_ec/src/models/waitlist_entry.dart';
 import 'dart:async';
 import 'package:amina_ec/src/models/class_reservation.dart';
 import 'package:amina_ec/src/models/response_api.dart';
@@ -8,7 +10,7 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -19,13 +21,23 @@ import '../../Start/user_start_controller.dart';
 import 'package:amina_ec/src/services/calendar_sync_service.dart';
 import 'package:amina_ec/src/providers/google_calendar_provider.dart';
 
-class UserCoachReserveController extends GetxController {
+class UserCoachReserveController extends GetxController with WidgetsBindingObserver {
   User user = User.fromJson(GetStorage().read('user') ?? {});
   late UserPlanProvider userPlanProvider;
 
   var selectedEquipos = <int>{}.obs;
   final occupiedEquipos = <int>{}.obs;
   final blockedEquipos = <int>{}.obs;
+  final heldEquipos=<int>{}.obs;
+  final availabilityError=RxnString();
+  final availabilityVerified=false.obs;
+  final List<void Function()> _subscriptions=[];
+  Worker? _queueWorker;
+  Timer? _availabilityTimer;
+  bool _fetching=false,_refreshAgain=false;
+  String scheduleId='';
+  WaitlistEntry? get activeQueue=>WaitlistService.to.activeFor(classDate,classTime,scheduleId:scheduleId);
+  void openWaitlist()=>WaitlistService.to.openList(queueId:activeQueue?.id);
   final RxInt totalRides = 0.obs;
   final accessMessage = ''.obs;
   final courseClass = false.obs;
@@ -39,8 +51,8 @@ class UserCoachReserveController extends GetxController {
 
   bool get isBusy =>
       isInitializing.value ||
-      isSubmittingReservation.value ||
-      _isGoogleAuthInProgress.value;
+          isSubmittingReservation.value ||
+          _isGoogleAuthInProgress.value;
 
   late String coachId;
   late String classDate;
@@ -72,23 +84,29 @@ class UserCoachReserveController extends GetxController {
     userPlanProvider = UserPlanProvider();
 
     final args = Get.arguments;
-    coachId = args['coach_id'] ?? '';
-    classDate = args['class_date'] ?? '';
-    classTime = args['class_time'] ?? '';
-    userId = _user['id'] ?? '';
+    coachId = '${args['coach_id'] ?? ''}';
+    scheduleId='${args['schedule_id'] ?? ''}';
+    classDate = '${args['class_date'] ?? ''}'.split('T').first;
+    classTime = WaitlistEntry.normalizeTime('${args['class_time'] ?? ''}');
+    userId = '${_user['id'] ?? ''}';
     coachName = args['coach_name'] ?? '';
     sessionToken = (_user['session_token'] ?? '').toString();
 
     SocketService().updateUserSession(user);
-    SocketService().on('rides:updated', (_) => getTotalRides());
+    WidgetsBinding.instance.addObserver(this);
+    _subscriptions.add(SocketService().subscribe('rides:updated', (_) => getTotalRides()));
     listenToMachineStatus();
-    listenToQueueOffer();
+    _queueWorker=ever(WaitlistService.to.entries,(_){joinedQueue.value=activeQueue!=null;_scheduleAvailabilityRefresh();});
+    joinedQueue.value=activeQueue!=null;
+    WaitlistService.to.refresh();
     _initializePage();
   }
 
   @override
   void onClose() {
-    _autoNavTimer?.cancel();
+    _autoNavTimer?.cancel();_availabilityTimer?.cancel();_queueWorker?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    for(final cancel in _subscriptions){cancel();}
     super.onClose();
   }
 
@@ -108,7 +126,7 @@ class UserCoachReserveController extends GetxController {
   }
 
   void toggleEquipo(int equipo) {
-    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo))
+    if (occupiedEquipos.contains(equipo) || blockedEquipos.contains(equipo) || heldEquipos.contains(equipo) || !availabilityVerified.value)
       return;
 
     if (selectedEquipos.contains(equipo)) {
@@ -172,11 +190,11 @@ class UserCoachReserveController extends GetxController {
               const SizedBox(height: 14),
               const Text(
                 'AMINA utilizará Google Calendar únicamente para crear '
-                'recordatorios automáticos de tus clases reservadas.\n\n'
-                '✔ Solo se crean eventos de tus reservas.\n'
-                '✔ No leemos eventos personales.\n'
-                '✔ No modificamos tu calendario existente.\n'
-                '✔ Puedes desconectarlo cuando quieras.',
+                    'recordatorios automáticos de tus clases reservadas.\n\n'
+                    '✔ Solo se crean eventos de tus reservas.\n'
+                    '✔ No leemos eventos personales.\n'
+                    '✔ No modificamos tu calendario existente.\n'
+                    '✔ Puedes desconectarlo cuando quieras.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.5,
@@ -221,6 +239,7 @@ class UserCoachReserveController extends GetxController {
 
   Future<void> reserveClass() async {
     if (isBusy) return;
+    if(!availabilityVerified.value){await fetchOccupiedEquiposInicial();if(!availabilityVerified.value)return;}
 
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -243,7 +262,7 @@ class UserCoachReserveController extends GetxController {
     }
 
     if (selectedEquipos.isEmpty) {
-      if (isClassFull.value && occupiedEquipos.length >= 18) {
+      if (isClassFull.value) {
         await joinReservationQueue();
 
         return;
@@ -301,7 +320,7 @@ class UserCoachReserveController extends GetxController {
                   'Reserva confirmada en AMINA.\nCoach: $coachName\nBici: #$bicycle\nFecha: ${_formatDateEs(classDate)}\nHora: ${_formatTimeHHmm(classTime)}';
 
               final eventId =
-                  await CalendarSyncService.instance.createOrUpdateEvent(
+              await CalendarSyncService.instance.createOrUpdateEvent(
                 reservationId: reservationIdSafe,
                 title: title,
                 start: start,
@@ -324,16 +343,6 @@ class UserCoachReserveController extends GetxController {
           if (Get.isRegistered<UserStartController>()) {
             Get.find<UserStartController>().getScheduledClasses();
           }
-
-          final reservationJson = reservation.toJson();
-          SocketService().emit('class:reserved', reservationJson);
-          SocketService().emit('class:coach:reserved', reservationJson);
-          SocketService().emit('machine:status:update', {
-            'bicycle': bicycle,
-            'class_date': classDate,
-            'class_time': classTime,
-            'status': 'occupied'
-          });
 
           showReservationDialog(
             Get.context!,
@@ -479,19 +488,19 @@ class UserCoachReserveController extends GetxController {
   }
 
   void showReservationDialog(
-    BuildContext context, {
-    bool offerGoogleCalendar = false,
-    bool googleConnected = false,
-    bool googleSynced = false,
-    String? googleError,
-  }) {
+      BuildContext context, {
+        bool offerGoogleCalendar = false,
+        bool googleConnected = false,
+        bool googleSynced = false,
+        String? googleError,
+      }) {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) {
         return Dialog(
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -560,16 +569,16 @@ class UserCoachReserveController extends GetxController {
                     children: const [
                       _BulletPoint(
                         text:
-                            'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
+                        'Las puertas se abrirán únicamente al final de la primera y segunda canción (no podemos interrumpir la clase).',
                       ),
                       _BulletPoint(
                         text:
-                            'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
+                        'Si no llegas a tiempo, tu bici será liberada entre la primera y segunda canción, pero podrás ingresar solo si hay disponibilidad.',
                       ),
                       _BulletPoint(text: 'Usa ropa cómoda.'),
                       _BulletPoint(
                         text:
-                            'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.',
+                        'Evita el uso del teléfono para que todos podamos disfrutar la experiencia al máximo.',
                       ),
                     ],
                   ),
@@ -590,7 +599,7 @@ class UserCoachReserveController extends GetxController {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black87,
                           side:
-                              BorderSide(color: Colors.black.withOpacity(.12)),
+                          BorderSide(color: Colors.black.withOpacity(.12)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -675,131 +684,64 @@ class UserCoachReserveController extends GetxController {
     }
   }
 
-  void listenToMachineStatus() {
-    SocketService().on('machine:status:update', (payload) {
-      final String date = payload['class_date'] ?? '';
-      final String time = payload['class_time'] ?? '';
-      final int bicycle = int.tryParse(payload['bicycle'].toString()) ?? -1;
-      final String status = payload['status'] ?? '';
-
-      if (bicycle == -1) return;
-      if (date != classDate || time != classTime) return;
-
-      if (status == 'occupied') {
-        occupiedEquipos.add(bicycle);
-        blockedEquipos.remove(bicycle);
-      } else if (status == 'blocked') {
-        blockedEquipos.add(bicycle);
-        occupiedEquipos.remove(bicycle);
-      } else {
-        occupiedEquipos.remove(bicycle);
-        blockedEquipos.remove(bicycle);
-      }
-
-      update();
-    });
+  void _scheduleAvailabilityRefresh(){
+    _availabilityTimer?.cancel();
+    _availabilityTimer=Timer(const Duration(milliseconds:200),fetchOccupiedEquiposInicial);
   }
-
-  void listenToQueueOffer() {
-    SocketService().on('reservation:queue:offer', (payload) {
-      print("🚴 Bicicleta disponible desde cola: $payload");
-
-      Get.dialog(AlertDialog(
-        title: const Text("¡Bicicleta disponible!"),
-        content: const Text("Una bicicleta quedó libre para tu clase. "
-            "¿Deseas tomarla?", style: TextStyle(color: almostBlack),),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.back();
-            },
-            child: const Text("Después"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-
-              acceptQueueOffer(payload['queue_id'].toString());
-            },
-            child: const Text("Aceptar"),
-          )
-        ],
-      ));
-    });
-  }
-
-  Future<void> acceptQueueOffer(String queueId) async {
-    final response = await _queueProvider.acceptOffer(queueId);
-
-    if (response.success == true) {
-      Get.snackbar("Reserva confirmada", "Tu bicicleta fue asignada",
-          backgroundColor: Colors.black87, colorText: Colors.white);
-    } else {
-      Get.snackbar("Oferta expirada",
-          response.message ?? "La bicicleta ya no está disponible");
+  void listenToMachineStatus(){
+    for(final event in ['machine:status:update','waitlist:slot:changed']){
+      _subscriptions.add(SocketService().subscribe(event,(payload){
+        if(payload is Map && '${payload['class_date']}'.split('T').first==classDate &&
+            WaitlistEntry.normalizeTime('${payload['class_time']}')==classTime)_scheduleAvailabilityRefresh();
+      }));
     }
+    _subscriptions.add(SocketService().subscribe('connect',(_){getTotalRides();_scheduleAvailabilityRefresh();}));
   }
-
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state){
+    if(state==AppLifecycleState.resumed){getTotalRides();_scheduleAvailabilityRefresh();WaitlistService.to.refresh();}
+  }
   Future<void> fetchOccupiedEquiposInicial() async {
-    final reservations = await _provider.getReservationsForSlot(
-      classDate: classDate,
-      classTime: classTime,
-    );
-
-    occupiedEquipos.clear();
-    blockedEquipos.clear();
-
-    for (final reservation in reservations) {
-      final bicycle = reservation.bicycle;
-
-      if (bicycle == null) continue;
-
-      if (reservation.status == 'blocked') {
-        blockedEquipos.add(bicycle);
-      } else if (reservation.status == 'scheduled') {
-        occupiedEquipos.add(bicycle);
+    if(_fetching){_refreshAgain=true;return;}_fetching=true;
+    try{
+      final rows=await _provider.getReservationsForSlot(classDate:classDate,classTime:classTime);
+      if(isClosed)return;
+      final occupied=<int>{},blocked=<int>{},held=<int>{};
+      for(final r in rows){
+        if(r.bicycle==null)continue;
+        if(r.status=='blocked')blocked.add(r.bicycle!);
+        else if(r.status=='held')held.add(r.bicycle!);
+        else if(r.status=='scheduled'||r.status=='attended')occupied.add(r.bicycle!);
       }
+      occupiedEquipos.assignAll(occupied);blockedEquipos.assignAll(blocked);heldEquipos.assignAll(held);
+      final unavailable={...occupied,...blocked,...held};
+      selectedEquipos.removeWhere(unavailable.contains);
+      isClassFull.value=List.generate(18,(i)=>i+2).every(unavailable.contains);
+      availabilityError.value=null;availabilityVerified.value=true;
+    }catch(_){
+      if(!isClosed){availabilityVerified.value=false;availabilityError.value='No se pudo verificar la disponibilidad. Actualiza antes de reservar.';}
+    }finally{
+      _fetching=false;
+      if(_refreshAgain&&!isClosed){_refreshAgain=false;_scheduleAvailabilityRefresh();}
     }
-
-    final available = await _provider.getAvailableBikes(
-      coachId: coachId,
-      date: classDate,
-      time: classTime,
-    );
-
-    isClassFull.value = available.isEmpty;
   }
-
   Future<void> joinReservationQueue() async {
-    if (isBusy) return;
-
-    isSubmittingReservation.value = true;
-
-    try {
-      final response = await _queueProvider.joinQueue(
-        coachId: coachId,
-        classDate: classDate,
-        classTime: classTime,
-      );
-
-      if (response.success == true) {
-        joinedQueue.value=true;
-        Get.snackbar(
-          "Lista de espera",
-          "Te notificaremos cuando una bicicleta quede disponible",
-          backgroundColor: Colors.black87,
-          colorText: Colors.white,
-        );
-      } else {
-        Get.snackbar(
-          "Error",
-          response.message ?? "No se pudo ingresar a la lista",
-        );
+    if(isBusy||joinedQueue.value)return;
+    isSubmittingReservation.value=true;
+    try{
+      final response=await _queueProvider.joinQueue(coachId:coachId,classDate:classDate,classTime:classTime,scheduleId:scheduleId);
+      if(response.success==true){
+        if(response.data is Map)WaitlistService.to.remember(WaitlistEntry.fromJson(Map<String,dynamic>.from(response.data)));
+        await WaitlistService.to.refresh(force:true);
+        joinedQueue.value=activeQueue!=null;
+        Get.snackbar('Lista de espera','Ya estás en la cola. Puedes consultar tu posición y salir desde Mis listas de espera.',backgroundColor:Colors.black87,colorText:Colors.white);
+      }else{
+        Get.snackbar('Lista de espera',response.message ?? 'No se pudo ingresar.');
+        await fetchOccupiedEquiposInicial();
       }
-    } finally {
-      isSubmittingReservation.value = false;
-    }
+    }finally{isSubmittingReservation.value=false;}
   }
+
 }
 
 class _BulletPoint extends StatelessWidget {

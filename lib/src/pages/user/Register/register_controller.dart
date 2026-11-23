@@ -81,42 +81,54 @@ class RegisterController extends GetxController {
       birthDate: birth != null ? birth.toIso8601String().split('T')[0] : '',
     );
 
+
     try {
-      Stream stream = await usersProvider.createWithImage(user, imageFile.value!); // <-- desenvuelto
-      await for (var res in stream) {
-        ResponseApi responseApi = ResponseApi.fromJson(json.decode(res));
-        if (responseApi.success == true) {
-          // 1️⃣ Guardar usuario en almacenamiento local
-          GetStorage().write('user', responseApi.data);
+      final ResponseApi responseApi = await usersProvider.createWithImage(
+        user,
+        imageFile.value!,
+      );
 
-          // 2️⃣ Actualizar sesión global
-          User myUser = User.fromJson(responseApi.data);
-          userSession = myUser; // 🔹 Actualización crítica
-
-          // 3️⃣ Configurar socket con nueva sesión
-          SocketService().updateUserSession(myUser);
-
-          // 4️⃣ Enviar token FCM al backend
-          try {
-            final fcmToken = await FirebaseMessaging.instance.getToken();
-            if (fcmToken != null) {
-              await sendTokenToServer(fcmToken);
-              print("✅ Token FCM enviado al backend: $fcmToken");
-            }
-          } catch (e) {
-            print("⚠️ No se pudo enviar token FCM: $e");
-          }
-          return true;
-        } else {
-          Get.snackbar('ERROR', 'Registro fallido');
-          return false;
-        }
+      if (responseApi.success != true || responseApi.data == null) {
+        Get.snackbar(
+          'ERROR',
+          responseApi.message ?? 'Registro fallido',
+        );
+        return false;
       }
-    } catch (e) {
-      Get.snackbar('ERROR', 'Error de conexión');
+
+      // 1️⃣ Guardar usuario en almacenamiento local
+      await GetStorage().write('user', responseApi.data);
+
+      // 2️⃣ Actualizar sesión global
+      final User myUser = User.fromJson(
+        Map<String, dynamic>.from(responseApi.data),
+      );
+      userSession = myUser;
+
+      // 3️⃣ Configurar socket (no bloquear el registro si falla)
+      try {
+        SocketService().updateUserSession(myUser);
+      } catch (e, st) {
+        debugPrint('⚠️ Error actualizando SocketService tras registro: $e\n$st');
+      }
+
+      // 4️⃣ Enviar token FCM al backend (no bloquear el registro si falla)
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await sendTokenToServer(fcmToken);
+          debugPrint('✅ Token FCM enviado al backend: $fcmToken');
+        }
+      } catch (e) {
+        debugPrint('⚠️ No se pudo enviar token FCM: $e');
+      }
+
+      return true;
+    } catch (e, st) {
+      debugPrint('❌ Error real en RegisterController.register(): $e\n$st');
+      Get.snackbar('ERROR', 'Error en el registro: $e');
       return false;
     }
-
     return false; // <--- Retorno seguro al final
   }
 

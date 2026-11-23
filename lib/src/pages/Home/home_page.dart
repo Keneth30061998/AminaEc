@@ -2,7 +2,7 @@ import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../home/home_controller.dart';
+import 'home_controller.dart';
 
 class HomePage extends StatelessWidget {
   final HomeController con = Get.put(HomeController());

@@ -199,7 +199,7 @@ class UserCoachSchedulePage extends StatelessWidget {
     );
 
     return Obx(() {
-      final occupied = con.occupiedBikeMap[key] ?? 0;
+      final occupied = con.occupiedBikeMap[key];
 
       final coachNames = relatedCoaches.take(2).map((c) => c.user?.name ?? '').where((n) => n.isNotEmpty).toList();
       final title = coachNames.isNotEmpty ? 'Rueda con ${coachNames.join(' & ')}' : 'Rueda';
@@ -217,6 +217,7 @@ class UserCoachSchedulePage extends StatelessWidget {
         onTap: () {
           con.goToUserCoachReservePage(
             coachId: relatedCoaches.first.id ?? '',
+            scheduleId:schedule.id?.toString(),
             classTime: schedule.start_time ?? '00:00:00',
             coachName: relatedCoaches.first.user?.name ?? '',
             classTheme: '${schedule.isCourse ? 'Curso' : 'Regular'} · $theme',
@@ -374,11 +375,11 @@ class _AnimatedClassCard extends StatefulWidget {
   final VoidCallback onTap;
   final bool isTablet;
   final String heroTag;
-  final int occupiedCount;
+  final int? occupiedCount;
   final int totalCount;
 
   const _AnimatedClassCard({
-    super.key,
+
     required this.avatar,
     required this.coachName,
     required this.coachImageUrl,
@@ -544,7 +545,7 @@ class _AnimatedClassCardState extends State<_AnimatedClassCard> with SingleTicke
                                   Icon(Icons.directions_bike_outlined, size: 15,),
                                   const SizedBox(width: 8),
                                   Text(
-                                    '${widget.occupiedCount}/${widget.totalCount}',
+                                    '${widget.occupiedCount ?? '—'}/${widget.totalCount}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: widget.isTablet ? 16 : 14,

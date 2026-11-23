@@ -1,3 +1,5 @@
+import 'package:amina_ec/src/services/notification_navigation.dart';
+import 'package:amina_ec/src/services/waitlist_service.dart';
 import 'package:amina_ec/src/pages/user/Start/reschedule_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -39,6 +41,10 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   final RxList<AppBanner> activeBanners = <AppBanner>[].obs;
   final RxBool isBannerLoading = false.obs;
 
+  final List<void Function()> _subscriptions=[];
+  void _listen(String event,Function(dynamic) callback){_subscriptions.add(SocketService().subscribe(event,callback));}
+  @override
+  void onReady(){super.onReady();processPendingNotificationNavigation();WaitlistService.to.refresh();}
   @override
   void onInit() {
     super.onInit();
@@ -66,7 +72,7 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
       AppLifecycleState state,
       ) {
     if (state == AppLifecycleState.resumed) {
-      getAppBanner();
+      getAppBanner();getScheduledClasses();getTotalRides();WaitlistService.to.refresh();
     }
   }
 
@@ -74,33 +80,33 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
 
-    SocketService().off('app-banner:changed');
+    for(final cancel in _subscriptions){cancel();}
 
     super.onClose();
   }
 
   void _setupSocketListeners() {
-    SocketService().on(
+    _listen(
       'coach:new',
           (_) => getCoaches(),
     );
 
-    SocketService().on(
+    _listen(
       'coach:delete',
           (_) => getCoaches(),
     );
 
-    SocketService().on(
+    _listen(
       'coach:update',
           (_) => getCoaches(),
     );
 
-    SocketService().on(
+    _listen(
       'rides:updated',
           (_) => refreshTotalRides(),
     );
 
-    SocketService().on(
+    _listen(
       'class:coach:reserved',
           (payload) {
         if (payload['user_id'].toString() == user.id.toString()) {
@@ -109,12 +115,12 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
       },
     );
 
-    SocketService().on(
+    _listen(
       'class:reserved',
           (_) => getScheduledClasses(),
     );
 
-    SocketService().on(
+    _listen(
       'class:coach:rescheduled',
           (payload) {
         if (payload['user_id'].toString() == user.id.toString()) {
@@ -127,9 +133,9 @@ class UserStartController extends GetxController with WidgetsBindingObserver {
    * Este evento es exclusivo del banner.
    * Se elimina primero para evitar listeners duplicados.
    */
-    SocketService().off('app-banner:changed');
 
-    SocketService().on(
+
+    _listen(
       'app-banner:changed',
       _handleBannerSocketEvent,
     );

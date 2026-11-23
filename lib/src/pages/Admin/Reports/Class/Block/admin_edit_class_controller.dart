@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'package:amina_ec/src/components/Socket/socket_service.dart';
+import 'package:amina_ec/src/models/waitlist_entry.dart';
+import 'package:amina_ec/src/providers/reservation_queue_provider.dart';
 import 'package:amina_ec/src/models/class_reservation.dart';
 import 'package:amina_ec/src/models/user.dart';
 import 'package:amina_ec/src/providers/admin_users_provider.dart';
@@ -7,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-class AdminCoachBlockController extends GetxController {
+class AdminCoachBlockController extends GetxController with WidgetsBindingObserver {
   final ClassReservationProvider classReservationProvider =
   ClassReservationProvider();
 
@@ -25,6 +29,49 @@ class AdminCoachBlockController extends GetxController {
   String coachName = '';
   String classDate = '';
   String classTime = '';
+  String scheduleId='';
+  final waitlist=<WaitlistEntry>[].obs;
+  final queueLoading=false.obs;
+  final queueError=RxnString();
+  final queueNow=DateTime.now().toUtc().obs;
+  final bikeVerified=false.obs;
+  final bikeError=RxnString();
+  final heldEquipos=<int>[].obs;
+  final ReservationQueueProvider _queue=ReservationQueueProvider();
+  final List<void Function()> _subscriptions=[];
+  Timer? _timer;
+  Duration _serverOffset=Duration.zero;
+  AppLifecycleState _lifecycle=AppLifecycleState.resumed;
+  bool _queueFetching=false;
+  int _ticks=0;
+  void _listen(String event){
+    _subscriptions.add(SocketService().subscribe(event,(data){
+      if(event=='connect' || (data is Map && '${data['class_date']}'==classDate &&
+          WaitlistEntry.normalizeTime('${data['class_time']}')==classTime))refreshClass();
+    }));
+  }
+  Future<void> refreshClass() async {await Future.wait([loadBikeStatus(showError:false),loadWaitlist()]);}
+  Future<void> loadWaitlist() async {
+    if(_queueFetching||!_hasValidClassArguments)return;
+    _queueFetching=true;queueLoading.value=true;
+    try{
+      final response=await (scheduleId.isNotEmpty?_queue.adminList(scheduleId):
+      _queue.adminByClass(coachId:coachId,classDate:classDate,classTime:classTime));
+      if(isClosed)return;
+      if(response.success!=true){queueError.value=response.message ?? 'No se pudo consultar la cola.';return;}
+      dynamic data=response.data;
+      if(data is Map){scheduleId='${data['schedule_id'] ?? scheduleId}';data=data['entries'];}
+      if(data is! List){queueError.value='Respuesta de lista de espera inválida.';return;}
+      if(response.serverTime!=null)_serverOffset=response.serverTime!.difference(DateTime.now().toUtc());
+      queueNow.value=DateTime.now().toUtc().add(_serverOffset);
+      waitlist.assignAll(data.whereType<Map>().map((e)=>WaitlistEntry.fromJson(Map<String,dynamic>.from(e))));
+      queueError.value=null;
+    }catch(_){if(!isClosed)queueError.value='No se pudo actualizar la lista de espera.';}
+    finally{_queueFetching=false;if(!isClosed)queueLoading.value=false;}
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state){_lifecycle=state;if(state==AppLifecycleState.resumed)refreshClass();}
+
 
   // ============================================================
   // ESTADO DE BICICLETAS
@@ -73,6 +120,13 @@ class AdminCoachBlockController extends GetxController {
     super.onInit();
 
     _readArguments();
+    WidgetsBinding.instance.addObserver(this);
+    for(final event in ['queue:changed','waitlist:slot:changed','machine:status:update','class:coach:reserved','class:coach:canceled','connect']){_listen(event);}
+    _timer=Timer.periodic(const Duration(seconds:1),(_){
+      if(_lifecycle!=AppLifecycleState.resumed)return;
+      queueNow.value=DateTime.now().toUtc().add(_serverOffset);
+      if(++_ticks%20==0)refreshClass();
+    });
 
     _searchWorker = debounce<String>(
       userSearchQuery,
@@ -81,7 +135,7 @@ class AdminCoachBlockController extends GetxController {
     );
 
     if (_hasValidClassArguments) {
-      loadBikeStatus();
+      refreshClass();
     } else {
       Future.microtask(() {
         Get.snackbar(
@@ -95,7 +149,8 @@ class AdminCoachBlockController extends GetxController {
 
   @override
   void onClose() {
-    _searchWorker.dispose();
+    _searchWorker.dispose();_timer?.cancel();WidgetsBinding.instance.removeObserver(this);
+    for(final cancel in _subscriptions){cancel();}
     userSearchController.dispose();
     super.onClose();
   }
@@ -119,6 +174,7 @@ class AdminCoachBlockController extends GetxController {
     }
 
     final arguments = Map<String, dynamic>.from(rawArguments);
+    scheduleId='${arguments['schedule_id'] ?? ''}';
 
     coachId = _readStringArgument(
       arguments,
@@ -176,7 +232,7 @@ class AdminCoachBlockController extends GetxController {
   Future<void> loadBikeStatus({
     bool showError = true,
   }) async {
-    if (!_hasValidClassArguments) {
+    if (!_hasValidClassArguments || isLoading.value) {
       return;
     }
 
@@ -189,8 +245,10 @@ class AdminCoachBlockController extends GetxController {
         classTime: classTime,
       );
 
+      if(isClosed)return;
       final occupied = <int>[];
       final blocked = <int>[];
+      final held=<int>[];
       final mappedReservations = <int, ClassReservation>{};
 
       for (final reservation in reservations) {
@@ -205,21 +263,24 @@ class AdminCoachBlockController extends GetxController {
           continue;
         }
 
-        if (reservation.status == 'scheduled') {
+        if(reservation.status=='held'){held.add(bicycle);continue;}
+        if (reservation.status == 'scheduled'||reservation.status=='attended') {
           occupied.add(bicycle);
           mappedReservations[bicycle] = reservation;
         }
       }
 
       occupiedEquipos.assignAll(occupied);
-      blockedEquipos.assignAll(blocked);
+      blockedEquipos.assignAll(blocked);heldEquipos.assignAll(held);
+      bikeVerified.value=true;bikeError.value=null;
       reservationByBike.assignAll(mappedReservations);
 
       // Elimina selecciones que cambiaron de estado mientras se recargaba.
       selectedEquipos.removeWhere(
-            (bicycle) => occupiedEquipos.contains(bicycle),
+            (bicycle) => occupiedEquipos.contains(bicycle)||heldEquipos.contains(bicycle),
       );
     } catch (error) {
+      bikeVerified.value=false;bikeError.value='No se pudo verificar el mapa. Actualiza para continuar.';
       if (showError) {
         Get.snackbar(
           'Error',
@@ -232,8 +293,7 @@ class AdminCoachBlockController extends GetxController {
     }
   }
 
-  Future<void> refreshBikeStatus() =>
-      loadBikeStatus();
+  Future<void> refreshBikeStatus()=>refreshClass();
 
   // ============================================================
   // INTERACCIÓN CON BICICLETAS
@@ -249,6 +309,7 @@ class AdminCoachBlockController extends GetxController {
       return;
     }
 
+    if(heldEquipos.contains(bicycle)||!bikeVerified.value){Get.snackbar('Bicicleta no disponible','Este cupo está en oferta o falta actualizar el mapa.');return;}
     if (occupiedEquipos.contains(bicycle)) {
       _showOccupiedBikeOptions(bicycle);
       return;
@@ -266,6 +327,7 @@ class AdminCoachBlockController extends GetxController {
   ///
   /// Ya no debe utilizarse para bicicletas ocupadas.
   void toggleSeat(int bicycle) {
+    if(heldEquipos.contains(bicycle)||!bikeVerified.value){Get.snackbar('Bicicleta no disponible','Este cupo está en oferta o falta actualizar el mapa.');return;}
     if (occupiedEquipos.contains(bicycle)) {
       return;
     }
@@ -1002,7 +1064,7 @@ class AdminCoachBlockController extends GetxController {
         .where(
           (bicycle) =>
       !occupiedEquipos.contains(bicycle) &&
-          !blockedEquipos.contains(bicycle),
+          !blockedEquipos.contains(bicycle) && !heldEquipos.contains(bicycle),
     )
         .toList();
 

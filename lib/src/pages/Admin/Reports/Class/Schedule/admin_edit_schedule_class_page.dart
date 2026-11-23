@@ -30,6 +30,15 @@ class AdminCoachSchedulePage extends StatelessWidget {
     await con.loadCoaches();
   }
 
+  Widget _queueBadge(String? id){
+    final counts=con.queueCounts[id?.toString()] ?? {'waiting':0,'offered':0};
+    if(con.queueCountsError.value!=null)return const Tooltip(message:'No se pudo consultar la cola',child:Icon(Icons.error_outline,color:Colors.orange));
+    if(con.queueCountsLoading.value&&con.queueCounts.isEmpty)return const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2));
+    return Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.end,children:[
+      Text('${counts['waiting']} en espera',style:const TextStyle(fontSize:12,fontWeight:FontWeight.bold,color:Colors.indigo)),
+      Text('${counts['offered']} en oferta',style:const TextStyle(fontSize:11,color:Colors.deepOrange)),
+    ]);
+  }
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: const AdminHeader(
@@ -70,6 +79,7 @@ class AdminCoachSchedulePage extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.w800))),
               const SizedBox(height: 12),
+              Obx(()=>con.queueCountsError.value==null?const SizedBox.shrink():Text(con.queueCountsError.value!,style:const TextStyle(color:Colors.red))),
               Obx(() {
                 if (con.loading.value && con.allCoaches.isEmpty)
                   return const Center(child: CircularProgressIndicator());
@@ -81,11 +91,12 @@ class AdminCoachSchedulePage extends StatelessWidget {
                         child: const Text('Reintentar'))
                   ]);
                 final entries = <({Coach coach, Schedule schedule})>[];
+                final seen=<String>{};
                 for (final coach in con.filteredCoaches) {
                   for (final s in coach.schedules) {
                     if (DateUtils.isSameDay(DateTime.tryParse(s.date ?? ''),
                         con.selectedDate.value)) {
-                      entries.add((coach: coach, schedule: s));
+                      if(seen.add('${s.id ?? '${s.date}-${s.start_time}-${coach.id}'}'))entries.add((coach: coach, schedule: s));
                     }
                   }
                 }
@@ -126,7 +137,7 @@ class AdminCoachSchedulePage extends StatelessWidget {
                                       fontWeight: FontWeight.w700)),
                               subtitle: Text(
                                   '${e.schedule.isCourse ? 'Curso' : 'Regular'} · ${e.schedule.class_theme ?? 'Clase'} · Ver detalle'),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing:Obx(()=>_queueBadge(e.schedule.id?.toString())),
                               onTap: () => _open(e.coach, e.schedule)),
                         )))
                         .toList());

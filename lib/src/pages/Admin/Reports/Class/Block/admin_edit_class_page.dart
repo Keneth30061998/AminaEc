@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/widgets/admin_waitlist_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -26,7 +27,7 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
     con = Get.put(AdminCoachBlockController());
   }
 
-  bool get busy => con.isProcessing.value || con.isLoading.value || navigating;
+  bool get busy => con.isProcessing.value || con.isLoading.value || !con.bikeVerified.value || navigating;
 
   String get instruction {
     switch (mode) {
@@ -55,6 +56,7 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
 
   void _tapBike(int bicycle) {
     if (busy) return;
+    if(con.heldEquipos.contains(bicycle)){Get.snackbar('Bicicleta en oferta','Consulta a la persona y el vencimiento en la lista de espera.');return;}
     final occupied = con.occupiedEquipos.contains(bicycle);
     final blocked = con.blockedEquipos.contains(bicycle);
     if (mode == _BikeMode.reservations) {
@@ -83,7 +85,7 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
         final date = DateTime.tryParse(con.classDate);
         if (date == null) return;
         await Get.to(
-            () => AdminStyled(
+                () => AdminStyled(
                 child: AdminClassAttendancePage(
                     coachId: con.coachId,
                     coachName: con.coachName,
@@ -93,7 +95,7 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
         if (mounted) await con.refreshBikeStatus();
       } else {
         final changed = await Get.to<bool>(
-            () => AdminStyled(child: AdminChangeCoachPage()),
+                () => AdminStyled(child: AdminChangeCoachPage()),
             routeName: '/admin/classes/change-coach',
             arguments: {
               'coach_id': con.coachId,
@@ -130,283 +132,288 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Detalle de clase'), actions: [
-          Obx(() => IconButton(
-              tooltip: 'Actualizar bicicletas',
-              onPressed: busy ? null : con.refreshBikeStatus,
-              icon: const Icon(Icons.refresh))),
-        ]),
-        body: SafeArea(
-          child: ListView(
-            key: PageStorageKey(
-                'class-${con.coachId}-${con.classDate}-${con.classTime}'),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    appBar: AppBar(title: const Text('Detalle de clase'), actions: [
+      Obx(() => IconButton(
+          tooltip: 'Actualizar bicicletas',
+          onPressed:con.isProcessing.value||con.isLoading.value||navigating?null:con.refreshBikeStatus,
+          icon: const Icon(Icons.refresh))),
+    ]),
+    body: SafeArea(
+      child: ListView(
+        key: PageStorageKey(
+            'class-${con.coachId}-${con.classDate}-${con.classTime}'),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          Text('${con.coachName} · ${formatHora(con.classTime)}',
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(dateLabel, style: const TextStyle(color: AdminUi.muted)),
+          const SizedBox(height: 12),
+          Obx(
+                () => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: busy ? null : () => _runClassAction(true),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Asistencia'),
+                ),
+                TextButton.icon(
+                  onPressed: busy ? null : () => _runClassAction(false),
+                  icon: const Icon(Icons.swap_horiz),
+                  label: const Text('Cambiar coach'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Bicicletas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Obx(
+                () => Wrap(
+              spacing: 8,
+              children: [
+                for (final item in _BikeMode.values)
+                  ChoiceChip(
+                      label: Text(const [
+                        'Reservas',
+                        'Bloquear',
+                        'Desbloquear'
+                      ][item.index]),
+                      selected: mode == item,
+                      showCheckmark: false,
+                      onSelected: busy ? null : (_) => _setMode(item)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(instruction,
+              style: const TextStyle(fontSize: 13, color: AdminUi.muted)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 14,
+            runSpacing: 8,
             children: [
-              Text('${con.coachName} · ${formatHora(con.classTime)}',
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Text(dateLabel, style: const TextStyle(color: AdminUi.muted)),
-              const SizedBox(height: 12),
-              Obx(
-                () => Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: busy ? null : () => _runClassAction(true),
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Asistencia'),
-                    ),
-                    TextButton.icon(
-                      onPressed: busy ? null : () => _runClassAction(false),
-                      icon: const Icon(Icons.swap_horiz),
-                      label: const Text('Cambiar coach'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text('Bicicletas',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              Obx(
-                () => Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final item in _BikeMode.values)
-                      ChoiceChip(
-                          label: Text(const [
-                            'Reservas',
-                            'Bloquear',
-                            'Desbloquear'
-                          ][item.index]),
-                          selected: mode == item,
-                          showCheckmark: false,
-                          onSelected: busy ? null : (_) => _setMode(item)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(instruction,
-                  style: const TextStyle(fontSize: 13, color: AdminUi.muted)),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 14,
-                runSpacing: 8,
-                children: [
-                  _legend(Colors.grey.shade300, 'Disponible'),
-                  _legend(indigoAmina, 'Ocupada'),
-                  _legend(Colors.grey.shade600, 'Bloqueada'),
-                  if (mode != _BikeMode.reservations)
-                    _legend(limeGreen, 'Seleccionada'),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Obx(() => con.isLoading.value
-                  ? const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(child: CircularProgressIndicator()))
-                  : _map()),
-              Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                      onPressed: _expandMap,
-                      icon: const Icon(Icons.zoom_in),
-                      label: const Text('Ampliar mapa'))),
-              const SizedBox(height: 12),
-              if (mode == _BikeMode.reservations)
-                Obx(
-                  () {
-                    final entries = con.reservationByBike.entries.toList()
-                      ..sort((a, b) => a.key.compareTo(b.key));
-                    return ExpansionTile(
-                      key: PageStorageKey<String>(
-                        'reserved-students-${con.coachId}-${con.classDate}-${con.classTime}',
-                      ),
-                      title: Text('Alumnos reservados (${entries.length})'),
-                      children: [
-                        if (entries.isEmpty)
-                          const ListTile(
-                              title: Text('No hay reservas activas.')),
-                        for (final entry in entries)
-                          ListTile(
-                            leading: CircleAvatar(child: Text('${entry.key}')),
-                            title: Text(entry.value.userName ?? 'Alumno'),
-                            subtitle: Text('Bicicleta ${entry.key}'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: busy ? null : () => _tapBike(entry.key),
-                          ),
-                      ],
-                    );
-                  },
-                ),
+              _legend(Colors.grey.shade300, 'Disponible'),
+              _legend(indigoAmina, 'Ocupada'),
+              _legend(Colors.grey.shade600, 'Bloqueada'),
+              _legend(Colors.amber,'En oferta'),
+              if (mode != _BikeMode.reservations)
+                _legend(limeGreen, 'Seleccionada'),
             ],
           ),
-        ),
-        bottomNavigationBar:
-            mode == _BikeMode.reservations ? null : _selectionBar(),
-      );
+          const SizedBox(height: 20),
+          Obx(()=>con.bikeError.value==null?const SizedBox.shrink():Text(con.bikeError.value!,style:const TextStyle(color:Colors.red))),
+          Obx(() => con.isLoading.value
+              ? const Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(child: CircularProgressIndicator()))
+              : _map()),
+          Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                  onPressed: _expandMap,
+                  icon: const Icon(Icons.zoom_in),
+                  label: const Text('Ampliar mapa'))),
+          const SizedBox(height: 12),
+          if (mode == _BikeMode.reservations)
+            Obx(
+                  () {
+                final entries = con.reservationByBike.entries.toList()
+                  ..sort((a, b) => a.key.compareTo(b.key));
+                return ExpansionTile(
+                  key: PageStorageKey<String>(
+                    'reserved-students-${con.coachId}-${con.classDate}-${con.classTime}',
+                  ),
+                  title: Text('Alumnos reservados (${entries.length})'),
+                  children: [
+                    if (entries.isEmpty)
+                      const ListTile(
+                          title: Text('No hay reservas activas.')),
+                    for (final entry in entries)
+                      ListTile(
+                        leading: CircleAvatar(child: Text('${entry.key}')),
+                        title: Text(entry.value.userName ?? 'Alumno'),
+                        subtitle: Text('Bicicleta ${entry.key}'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: busy ? null : () => _tapBike(entry.key),
+                      ),
+                  ],
+                );
+              },
+            ),
+          Obx(()=>AdminWaitlistPanel(entries:con.waitlist.toList(),loading:con.queueLoading.value,
+              error:con.queueError.value,now:con.queueNow.value,onRefresh:con.loadWaitlist)),
+        ],
+      ),
+    ),
+    bottomNavigationBar:
+    mode == _BikeMode.reservations ? null : _selectionBar(),
+  );
 
   Widget _selectionBar() => Obx(
         () {
-          final count = con.selectedEquipos.length;
-          final verb = mode == _BikeMode.block ? 'Bloquear' : 'Desbloquear';
-          return Material(
-            color: Colors.white,
-            elevation: 6,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+      final count = con.selectedEquipos.length;
+      final verb = mode == _BikeMode.block ? 'Bloquear' : 'Desbloquear';
+      return Material(
+        color: Colors.white,
+        elevation: 6,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '$count seleccionada(s)',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: busy || count == 0
-                              ? null
-                              : () => con.selectedEquipos.clear(),
-                          child: const Text('Limpiar'),
-                        )
-                      ],
+                    Expanded(
+                      child: Text(
+                        '$count seleccionada(s)',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
-                    SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                            onPressed:
-                                busy || count == 0 ? null : _applySelection,
-                            child: Text(con.isProcessing.value
-                                ? 'Guardando…'
-                                : '$verb $count bicicleta(s)'))),
+                    TextButton(
+                      onPressed: busy || count == 0
+                          ? null
+                          : () => con.selectedEquipos.clear(),
+                      child: const Text('Limpiar'),
+                    )
                   ],
                 ),
-              ),
+                SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                        onPressed:
+                        busy || count == 0 ? null : _applySelection,
+                        child: Text(con.isProcessing.value
+                            ? 'Guardando…'
+                            : '$verb $count bicicleta(s)'))),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 
   // Physical arrangement from the original page. Rows never wrap or reflow.
   Widget _map() => Column(
-        mainAxisSize: MainAxisSize.min,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Center(
+          child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  border: Border.all(color: Colors.grey, width: 2),
+                  borderRadius: BorderRadius.circular(8)),
+              child: const Center(
+                  child: Text('Coach',
+                      style: TextStyle(fontWeight: FontWeight.bold))))),
+      const SizedBox(height: 20),
+      Row(
         children: [
-          Center(
-              child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      border: Border.all(color: Colors.grey, width: 2),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: const Center(
-                      child: Text('Coach',
-                          style: TextStyle(fontWeight: FontWeight.bold))))),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: _seatRow(2, 4)),
-              const SizedBox(width: 24),
-              Expanded(child: _seatRow(6, 4)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _seatRow(10, 10),
+          Expanded(child: _seatRow(2, 4)),
+          const SizedBox(width: 24),
+          Expanded(child: _seatRow(6, 4)),
         ],
-      );
+      ),
+      const SizedBox(height: 10),
+      _seatRow(10, 10),
+    ],
+  );
 
   Widget _seatRow(int start, int count) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final seatWidth = (constraints.maxWidth - count * 8) / count;
-            return Row(
-              children: List.generate(
-                count,
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final seatWidth = (constraints.maxWidth - count * 8) / count;
+        return Row(
+          children: List.generate(
+            count,
                 (index) {
-                  final bicycle = start + index;
-                  return Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Obx(
+              final bicycle = start + index;
+              return Padding(
+                padding: const EdgeInsets.all(4),
+                child: Obx(
                       () {
-                        final selected = con.selectedEquipos.contains(bicycle);
-                        final occupied = con.occupiedEquipos.contains(bicycle);
-                        final blocked = con.blockedEquipos.contains(bicycle);
-                        final eligible = mode == _BikeMode.reservations ||
-                            (!occupied &&
-                                (mode == _BikeMode.block ? !blocked : blocked));
-                        final color = selected
-                            ? limeGreen
-                            : occupied
-                                ? indigoAmina
-                                : blocked
-                                    ? Colors.grey.shade600
-                                    : Colors.grey.shade300;
-                        final state = occupied
-                            ? 'ocupada'
-                            : blocked
-                                ? 'bloqueada'
-                                : 'disponible';
-                        return Semantics(
-                          button: true,
-                          selected: selected,
-                          enabled: eligible && !busy,
-                          label: 'Bicicleta $bicycle, $state',
-                          child: Tooltip(
-                            message: 'Bicicleta $bicycle · $state',
-                            child: Opacity(
-                              opacity: eligible ? 1 : .35,
-                              child: Material(
-                                color: color,
-                                borderRadius: BorderRadius.circular(4),
-                                child: InkWell(
-                                  onTap: busy || !eligible
-                                      ? null
-                                      : () => _tapBike(bicycle),
-                                  child: Container(
-                                    width: seatWidth,
-                                    height: seatWidth,
-                                    decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: selected
-                                                ? almostBlack
-                                                : Colors.black26,
-                                            width: 2),
-                                        borderRadius: BorderRadius.circular(4)),
-                                    child: Center(
-                                      child: Text(
-                                        '$bicycle',
-                                        style: TextStyle(
-                                            fontSize: seatWidth * .3,
-                                            fontWeight: FontWeight.bold,
-                                            color: selected ||
-                                                    (!occupied && !blocked)
-                                                ? almostBlack
-                                                : Colors.white),
-                                      ),
-                                    ),
+                    final selected = con.selectedEquipos.contains(bicycle);
+                    final occupied = con.occupiedEquipos.contains(bicycle);
+                    final blocked = con.blockedEquipos.contains(bicycle);
+                    final held=con.heldEquipos.contains(bicycle);
+                    final eligible = con.bikeVerified.value && !held && (mode == _BikeMode.reservations ||
+                        (!occupied &&
+                            (mode == _BikeMode.block ? !blocked : blocked)));
+                    final color = selected
+                        ? limeGreen
+                        : held?Colors.amber:occupied
+                        ? indigoAmina
+                        : blocked
+                        ? Colors.grey.shade600
+                        : Colors.grey.shade300;
+                    final state = held?'en oferta':occupied
+                        ? 'ocupada'
+                        : blocked
+                        ? 'bloqueada'
+                        : 'disponible';
+                    return Semantics(
+                      button: true,
+                      selected: selected,
+                      enabled: eligible && !busy,
+                      label: 'Bicicleta $bicycle, $state',
+                      child: Tooltip(
+                        message: 'Bicicleta $bicycle · $state',
+                        child: Opacity(
+                          opacity: eligible ? 1 : .35,
+                          child: Material(
+                            color: color,
+                            borderRadius: BorderRadius.circular(4),
+                            child: InkWell(
+                              onTap: busy || !eligible
+                                  ? null
+                                  : () => _tapBike(bicycle),
+                              child: Container(
+                                width: seatWidth,
+                                height: seatWidth,
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: selected
+                                            ? almostBlack
+                                            : Colors.black26,
+                                        width: 2),
+                                    borderRadius: BorderRadius.circular(4)),
+                                child: Center(
+                                  child: Text(
+                                    '$bicycle',
+                                    style: TextStyle(
+                                        fontSize: seatWidth * .3,
+                                        fontWeight: FontWeight.bold,
+                                        color: selected ||
+                                            (!occupied && !blocked)
+                                            ? almostBlack
+                                            : Colors.white),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      );
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ),
+  );
 
   Widget _legend(Color color, String label) =>
       Row(mainAxisSize: MainAxisSize.min, children: [
@@ -452,7 +459,7 @@ class _AdminCoachBlockPageState extends State<AdminCoachBlockPage> {
             ],
           ),
           bottomNavigationBar:
-              mode == _BikeMode.reservations ? null : _selectionBar(),
+          mode == _BikeMode.reservations ? null : _selectionBar(),
         ),
       ),
     );

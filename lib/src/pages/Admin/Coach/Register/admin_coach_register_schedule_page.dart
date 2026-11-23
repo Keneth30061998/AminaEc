@@ -189,7 +189,6 @@ class _ScheduleCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   const _ScheduleCard({
-    super.key,
     required this.schedule,
     required this.isTablet,
     required this.onDelete,

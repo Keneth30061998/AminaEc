@@ -8,7 +8,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 
 import '../../../utils/color.dart';
 import '../../../utils/iconos.dart';
-import '../../user/Sponsor/List/user_sponsor_list_page.dart';
+
 import '../Class/coach_class_page.dart';
 
 class CoachHomePage extends StatelessWidget {

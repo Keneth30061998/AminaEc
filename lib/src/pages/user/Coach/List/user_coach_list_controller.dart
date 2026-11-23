@@ -10,7 +10,7 @@ import '../../../../models/schedule.dart';
 import '../../../../providers/class_reservation_provider.dart';
 import '../../../../providers/coachs_provider.dart';
 
-class UserCoachScheduleController extends GetxController {
+class UserCoachScheduleController extends GetxController with WidgetsBindingObserver {
   final CoachProvider _provider = CoachProvider();
   final calendarRefreshTrigger = 0.obs;
 
@@ -24,7 +24,31 @@ class UserCoachScheduleController extends GetxController {
   Timer? _midnightTimer;
 
   // Contador reactivo de bicicletas ocupadas
-  final occupiedBikeMap = <String, int>{}.obs;
+  final occupiedBikeMap = <String, int?>{}.obs;
+  final List<void Function()> _subscriptions=[];
+  final Set<String> _pendingCounts={};
+  Worker? _coachWorker;
+  void _listen(String event,Function(dynamic) callback){_subscriptions.add(SocketService().subscribe(event,callback));}
+  String _hour(String time)=>time.split('.').first.length==5?'${time.split('.').first}:00':time.split('.').first;
+  void _refreshCounts([dynamic payload]) {
+    final selectedDay = selectedDate.value.toIso8601String().split('T').first;
+    for (final coach in filteredCoaches) {
+      for (final schedule in coach.schedules) {
+        final day = (schedule.date ?? '').split('T').first;
+        final time = schedule.start_time ?? '';
+        if (day != selectedDay) continue;
+        if (payload is Map &&
+            (day != '${payload['class_date']}'.split('T').first ||
+                _hour(time) != _hour('${payload['class_time']}'))) continue;
+        fetchOccupiedCount(
+          coachId: coach.id ?? '', date: schedule.date ?? '', time: time,
+        );
+      }
+    }
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state){if(state==AppLifecycleState.resumed)_refreshCounts();}
+
 
   // Colores persistentes por coach
   final Map<String, Color> _coachColors = {};
@@ -49,28 +73,21 @@ class UserCoachScheduleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     loadCoaches();
     _scheduleMidnightTimer();
 
-    ever(CoachEvents.to.coachUpdated, (_) => loadCoaches());
+    _coachWorker=ever(CoachEvents.to.coachUpdated, (_) => loadCoaches());
 
-    SocketService().on('coach:new', (_) => CoachEvents.to.notifyCoachesUpdated());
-    SocketService().on('coach:update', (_) {
+    _listen('coach:new', (_) => CoachEvents.to.notifyCoachesUpdated());
+    _listen('coach:update', (_) {
       CoachEvents.to.notifyCoachesUpdated();
       _updateCalendar();
     });
-    SocketService().on('coach:delete', (_) => CoachEvents.to.notifyCoachesUpdated());
+    _listen('coach:delete', (_) => CoachEvents.to.notifyCoachesUpdated());
 
-    // Actualización en tiempo real del contador
-    SocketService().on('reservation:update', (data) {
-      if (data is Map) {
-        fetchOccupiedCount(
-          coachId: data['coach_id'],
-          date: data['class_date'],
-          time: data['class_time'],
-        );
-      }
-    });
+    for(final event in ['machine:status:update','waitlist:slot:changed'])_listen(event,_refreshCounts);
+    _listen('connect',(_)=>_refreshCounts());
   }
 
   Future<void> loadCoaches() async {
@@ -80,6 +97,7 @@ class UserCoachScheduleController extends GetxController {
 
       _filterCoachesByDate(selectedDate.value);
       _updateCalendar();
+      _refreshCounts();
     } catch (e, st) {
       print('❌ Error loadCoaches: $e\n$st');
     }
@@ -88,6 +106,7 @@ class UserCoachScheduleController extends GetxController {
   void selectDate(DateTime date) {
     selectedDate.value = date;
     _filterCoachesByDate(date);
+    _refreshCounts();
   }
 
   void _filterCoachesByDate(DateTime date) {
@@ -183,6 +202,7 @@ class UserCoachScheduleController extends GetxController {
     required String classTime,
     required String coachName,
     String? classTheme,
+    String? scheduleId,
   }) {
     final classDate = selectedDate.value.toString().split(' ')[0];
     Get.toNamed('/user/coach/reserve', arguments: {
@@ -191,6 +211,7 @@ class UserCoachScheduleController extends GetxController {
       'class_time': classTime,
       'coach_name': coachName,
       'class_theme': classTheme ?? 'Clase',
+      'schedule_id':scheduleId,
     });
   }
 
@@ -218,7 +239,8 @@ class UserCoachScheduleController extends GetxController {
 
   @override
   void onClose() {
-    _midnightTimer?.cancel();
+    _midnightTimer?.cancel();_coachWorker?.dispose();WidgetsBinding.instance.removeObserver(this);
+    for(final cancel in _subscriptions){cancel();}
     super.onClose();
   }
 
@@ -229,11 +251,13 @@ class UserCoachScheduleController extends GetxController {
     required String time,
   }) async {
     final key = '$coachId-$date-$time';
-    final reservations = await ClassReservationProvider().getReservationsForSlot(
-      classDate: date,
-      classTime: time,
-    );
-    occupiedBikeMap[key] = reservations.length;
+    if(!_pendingCounts.add(key))return;
+    try {
+      final reservations=await ClassReservationProvider().getReservationsForSlot(classDate:date,classTime:time);
+      if(!isClosed)occupiedBikeMap[key]=reservations.length;
+    }catch(_){if(!isClosed)occupiedBikeMap[key]=null;}
+    finally{_pendingCounts.remove(key);}
+
   }
 }
 

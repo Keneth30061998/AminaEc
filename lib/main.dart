@@ -1,3 +1,5 @@
+import 'src/services/waitlist_service.dart';
+import 'src/services/notification_navigation.dart';
 import 'package:amina_ec/src/providers/class_rating_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -22,40 +24,27 @@ import 'src/services/fcm_service.dart';
 import 'src/services/notifications_service.dart';
 import 'src/services/app_config_service.dart';
 import 'src/services/att_service.dart';
-import 'src/services/pending_navigation_service.dart';
+
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-// Definir la función _firebaseMessagingBackgroundHandler fuera de cualquier clase
+@pragma("vm:entry-point")
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print("Handling a background message: ${message.messageId}");
-
-  /*
-  if (message.data['type'] == 'CLASS_RATING_REQUEST' && message.data['attendance_id'] != null) {
-    final String attendanceId = message.data['attendance_id'].toString();
-
-    final args = {'attendanceId': attendanceId};
-
-    // Si la app está en primer plano, redirigimos directamente
-    if (Get.key.currentState != null) {
-      Get.toNamed('/user/class-rating', arguments: args);
-    } else {
-      // Si la app está en segundo plano, guardamos la ruta pendiente
-      PendingNavigationService.setPendingRoute(route: '/user/class-rating', arguments: args);
-    }
-  }
-   */
+  await Firebase.initializeApp(options:DefaultFirebaseOptions.currentPlatform);
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   Get.put(CoachEvents());
+  Get.put(WaitlistService(),permanent:true);
 
   // 1️⃣ Inicializar Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // 2️⃣ Simular versión antigua: Delay antes de ATT (solo en iOS)
   if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -88,8 +77,7 @@ void main() async {
       remoteCfg['message'] ?? 'La app está en mantenimiento.';
   final String maintenanceEstimated = remoteCfg['estimated_time'] ?? '';
 
-  // Registra el manejador de mensajes en segundo plano
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
 
   runApp(MyAppBootstrap(
     isMaintenance: isMaintenance,
@@ -161,19 +149,8 @@ class _MyAppState extends State<MyApp> {
     }
 
     // 2. Si hay ruta pendiente por notificación, se procesa primero.
-    final pendingRoute = PendingNavigationService.consumePendingRoute();
-
-    if (pendingRoute != null) {
-      final String route = pendingRoute['route'];
-      final Map<String, dynamic> arguments =
-      Map<String, dynamic>.from(pendingRoute['arguments'] ?? {});
-
-      if (route.isNotEmpty && Get.currentRoute != route) {
-        Get.toNamed(route, arguments: arguments);
-      }
-
-      return;
-    }
+    if(processPendingNotificationNavigation())return;
+    await WaitlistService.to.refresh();
 
     // 3. Evitar consultar calificación si el usuario tiene más de un rol
     // y todavía está en pantalla de selección de roles.

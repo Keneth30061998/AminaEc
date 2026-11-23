@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/services/fcm_service.dart';
 import 'package:amina_ec/src/components/Socket/socket_service.dart';
 import 'package:amina_ec/src/utils/color.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,8 @@ class UserProfileInfoController extends GetxController {
   UserProvider userProvider = UserProvider();
 
   /// 🚪 Cerrar sesión del usuario
-  void signOut() {
+  Future<void> signOut() async {
+    await unregisterCurrentPushToken();
     // 🧩 1. Desconectar sockets activos
     final socketService = SocketService();
     socketService.disconnect();

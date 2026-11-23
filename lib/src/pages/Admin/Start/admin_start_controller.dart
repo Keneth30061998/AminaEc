@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../components/Socket/socket_service.dart';
-import '../../../models/attendance.dart';
+
 import '../../../models/app_banner.dart';
 import '../../../providers/app_banner_provider.dart';
 import '../../../models/coach.dart';

@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/services/fcm_service.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,8 @@ class HomeController extends GetxController {
     //print('Usuario de session: ${user.toJson()}');
   }
 
-  void signOut() {
+  Future<void> signOut() async {
+    await unregisterCurrentPushToken();
     GetStorage().remove('user');
     Get.offNamedUntil('/splash', (route) => false);
   }

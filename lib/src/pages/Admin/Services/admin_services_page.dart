@@ -1,4 +1,4 @@
-import 'package:amina_ec/src/pages/Admin/Services/Plan/List/admin_plan_list_page.dart';
+
 import 'package:amina_ec/src/pages/Admin/Services/Plan/Register/admin_plan_register_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Sponsor/List/admin_sponsor_list_page.dart';
 import 'package:amina_ec/src/utils/color.dart';

@@ -121,60 +121,13 @@ class ClassReservationProvider {
   ///
   /// Si el token pertenece a un administrador, el backend también devuelve
   /// nombre, correo, foto, user_id y plan_id del usuario asignado.
-  Future<List<ClassReservation>> getReservationsForSlot({
-    required String classDate,
-    required String classTime,
-  }) async {
-    _debugPrintHeader('API: getReservationsForSlot');
-
-    final headers = _headers;
-    final url = '${_baseUrl}api/class-reservations/by-slot';
-    final body = {
-      'class_date': classDate,
-      'class_time': _normalizeTime(classTime),
-    };
-
-    print('➡️ POST: $url');
-    print('📦 Body enviado: $body');
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: json.encode(body),
-      );
-
-      print('🌐 StatusCode: ${response.statusCode}');
-      print('🌐 Respuesta: ${response.body}');
-
-      if (response.body.isEmpty) {
-        print('⚠️ Body vacío');
-        return [];
-      }
-
-      final dynamic decoded = json.decode(response.body);
-
-      if (decoded is! Map<String, dynamic>) {
-        print('⚠️ Respuesta inesperada');
-        return [];
-      }
-
-      if (decoded['success'] == true && decoded['data'] is List) {
-        return (decoded['data'] as List)
-            .whereType<Map>()
-            .map(
-              (item) => ClassReservation.fromJson(
-            Map<String, dynamic>.from(item),
-          ),
-        )
-            .toList();
-      }
-    } catch (error) {
-      print('❌ ERROR getReservationsForSlot: $error');
-    }
-
-    print('⚠️ Retornando lista vacía');
-    return [];
+  Future<List<ClassReservation>> getReservationsForSlot({required String classDate,required String classTime}) async {
+    final response=await http.post(Uri.parse('${_baseUrl}api/class-reservations/by-slot'),headers:_headers,
+        body:jsonEncode({'class_date':classDate,'class_time':_normalizeTime(classTime)})).timeout(const Duration(seconds:15));
+    final decoded=jsonDecode(response.body);
+    if(response.statusCode!=200||decoded is! Map||decoded['success']!=true||decoded['data'] is! List)
+      throw Exception(decoded is Map ? decoded['message'] ?? 'No se pudo consultar la disponibilidad.' : 'Respuesta inválida.');
+    return (decoded['data'] as List).whereType<Map>().map((r)=>ClassReservation.fromJson(Map<String,dynamic>.from(r))).toList();
   }
 
   // ============================================================
@@ -363,45 +316,13 @@ class ClassReservationProvider {
   // DISPONIBILIDAD: BICICLETAS
   // ============================================================
 
-  Future<List<int>> getAvailableBikes({
-    required String coachId,
-    required String date,
-    required String time,
-  }) async {
-    _debugPrintHeader('API: getAvailableBikes');
-
-    final cleanedTime = _normalizeTime(time);
-    final url =
-        '${_baseUrl}api/class-reservations/availability/bikes/'
-        '$coachId/$date/$cleanedTime';
-
-    print('➡️ GET: $url');
-
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _headers,
-      );
-
-      print('🌐 Response: ${response.body}');
-
-      if (response.statusCode != 200 || response.body.isEmpty) {
-        return [];
-      }
-
-      final dynamic decoded = json.decode(response.body);
-
-      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
-        return (decoded['data'] as List)
-            .map((item) => int.tryParse(item.toString()))
-            .whereType<int>()
-            .toList();
-      }
-    } catch (error) {
-      print('❌ ERROR getAvailableBikes: $error');
-    }
-
-    return [];
+  Future<List<int>> getAvailableBikes({required String coachId,required String date,required String time}) async {
+    final response=await http.get(Uri.parse('${_baseUrl}api/class-reservations/availability/bikes/$coachId/$date/${_normalizeTime(time)}'),
+        headers:_headers).timeout(const Duration(seconds:15));
+    final decoded=jsonDecode(response.body);
+    if(response.statusCode!=200||decoded is! Map||decoded['success']!=true||decoded['data'] is! List)
+      throw Exception(decoded is Map ? decoded['message'] ?? 'No se pudo consultar la disponibilidad.' : 'Respuesta inválida.');
+    return (decoded['data'] as List).map((v)=>int.tryParse('$v')).whereType<int>().toList();
   }
 
   // ============================================================

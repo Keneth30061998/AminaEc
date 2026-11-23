@@ -1,3 +1,4 @@
+import 'package:amina_ec/src/services/fcm_service.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,7 +12,8 @@ import '../../../../models/user.dart';
 class AdminProfileInfoController extends GetxController {
   User user = User.fromJson(GetStorage().read('user') ?? {});
 
-  void signOut() {
+  Future<void> signOut() async {
+    await unregisterCurrentPushToken();
 
     final socketService = SocketService();
     socketService.disconnect();

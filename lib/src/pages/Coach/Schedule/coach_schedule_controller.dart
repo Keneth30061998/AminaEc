@@ -9,7 +9,7 @@ import '../../../models/coach.dart';
 import '../../../models/schedule.dart';
 import '../../../models/user.dart';
 import '../../../providers/coachs_provider.dart';
-import '../../../utils/color.dart';
+
 
 class CoachScheduleController extends GetxController {
   final CoachProvider coachProvider = CoachProvider();

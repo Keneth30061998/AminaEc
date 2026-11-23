@@ -1,3 +1,4 @@
+import '../pages/user/Waitlist/user_waitlist_page.dart';
 import '../pages/Admin/Shared/admin_ui.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_image_page.dart';
 import 'package:amina_ec/src/pages/Admin/Coach/Register/admin_coach_register_page.dart';
@@ -7,7 +8,6 @@ import 'package:amina_ec/src/pages/Admin/Coach/Update/admin_coach_update_page.da
 // --- Admin: Home, Coach y Planes ---
 import 'package:amina_ec/src/pages/Admin/Home/admin_home_page.dart';
 import 'package:amina_ec/src/pages/Admin/Reports/PlanUsage/admin_reports_plan_usage_page.dart';
-import 'package:amina_ec/src/pages/Admin/Services/Sponsor/List/admin_sponsor_list_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Sponsor/Register/admin_sponsor_register_page.dart';
 import 'package:amina_ec/src/pages/Admin/Services/Sponsor/Update/admin_sponsor_update_page.dart';
 
@@ -61,6 +61,7 @@ final List<GetPage> appRoutes = [
   GetPage(name: '/user/plan/buy/resume', page: () => UserPlanBuyResumePage()),
   GetPage(name: '/user/coach/reserve', page: () => UserCoachReservePage()),
   GetPage(name: '/user/plan', page: () => UserPlanListPage()),
+  GetPage(name:'/user/waitlist',page:()=>const UserWaitlistPage()),
   GetPage(name: '/user/class-rating', page: () => const UserClassRatingPage()),
   // --- Coach ---
   GetPage(name: '/coach/home', page: () => CoachHomePage()),

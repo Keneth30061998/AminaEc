@@ -9,6 +9,8 @@ class ResponseApi {
   bool? success;
   String? message;
   dynamic data;
+  String? code;
+  DateTime? serverTime;
 
   // Campos nuevos para OTP
   bool? requiresConfirmation;
@@ -18,6 +20,8 @@ class ResponseApi {
     this.success,
     this.message,
     this.data,
+    this.code,
+    this.serverTime,
     this.requiresConfirmation,
     this.transactionId,
   });
@@ -26,11 +30,13 @@ class ResponseApi {
     return ResponseApi(
       success: json["success"] as bool?,
       message: json["message"] as String?,
-      data: json["data"],
+      data: json["data"] ?? (json['queue_id'] != null ? {'id':json['queue_id'],'status':json['status']} : null),
+      code: json['code']?.toString(),
+      serverTime: DateTime.tryParse('${json['server_time']}')?.toUtc(),
       requiresConfirmation: json["requiresConfirmation"] as bool? ??
           json["requires_confirmation"] as bool?,
       transactionId:
-          json["transactionId"] as String? ?? json["transaction_id"] as String?,
+      json["transactionId"] as String? ?? json["transaction_id"] as String?,
     );
   }
 

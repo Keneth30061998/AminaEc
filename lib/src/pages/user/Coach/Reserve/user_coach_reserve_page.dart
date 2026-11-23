@@ -42,6 +42,27 @@ class UserCoachReservePage extends StatelessWidget {
                     children: [
                       const SizedBox(height: 40),
                       SingleChildScrollView(child: _containerCount()),
+                      Obx(() => con.availabilityError.value == null
+                          ? const SizedBox.shrink()
+                          : ListTile(
+                              title: Text(con.availabilityError.value!,
+                                  style: const TextStyle(color: Colors.red)),
+                              trailing: TextButton(
+                                  onPressed: con.fetchOccupiedEquiposInicial,
+                                  child: const Text('Actualizar')))),
+                      Obx(() => con.joinedQueue.value
+                          ? ListTile(
+                              leading: const Icon(Icons.format_list_numbered,
+                                  color: Colors.deepOrange),
+                              title: Text(
+                                  con.activeQueue?.status == 'offered'
+                                      ? 'Tienes una bicicleta ofrecida'
+                                      : 'Ya estás en esta lista de espera',
+                                  style: const TextStyle(color: almostBlack)),
+                              subtitle: const Text(
+                                  'Consulta tu lugar, confirma una oferta o sal de la cola.'),
+                              onTap: con.openWaitlist)
+                          : const SizedBox.shrink()),
                       const SizedBox(height: 30),
                       _simbolIndicator(),
                       const SizedBox(height: 30),
@@ -71,10 +92,10 @@ class UserCoachReservePage extends StatelessWidget {
                           margin: const EdgeInsets.symmetric(horizontal: 16),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(.12),
+                            color: Colors.orange.withValues(alpha: .12),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.orange.withOpacity(.4),
+                              color: Colors.orange.withValues(alpha: .4),
                             ),
                           ),
                           child: Row(
@@ -108,9 +129,15 @@ class UserCoachReservePage extends StatelessWidget {
 
                           final bool full = con.isClassFull.value;
 
+                          if (con.joinedQueue.value) {
+                            return OutlinedButton.icon(
+                                onPressed: con.openWaitlist,
+                                icon: const Icon(Icons.format_list_numbered),
+                                label: const Text('Ver mi lista de espera'));
+                          }
                           if (full) {
                             return ElevatedButton.icon(
-                              onPressed: busy
+                              onPressed: busy || !con.availabilityVerified.value
                                   ? null
                                   : () => con.joinReservationQueue(),
                               icon: const Icon(
@@ -129,7 +156,7 @@ class UserCoachReservePage extends StatelessWidget {
                                 backgroundColor: almostBlack,
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor:
-                                    almostBlack.withOpacity(.7),
+                                    almostBlack.withValues(alpha: .7),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -138,13 +165,15 @@ class UserCoachReservePage extends StatelessWidget {
                           }
 
                           return ElevatedButton(
-                            onPressed: busy ? null : () => con.reserveClass(),
+                            onPressed: busy || !con.availabilityVerified.value
+                                ? null
+                                : () => con.reserveClass(),
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(double.infinity, 52),
                               backgroundColor: almostBlack,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor:
-                                  almostBlack.withOpacity(.7),
+                                  almostBlack.withValues(alpha: .7),
                             ),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 250),
@@ -197,7 +226,7 @@ class UserCoachReservePage extends StatelessWidget {
               if (!con.isBusy) return const SizedBox.shrink();
 
               return Container(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha: 0.12),
                 child: Center(
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -208,7 +237,7 @@ class UserCoachReservePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         )
@@ -348,40 +377,22 @@ class UserCoachReservePage extends StatelessWidget {
     );
   }
 
-  Widget _simbolIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 15,
-          height: 15,
-          color: limeGreen,
-        ),
-        Text(
-          ' Tu selección',
-          style: GoogleFonts.roboto(color: almostBlack),
-        ),
-        SizedBox(
-          width: 20,
-        ),
-        Container(
-          width: 15,
-          height: 15,
-          color: Colors.black12,
-        ),
-        Text(' Disponible', style: GoogleFonts.roboto(color: almostBlack)),
-        SizedBox(
-          width: 20,
-        ),
-        Container(
-          width: 15,
-          height: 15,
-          color: indigoAmina,
-        ),
-        Text(' Ocupada', style: GoogleFonts.roboto(color: almostBlack)),
-      ],
-    );
-  }
+  Widget _simbolIndicator() => Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            _legend(limeGreen, 'Tu selección'),
+            _legend(Colors.grey.shade300, 'Disponible'),
+            _legend(indigoAmina, 'Ocupada'),
+            _legend(Colors.grey.shade600, 'Bloqueada'),
+          ]);
+  Widget _legend(Color color, String label) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 12, height: 12, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(color: almostBlack, fontSize: 12))
+      ]);
 
   Widget _buildBigSeat() {
     return Center(
@@ -431,9 +442,15 @@ class UserCoachReservePage extends StatelessWidget {
                   final bool isOccupied =
                       con.occupiedEquipos.contains(seatNumber);
                   final bool classFull = con.isClassFull.value;
+                  final bool held = con.heldEquipos.contains(seatNumber);
+                  final bool blocked = con.blockedEquipos.contains(seatNumber);
                   Color seatColor;
                   if (isSelected) {
                     seatColor = limeGreen;
+                  } else if (held) {
+                    seatColor = Colors.amber;
+                  } else if (blocked) {
+                    seatColor = Colors.grey.shade600;
                   } else if (isOccupied) {
                     seatColor = indigoAmina;
                   } else {
@@ -442,7 +459,12 @@ class UserCoachReservePage extends StatelessWidget {
 
                   return GestureDetector(
                     onTap: () {
-                      if (con.isBusy) return;
+                      if (con.isBusy || !con.availabilityVerified.value) return;
+                      if (held) {
+                        Get.snackbar('Bicicleta en oferta',
+                            'Este cupo está apartado para una persona de la lista de espera.');
+                        return;
+                      }
 
                       if (classFull) {
                         Get.snackbar(

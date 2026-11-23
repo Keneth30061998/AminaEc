@@ -1,107 +1,35 @@
 import 'dart:convert';
-
 import 'package:amina_ec/src/environment/environment.dart';
 import 'package:amina_ec/src/models/response_api.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
 class ReservationQueueProvider {
-  final String _baseUrl = Environment.API_URL;
-
-  Map<String, dynamic> get _user => GetStorage().read('user') ?? {};
-
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Authorization': (_user['session_token'] ?? '').toString(),
-      };
-
-  // =====================================================
-  // INGRESAR A LISTA DE ESPERA
-  // =====================================================
-
-  Future<ResponseApi> joinQueue({
-    required String coachId,
-    required String classDate,
-    required String classTime,
-  }) async {
-    final url = '${_baseUrl}api/reservation-queue';
-
-    final body = {
-      "coach_id": coachId,
-
-      "class_date": classDate,
-
-      "class_time": classTime.split('.').first,
-
-      // importante:
-      // no se asigna bicicleta todavía
-
-      "bicycle": null,
-    };
-
-    print("🚴 JOIN QUEUE");
-
-    print(url);
-
-    print(body);
-
+  Map<String,String> get _headers => {'Content-Type':'application/json',
+    'Authorization':'${(GetStorage().read('user') ?? {})['session_token'] ?? ''}'};
+  Future<ResponseApi> _request(String path,{Map<String,dynamic>? body,Map<String,String>? query}) async {
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: _headers,
-        body: json.encode(body),
-      );
-
-      print(response.body);
-
-      return _response(response);
-    } catch (e) {
-      print("❌ Error joinQueue $e");
-
-      return ResponseApi(
-        success: false,
-        message: "No se pudo ingresar a lista de espera",
-      );
-    }
+      final base=Uri.parse('${Environment.API_URL}$path');
+      final uri=query==null?base:base.replace(queryParameters:query);
+      final response=await (body==null?http.get(uri,headers:_headers):
+      http.post(uri,headers:_headers,body:jsonEncode(body))).timeout(const Duration(seconds:15));
+      final decoded=jsonDecode(response.body);
+      if(decoded is! Map<String,dynamic>)throw const FormatException('Respuesta inválida');
+      final result=ResponseApi.fromJson(decoded);
+      if(response.statusCode>=400)result.success=false;
+      return result;
+    }catch(_){return ResponseApi(success:false,message:'No se pudo conectar. Actualiza para consultar el estado real de la cola.');}
   }
-
-  // =====================================================
-  // ACEPTAR OFERTA
-  // =====================================================
-
-  Future<ResponseApi> acceptOffer(String queueId) async {
-    final url = '${_baseUrl}api/reservation-queue/$queueId/accept';
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: _headers,
-      );
-
-      return _response(response);
-    } catch (e) {
-      return ResponseApi(
-        success: false,
-        message: "Error aceptando bicicleta",
-      );
-    }
-  }
-
-  ResponseApi _response(http.Response response) {
-    if (response.body.isEmpty) {
-      return ResponseApi(
-        success: false,
-        message: "Respuesta vacía",
-      );
-    }
-
-    try {
-      return ResponseApi.fromJson(json.decode(response.body));
-    } catch (e) {
-      return ResponseApi(
-        success: false,
-        message: "Respuesta inválida",
-      );
-    }
-  }
+  Future<ResponseApi> joinQueue({required String coachId,required String classDate,required String classTime,String? scheduleId}) =>
+      _request('api/reservation-queue',body:{'coach_id':coachId,'class_date':classDate,
+        'class_time':classTime.split('.').first,if(scheduleId?.isNotEmpty==true)'schedule_id':scheduleId});
+  Future<ResponseApi> mine() => _request('api/reservation-queue/mine');
+  Future<ResponseApi> getEntry(String id) => _request('api/reservation-queue/$id');
+  Future<ResponseApi> acceptOffer(String id) => _request('api/reservation-queue/$id/accept',body:{});
+  Future<ResponseApi> rejectOffer(String id) => _request('api/reservation-queue/$id/reject',body:{});
+  Future<ResponseApi> cancelEntry(String id) => _request('api/reservation-queue/$id/cancel',body:{});
+  Future<ResponseApi> adminList(String scheduleId) => _request('api/admin/schedules/$scheduleId/waitlist');
+  Future<ResponseApi> adminByClass({required String coachId,required String classDate,required String classTime}) =>
+      _request('api/admin/waitlist/by-class',query:{'coach_id':coachId,'class_date':classDate,'class_time':classTime});
+  Future<ResponseApi> counts(String date) => _request('api/admin/waitlist/counts',query:{'date':date});
 }
